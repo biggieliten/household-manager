@@ -1,0 +1,22 @@
+name: Discord PR ping
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TITLE: ${{ github.event.pull_request.title }}
+          URL: ${{ github.event.pull_request.html_url }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          if [ "$AUTHOR" = "VarxTheBaron" ]; then
+            AUTHOR="Dansken"
+          fi
+          jq -n --arg t "$TITLE" --arg u "$URL" --arg a "$AUTHOR" \
+            '{content: "@everyone New PR by \($a): **\($t)**\n\($u)",
+              allowed_mentions: {parse: ["everyone"]}}' \
+            | curl -sf -H "Content-Type: application/json" -d @- "$WEBHOOK"
