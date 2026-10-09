@@ -13,6 +13,9 @@ jobs:
           URL: ${{ github.event.pull_request.html_url }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
+          if [ "$AUTHOR" = "VarxTheBaron" ]; then
+            AUTHOR="Dansken"
+          fi
           jq -n --arg t "$TITLE" --arg u "$URL" --arg a "$AUTHOR" \
             '{content: "@everyone New PR by \($a): **\($t)**\n\($u)",
               allowed_mentions: {parse: ["everyone"]}}' \
