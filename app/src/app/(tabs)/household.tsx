@@ -1,5 +1,6 @@
-import { Text, View, StyleSheet } from "react-native";
+import { Pressable, Text, View, StyleSheet } from "react-native";
 
+import { authClient } from "@/lib/auth-client";
 import { ThemePicker, useTheme } from "@/theme";
 
 export default function Household() {
@@ -13,6 +14,16 @@ export default function Household() {
         <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>Utseende</Text>
         <ThemePicker />
       </View>
+
+      <Pressable
+        accessibilityRole='button'
+        onPress={() => authClient.signOut()}
+        style={[
+          styles.signOut,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}>
+        <Text style={[styles.signOutText, { color: "#D32F2F" }]}>Logga ut</Text>
+      </Pressable>
     </View>
   );
 }
@@ -36,5 +47,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     textTransform: "uppercase",
+  },
+  signOut: {
+    alignSelf: "stretch",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  signOutText: {
+    fontSize: 17,
+    fontWeight: "600",
   },
 });
