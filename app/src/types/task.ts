@@ -6,6 +6,6 @@ export interface Task {
   frequency: number;
   isActive: boolean;
   difficultyLevel: number;
-  houseHoldId: number;
+  householdId: number;
 }
-export type TaskCreate = Omit<Task, "id" | "isActive" | "houseHoldId">;
+export type TaskCreate = Omit<Task, "id" | "isActive" | "householdId">;
