@@ -1,5 +1,5 @@
-import { Text, View, Pressable, StyleSheet } from "react-native";
 import { Link } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useTheme } from "@/theme";
 
@@ -9,16 +9,14 @@ export default function Index() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={{ color: colors.text }}>Sysslor</Text>
-
-      <Link href="/create-task" asChild>
+      <Link href='/create-task' asChild>
         <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Skapa syssla"
+          accessibilityRole='button'
+          accessibilityLabel='Skapa syssla'
           style={StyleSheet.flatten([
             styles.addButton,
             { backgroundColor: colors.primary },
-          ])}
-        >
+          ])}>
           <Text style={styles.addButtonText}>+</Text>
         </Pressable>
       </Link>
