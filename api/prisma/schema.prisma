@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Household {
+  id         Int      @id @default(autoincrement())
+  name       String
+  accessCode String   @unique
+  members    Member[]
+  tasks      Task[]
+}
+
+model Account {
+  id       Int      @id @default(autoincrement())
+  name     String
+  email    String   @unique
+  password String
+  members  Member[]
+}
+
+model Member {
+  id             Int             @id @default(autoincrement())
+  nickname       String
+  avatar         Avatar
+  isAdmin        Boolean         @default(false)
+  household      Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  householdId    Int
+  account        Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId      Int
+  completedTasks CompletedTask[]
+  memberToTasks  MemberToTask[]
+  pauses         Pause[]
+  leftAt         DateTime?
+
+  @@unique([accountId, householdId])
+  @@unique([householdId, avatar])
+}
+
+model Task {
+  id              Int             @id @default(autoincrement())
+  name            String
+  description     String
+  frequency       Int
+  isActive        Boolean         @default(true)
+  difficultyLevel Int
+  household       Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  householdId     Int
+  completedTasks  CompletedTask[]
+  memberToTasks   MemberToTask[]
+}
+
+model MemberToTask {
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId Int
+  task     Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId   Int
+
+  @@id([memberId, taskId])
+}
+
+model CompletedTask {
+  id          Int      @id @default(autoincrement())
+  member      Member   @relation(fields: [memberId], references: [id])
+  memberId    Int
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId      Int
+  completedAt DateTime
+}
+
+model Pause {
+  id        Int       @id @default(autoincrement())
+  member    Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId  Int
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+
+  @@index([memberId])
+}
+
+enum Avatar {
+  FOX
+  PIG
+  FROG
+  CHICKEN
+  OCTOPUS
+  DOLPHIN
+  OWL
+  UNICORN
+}
