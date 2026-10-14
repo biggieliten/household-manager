@@ -20,12 +20,63 @@ model Household {
   tasks      Task[]
 }
 
+// Better Auth models (user, session, account, verification).
+// Account here is a login method (GitHub, email/password) linked to a User.
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  members       Member[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+
+  @@index([userId])
+}
+
 model Account {
-  id       Int      @id @default(autoincrement())
-  name     String
-  email    String   @unique
-  password String
-  members  Member[]
+  id                    String    @id
+  accountId             String
+  providerId            String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
 }
 
 model Member {
@@ -35,14 +86,14 @@ model Member {
   isAdmin        Boolean         @default(false)
   household      Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
   householdId    Int
-  account        Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  accountId      Int
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
   completedTasks CompletedTask[]
   memberToTasks  MemberToTask[]
   pauses         Pause[]
   leftAt         DateTime?
 
-  @@unique([accountId, householdId])
+  @@unique([userId, householdId])
   @@unique([householdId, avatar])
 }
 
