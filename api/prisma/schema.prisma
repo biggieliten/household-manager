@@ -5,7 +5,7 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -33,14 +33,14 @@ model Member {
   nickname       String
   avatar         Avatar
   isAdmin        Boolean         @default(false)
-  household     Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  household      Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
   householdId    Int
   account        Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
   accountId      Int
   completedTasks CompletedTask[]
   memberToTasks  MemberToTask[]
   pauses         Pause[]
-  leftAt        DateTime?
+  leftAt         DateTime?
 
   @@unique([accountId, householdId])
   @@unique([householdId, avatar])
