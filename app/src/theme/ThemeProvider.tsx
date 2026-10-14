@@ -1,5 +1,4 @@
-import { useEffect, type ReactNode } from "react";
-import { Appearance } from "react-native";
+import type { ReactNode } from "react";
 import {
   DarkTheme,
   DefaultTheme,
@@ -27,12 +26,7 @@ function toNavigationTheme(scheme: ColorScheme): Theme {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const { preference, scheme } = useTheme();
-
-  // Keep native UI (tab bar, alerts, keyboard) in sync with the chosen preference.
-  useEffect(() => {
-    Appearance.setColorScheme(preference === "system" ? "unspecified" : preference);
-  }, [preference]);
+  const { scheme } = useTheme();
 
   return (
     <NavigationThemeProvider value={toNavigationTheme(scheme)}>
