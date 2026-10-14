@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Link } from "expo-router";
 
-import { TaskList } from "@/components/TaskList";
+import TaskList from "@/components/TaskList";
 import { exampleTasks } from "@/data/exampleTasks";
 import { useTheme } from "@/theme";
 

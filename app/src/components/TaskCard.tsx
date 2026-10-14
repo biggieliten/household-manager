@@ -20,25 +20,33 @@ function daysSince(completedAt: Date, today: Date): number {
     completedAt.getMonth(),
     completedAt.getDate(),
   );
-  const currentDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const currentDay = Date.UTC(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
   return Math.max(0, Math.round((currentDay - completedDay) / 86_400_000));
 }
 
-export function TaskCard({
-  task,
-  today,
-}: {
+interface Props {
   task: TaskListItem;
   today: Date;
-}): React.JSX.Element {
+}
+
+export default function TaskCard({ task, today }: Props): React.JSX.Element {
   const { colors, scheme } = useTheme();
   const elapsed = task.latestCompletion
     ? daysSince(task.latestCompletion.completedAt, today)
     : null;
   const doneToday = elapsed === 0;
   const overdue = elapsed !== null && elapsed > task.frequency;
-  const status = doneToday ? "Gjord idag" : overdue ? "Försenad" : "Inte gjord idag";
-  const cardBackground = scheme === "light" ? colors.background : colors.surface;
+  const status = doneToday
+    ? "Gjord idag"
+    : overdue
+      ? "Försenad"
+      : "Inte gjord idag";
+  const cardBackground =
+    scheme === "light" ? colors.background : colors.surface;
   const statusBackground = doneToday
     ? "#51FAC1"
     : overdue
@@ -46,17 +54,25 @@ export function TaskCard({
       : scheme === "light"
         ? "#ECEBFD"
         : "#33354A";
-  const statusColor = doneToday ? "#00513B" : overdue ? "#B42318" : colors.textMuted;
+  const statusColor = doneToday
+    ? "#00513B"
+    : overdue
+      ? "#B42318"
+      : colors.textMuted;
 
   return (
     <View
       accessible
       accessibilityLabel={`${task.name}, ${task.description}, ${status}, ${
-        elapsed === null ? "aldrig gjord" : `${elapsed} dagar sedan senast gjord`
+        elapsed === null
+          ? "aldrig gjord"
+          : `${elapsed} dagar sedan senast gjord`
       }`}
       style={[styles.card, { backgroundColor: cardBackground }]}
     >
-      <View style={[styles.statusCircle, { backgroundColor: statusBackground }]}>
+      <View
+        style={[styles.statusCircle, { backgroundColor: statusBackground }]}
+      >
         <Text style={[styles.statusIcon, { color: statusColor }]}>
           {overdue ? "!" : "✓"}
         </Text>
@@ -64,23 +80,40 @@ export function TaskCard({
 
       <View style={styles.cardContent}>
         <View style={styles.titleRow}>
-          <Text numberOfLines={1} style={[styles.taskName, { color: colors.text }]}>
+          <Text
+            numberOfLines={1}
+            style={[styles.taskName, { color: colors.text }]}
+          >
             {task.name}
           </Text>
           <View
             style={[
               styles.label,
-              { backgroundColor: overdue ? "#FFDDDA" : scheme === "light" ? "#ECEBFD" : "#33354A" },
+              {
+                backgroundColor: overdue
+                  ? "#FFDDDA"
+                  : scheme === "light"
+                    ? "#ECEBFD"
+                    : "#33354A",
+              },
             ]}
           >
-            <Text style={[styles.labelText, { color: overdue ? "#B42318" : colors.text }]}>
+            <Text
+              style={[
+                styles.labelText,
+                { color: overdue ? "#B42318" : colors.text },
+              ]}
+            >
               {overdue ? "Försenad" : `⚡ ${task.difficultyLevel}p`}
             </Text>
           </View>
         </View>
         <Text
           numberOfLines={1}
-          style={[styles.description, { color: overdue ? "#B42318" : colors.textMuted }]}
+          style={[
+            styles.description,
+            { color: overdue ? "#B42318" : colors.textMuted },
+          ]}
         >
           {task.description}
         </Text>
