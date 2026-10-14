@@ -63,7 +63,7 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
   return (
     <View
       accessible
-      accessibilityLabel={`${task.name}, ${task.description}, ${status}, ${
+      accessibilityLabel={`${task.name}, ${status}, ${
         elapsed === null
           ? "aldrig gjord"
           : `${elapsed} dagar sedan senast gjord`
@@ -108,15 +108,6 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
             </Text>
           </View>
         </View>
-        <Text
-          numberOfLines={1}
-          style={[
-            styles.description,
-            { color: overdue ? "#B42318" : colors.textMuted },
-          ]}
-        >
-          {task.description}
-        </Text>
       </View>
 
       {doneToday && task.latestCompletion ? (
@@ -162,12 +153,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   statusIcon: { fontSize: 26, fontWeight: "600" },
-  cardContent: { flex: 1, minWidth: 0, gap: 3 },
+  cardContent: { flex: 1, minWidth: 0 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   taskName: { fontSize: 19, fontWeight: "600", flexShrink: 1 },
   label: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
   labelText: { fontSize: 12, fontWeight: "700" },
-  description: { fontSize: 14 },
   avatar: {
     width: 34,
     height: 34,
