@@ -3,6 +3,8 @@
     "target": "ESNext",
     "module": "NodeNext",
     "strict": true,
+    "esModuleInterop": true,
+    "ignoreDeprecations": "6.0",
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "types": [
@@ -13,5 +15,6 @@
     "rootDir": "./src",
     "outDir": "./dist"
   },
+  "include": ["src"],
   "exclude": ["node_modules"]
 }
