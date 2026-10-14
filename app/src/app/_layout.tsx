@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ActivityIndicator, View } from "react-native";
@@ -5,12 +6,16 @@ import { ActivityIndicator, View } from "react-native";
 import { authClient } from "@/lib/auth-client";
 import { ThemeProvider, useTheme } from "@/theme";
 
+const queryClient = new QueryClient();
+
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <StatusBar style='auto' />
-      <RootStack />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <StatusBar style="auto" />
+        <RootStack />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -26,7 +31,8 @@ function RootStack() {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: colors.background,
-        }}>
+        }}
+      >
         <ActivityIndicator />
       </View>
     );
@@ -38,14 +44,14 @@ function RootStack() {
   return (
     <Stack>
       <Stack.Protected guard={isSignedIn}>
-        <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
-          name='create-task'
+          name="create-task"
           options={{ presentation: "modal", title: "Skapa syssla" }}
         />
       </Stack.Protected>
       <Stack.Protected guard={!isSignedIn}>
-        <Stack.Screen name='sign-in' options={{ headerShown: false }} />
+        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   );

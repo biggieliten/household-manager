@@ -221,6 +221,7 @@ household-manager/
         ├── data/
         │   └── exampleTasks.ts
         ├── lib/
+        │   ├── api.ts
         │   └── storage.ts
         ├── theme/
         │   ├── ThemePicker.tsx
@@ -230,5 +231,6 @@ household-manager/
         │   ├── index.ts
         │   └── useTheme.ts
         └── types/
+            ├── statistics.ts
             └── task.ts
 ```
