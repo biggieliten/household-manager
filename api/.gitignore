@@ -31,3 +31,6 @@ lerna-debug.log*
 
 
 /src/generated/prisma
+
+# local SQLite database
+/data/*.db
