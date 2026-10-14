@@ -199,6 +199,7 @@ household-manager/
         │       ├── index.tsx
         │       └── statistics.tsx
         ├── lib/
+        │   ├── api.ts
         │   └── storage.ts
         ├── theme/
         │   ├── ThemePicker.tsx
@@ -208,5 +209,6 @@ household-manager/
         │   ├── index.ts
         │   └── useTheme.ts
         └── types/
+            ├── statistics.ts
             └── task.ts
 ```
