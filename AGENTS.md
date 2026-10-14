@@ -215,6 +215,9 @@ household-manager/
         │       ├── household.tsx
         │       ├── index.tsx
         │       └── statistics.tsx
+        ├── components/
+        │   ├── TaskCard.tsx
+        │   └── TaskList.tsx
         ├── data/
         │   └── exampleTasks.ts
         ├── lib/
