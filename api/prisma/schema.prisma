@@ -15,7 +15,7 @@ datasource db {
 model Household {
     id         Int       @id @default(autoincrement())
     name       String
-    accessCode String    @unique
+    accessCode String    @unique @default(nanoid(8))
     members    Member[]
     tasks      Task[]
     createdAt  DateTime  @default(now())
