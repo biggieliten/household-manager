@@ -11,13 +11,18 @@ import { ActivityIndicator, View } from "react-native";
 
 import { authClient } from "@/lib/auth-client";
 import { ThemeProvider, useTheme } from "@/theme";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <StatusBar style='auto' />
-      <RootStack />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <StatusBar style='auto' />
+        <RootStack />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 

@@ -9,7 +9,7 @@
     "@expo/vector-icons": "^15.0.2",
     "@shopify/react-native-skia": "2.6.2",
     "better-auth": "^1.7.7",
-    "expo": "~57.0.27",
+    "expo": "~57.0.28",
     "expo-constants": "~57.0.21",
     "expo-device": "~57.0.2",
     "expo-font": "~57.0.4",
