@@ -1,17 +1,17 @@
 import z from "zod";
 
 export const createTaskSchema = z.object({
-  name: z.string().min(2),
-  description: z.string().min(2),
+  name: z.string().trim().min(2),
+  description: z.string().trim().min(2),
   frequency: z.int().nonnegative(),
-  difficultyLevel: z.int().nonnegative(),
+  difficultyLevel: z.int().min(1),
   householdId: z.int().nonnegative(),
 });
 
 export const responseTaskSchema = createTaskSchema.extend({
   id: z.int(),
   isArchived: z.boolean(),
-  createdAt: z.date(),
+  createdAt: z.coerce.date(),
 });
 
 export const updateTaskSchema = createTaskSchema
