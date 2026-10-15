@@ -27,10 +27,10 @@ async function main() {
 
   // Households
   const family = await db.household.create({
-    data: { name: "Familjen Andersson", accessCode: "FAM123" },
+    data: { name: "Familjen Andersson", accessCode: "FAM12346" },
   });
   const flat = await db.household.create({
-    data: { name: "Studentkorridoren", accessCode: "KOR456" },
+    data: { name: "Studentkorridoren", accessCode: "KOR45678" },
   });
 
   // Members — Anna belongs to both households
@@ -137,7 +137,7 @@ async function main() {
       description: "Släng gammal mat",
       frequency: 14,
       difficultyLevel: 2,
-      isActive: false,
+      isArchived: true,
     },
     {
       householdId: flat.id,
@@ -165,7 +165,7 @@ async function main() {
     taskData.map((data) => db.task.create({ data })),
   );
   const familyTasks = tasks.filter(
-    (t) => t.householdId === family.id && t.isActive,
+    (t) => t.householdId === family.id && !t.isArchived,
   );
   const flatTasks = tasks.filter((t) => t.householdId === flat.id);
 
