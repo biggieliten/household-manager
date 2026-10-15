@@ -12,4 +12,6 @@ export const responseCompletedTaskSchema = createCompletedTaskSchema.extend({
 });
 
 export type CompletedTask = z.infer<typeof responseCompletedTaskSchema>;
-export type CreateCompletedTaskInput = z.input<typeof createCompletedTaskSchema>;
+export type CreateCompletedTaskInput = z.input<
+  typeof createCompletedTaskSchema
+>;
