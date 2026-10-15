@@ -11,7 +11,8 @@ import {
 import { router } from "expo-router";
 
 import { useTheme } from "@/theme";
-import type { TaskCreate } from "@/types/task";
+import { createTaskBodySchema } from "@shared/schemas/task-schema";
+import type { CreateTaskBody } from "@shared/schemas/task-schema";
 
 const frequencyOptions = Array.from({ length: 30 }, (_, i) => i + 1);
 const difficultyOptions = [
@@ -25,7 +26,7 @@ const difficultyOptions = [
 // Placeholder avatars until household members are fetched from the backend.
 const exampleAssignees = ["🦊", "🐸", "🐷"];
 
-const initialTask: TaskCreate = {
+const initialTask: CreateTaskBody = {
   name: "",
   description: "",
   frequency: 7,
@@ -38,21 +39,20 @@ function close() {
 
 export default function CreateTask() {
   const { colors } = useTheme();
-  const [task, setTask] = useState<TaskCreate>(initialTask);
+  const [task, setTask] = useState<CreateTaskBody>(initialTask);
 
-  const update = <K extends keyof TaskCreate>(key: K, value: TaskCreate[K]) =>
-    setTask((prev) => ({ ...prev, [key]: value }));
+  const update = <K extends keyof CreateTaskBody>(
+    key: K,
+    value: CreateTaskBody[K],
+  ) => setTask((prev) => ({ ...prev, [key]: value }));
 
-  const canSave = task.name.trim().length > 0;
+  const canSave = createTaskBodySchema.safeParse(task).success;
 
   const handleSave = () => {
-    if (!canSave) return;
+    const result = createTaskBodySchema.safeParse(task);
+    if (!result.success) return;
 
-    const payload: TaskCreate = {
-      ...task,
-      name: task.name.trim(),
-      description: task.description.trim(),
-    };
+    const payload = result.data;
 
     // TODO: send payload to the backend. It will add id, isArchived and householdId.
     console.log("Create task", payload);
@@ -122,7 +122,9 @@ export default function CreateTask() {
 
       {/* Not functional yet: attachments are not part of the task model. */}
       <View style={styles.section}>
-        <Text style={[labelStyle, styles.caps]}>Hjälpmedel & instruktioner</Text>
+        <Text style={[labelStyle, styles.caps]}>
+          Hjälpmedel & instruktioner
+        </Text>
         <View style={styles.row}>
           {["📷  Lägg till bild", "🎙  Spela in röst"].map((label) => (
             <Pressable
@@ -185,7 +187,9 @@ export default function CreateTask() {
 
       {/* Not functional yet: assignment will use the household's members. */}
       <View style={styles.assignRow}>
-        <Text style={[styles.panelTitle, { color: colors.text }]}>Tilldela</Text>
+        <Text style={[styles.panelTitle, { color: colors.text }]}>
+          Tilldela
+        </Text>
         <View style={styles.avatars}>
           {exampleAssignees.map((emoji, index) => (
             <View
@@ -211,7 +215,10 @@ export default function CreateTask() {
               styles.avatar,
               styles.avatarOverlap,
               styles.disabled,
-              { backgroundColor: colors.surface, borderColor: colors.background },
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.background,
+              },
             ]}
           >
             <Text style={[styles.addText, { color: colors.text }]}>+</Text>
@@ -237,7 +244,9 @@ export default function CreateTask() {
           onPress={close}
           style={styles.cancelButton}
         >
-          <Text style={[styles.cancelText, { color: colors.text }]}>Avbryt</Text>
+          <Text style={[styles.cancelText, { color: colors.text }]}>
+            Avbryt
+          </Text>
         </Pressable>
       </View>
     </ScrollView>
