@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { prisma } from "../lib/prisma.ts";
+import { db } from "../lib/prisma.ts";
 const tasks = new Hono();
 
 tasks.post("/households/:householdId/tasks", async (c) => {
@@ -30,15 +30,14 @@ tasks.post("/households/:householdId/tasks", async (c) => {
     return c.json({ error: "difficultyLevel must be a positive integer" }, 400);
   }
 
-  // 4a. L'household esiste?
-  const household = await prisma.household.findUnique({
+  const household = await db.household.findUnique({
     where: { id: householdId },
   });
   if (!household) {
     return c.json({ error: "Household not found" }, 404);
   }
 
-  const task = await prisma.task.create({
+  const task = await db.task.create({
     data: {
       name: name.trim(),
       description: description.trim(),

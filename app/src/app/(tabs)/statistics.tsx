@@ -1,126 +1,208 @@
-import { useTheme } from "@/theme";
+import { useQuery } from "@tanstack/react-query";
 import { DonutChart } from "expo-skia-charts";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const members = [
-  { name: "Alex", color: "#F0866A" },
-  { name: "Sam", color: "#EDC45E" },
-  { name: "Kim", color: "#C9546F" },
-];
+import { fetchHouseholdStatistics, HOUSEHOLD_ID } from "@/lib/api";
+import { useTheme } from "@/theme";
+import type { Avatar, MemberStatistics } from "@/types/statistics";
 
-const memberColors = members.map((member) => member.color);
+const avatarColors: Record<Avatar, string> = {
+  FOX: "#F0866A",
+  PIG: "#F2A7C3",
+  FROG: "#7BC47F",
+  CHICKEN: "#EDC45E",
+  OCTOPUS: "#C9546F",
+  DOLPHIN: "#5FA8D3",
+  OWL: "#A47551",
+  UNICORN: "#A68BE0",
+};
 
-// Poäng i samma ordning som `members`
-const totalPoints = [18, 16, 12];
-
-const chores = [
-  { name: "Laga mat", count: 8, points: [4, 2, 2] },
-  { name: "Damma", count: 3, points: [2, 0, 1] },
-  { name: "Diska", count: 12, points: [5, 4, 3] },
-  { name: "Ta hand om My", count: 14, points: [7, 0, 7] },
-  { name: "Torka golvet", count: 2, points: [0, 1, 1] },
-  { name: "Vattna blommor", count: 4, points: [1, 2, 1] },
-];
-
-function toChartData(points: number[]) {
+function toChartData(members: MemberStatistics[], points: number[]) {
   return members.map((member, index) => ({
-    label: member.name,
+    label: member.nickname,
     value: points[index] ?? 0,
   }));
 }
 
-const totalChartData = toChartData(totalPoints);
-const totalSum = totalPoints.reduce((sum, value) => sum + value, 0);
-const choreCharts = chores.map((chore) => ({
-  ...chore,
-  data: toChartData(chore.points),
-}));
-
 export default function Statistics() {
   const { colors } = useTheme();
+  const { data, error, isPending, refetch, isRefetching } = useQuery({
+    queryKey: ["statistics", HOUSEHOLD_ID],
+    queryFn: () => fetchHouseholdStatistics(HOUSEHOLD_ID),
+  });
+
+  if (isPending) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.textMuted} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.centered, { backgroundColor: colors.background }]}>
+        <Text style={{ color: colors.text }}>{error.message}</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => refetch()}
+          style={[styles.retryButton, { backgroundColor: colors.primary }]}
+        >
+          <Text style={styles.retryButtonText}>Försök igen</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  const { members, tasks, totalPoints } = data;
+  const memberColors = members.map((member) => avatarColors[member.avatar]);
+  const totalChartData = toChartData(
+    members,
+    members.map((member) => member.points),
+  );
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={styles.content}
+    <SafeAreaView
+      edges={["top", "left", "right"]}
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
-      <View style={[styles.card, { backgroundColor: colors.surface }]}>
-        <View style={styles.cardHeader}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Totalt</Text>
-          <View style={[styles.badge, { backgroundColor: colors.border }]}>
-            <Text style={[styles.badgeText, { color: colors.text }]}>
-              {totalSum} p
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.totalChart}>
-          <DonutChart
-            config={{
-              data: totalChartData,
-              colors: memberColors,
-              strokeWidth: 25,
-            }}
-          />
-        </View>
-
-        <View style={styles.memberRow}>
-          {members.map((member, index) => {
-            const points = totalPoints[index] ?? 0;
-            const percent = Math.round((points / totalSum) * 100);
-            return (
-              <View key={member.name} style={styles.memberStat}>
-                <View style={styles.memberName}>
-                  <View style={[styles.dot, { backgroundColor: member.color }]} />
-                  <Text style={{ color: colors.text }}>{member.name}</Text>
-                </View>
-                <Text style={[styles.percent, { color: colors.text }]}>
-                  {percent}%
+      <ScrollView
+        style={{ backgroundColor: colors.background }}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
+      >
+        {totalPoints === 0 ? (
+          <Text style={[styles.empty, { color: colors.textMuted }]}>
+            Inga utförda sysslor än
+          </Text>
+        ) : (
+          <>
+            <View style={[styles.card, { backgroundColor: colors.surface }]}>
+              <View style={styles.cardHeader}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>
+                  Totalt
                 </Text>
-                <Text style={{ color: colors.textMuted }}>{points} poäng</Text>
+                <View style={[styles.badge, { backgroundColor: colors.border }]}>
+                  <Text style={[styles.badgeText, { color: colors.text }]}>
+                    {totalPoints} p
+                  </Text>
+                </View>
               </View>
-            );
-          })}
-        </View>
-      </View>
 
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Fördelning per syssla
-        </Text>
-        <Text style={{ color: colors.textMuted }}>{chores.length} sysslor</Text>
-      </View>
+              <View style={styles.totalChart}>
+                <DonutChart
+                  config={{
+                    data: totalChartData,
+                    colors: memberColors,
+                    strokeWidth: 25,
+                  }}
+                />
+              </View>
 
-      <View style={styles.grid}>
-        {choreCharts.map((chore) => (
-          <View
-            key={chore.name}
-            style={[styles.choreCard, { backgroundColor: colors.surface }]}
-          >
-            <View style={styles.choreChart}>
-              <DonutChart
-                config={{
-                  data: chore.data,
-                  colors: memberColors,
-                  strokeWidth: 14,
-                }}
-              />
+              <View style={styles.memberRow}>
+                {members.map((member) => {
+                  const percent = Math.round((member.points / totalPoints) * 100);
+                  return (
+                    <View key={member.id} style={styles.memberStat}>
+                      <View style={styles.memberName}>
+                        <View
+                          style={[
+                            styles.dot,
+                            { backgroundColor: avatarColors[member.avatar] },
+                          ]}
+                        />
+                        <Text style={{ color: colors.text }}>
+                          {member.nickname}
+                        </Text>
+                      </View>
+                      <Text style={[styles.percent, { color: colors.text }]}>
+                        {percent}%
+                      </Text>
+                      <Text style={{ color: colors.textMuted }}>
+                        {member.points} poäng
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
             </View>
-            <Text
-              style={[styles.choreName, { color: colors.text }]}
-              numberOfLines={1}
-            >
-              {chore.name}
-            </Text>
-            <Text style={{ color: colors.textMuted }}>{chore.count} ggr</Text>
-          </View>
-        ))}
-      </View>
-    </ScrollView>
+
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                Fördelning per syssla
+              </Text>
+              <Text style={{ color: colors.textMuted }}>
+                {tasks.length} sysslor
+              </Text>
+            </View>
+
+            <View style={styles.grid}>
+              {tasks.map((task) => (
+                <View
+                  key={task.id}
+                  style={[styles.choreCard, { backgroundColor: colors.surface }]}
+                >
+                  <View style={styles.choreChart}>
+                    <DonutChart
+                      config={{
+                        data: toChartData(members, task.pointsByMember),
+                        colors: memberColors,
+                        strokeWidth: 14,
+                      }}
+                    />
+                  </View>
+                  <Text
+                    style={[styles.choreName, { color: colors.text }]}
+                    numberOfLines={1}
+                  >
+                    {task.name}
+                  </Text>
+                  <Text style={{ color: colors.textMuted }}>{task.count} ggr</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    gap: 12,
+  },
+  retryButton: {
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  empty: {
+    textAlign: "center",
+    marginTop: 32,
+  },
   content: {
     padding: 16,
     gap: 16,
