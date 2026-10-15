@@ -140,6 +140,7 @@ Cover tracked source, assets, configuration, documentation, and tooling paths. I
 Top-level directory purposes:
 
 - `.github/`: repository automation and workflow configuration.
+- `api/`: Hono API, Prisma schema, seed data, and backend configuration.
 - `app/`: Expo/React Native application, source, assets, and development configuration.
 
 ```text
@@ -149,6 +150,22 @@ household-manager/
 ├── .github/
 │   └── workflows/
 │       └── discord-pr.yml
+├── api/
+│   ├── .gitignore
+│   ├── README.md
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── pnpm-workspace.yaml
+│   ├── prisma7.config.ts
+│   ├── tsconfig.json
+│   ├── prisma/
+│   │   └── schema.prisma
+│   └── src/
+│       ├── index.ts
+│       ├── db/
+│       │   └── seed.ts
+│       └── lib/
+│           └── prisma.ts
 └── app/
     ├── .gitignore
     ├── .vscode/
@@ -198,6 +215,11 @@ household-manager/
         │       ├── household.tsx
         │       ├── index.tsx
         │       └── statistics.tsx
+        ├── components/
+        │   ├── TaskCard.tsx
+        │   └── TaskList.tsx
+        ├── data/
+        │   └── exampleTasks.ts
         ├── lib/
         │   ├── api.ts
         │   └── storage.ts
