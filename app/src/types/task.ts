@@ -8,7 +8,6 @@ export interface Task {
   difficultyLevel: number;
   householdId: number;
 }
-export type TaskCreate = Omit<Task, "id" | "isArchived" | "householdId">;
 
 // Mirrors the avatar values and latest completion relation in api/prisma/schema.prisma.
 export type Avatar =
