@@ -23,8 +23,8 @@ tasks.post("/households/:householdId/tasks", async (c) => {
   if (typeof description !== "string") {
     return c.json({ error: "description must be a string" }, 400);
   }
-  if (!Number.isInteger(frequency) || frequency < 1) {
-    return c.json({ error: "frequency must be a positive integer" }, 400);
+  if (!Number.isInteger(frequency) || frequency < 0) {
+    return c.json({ error: "frequency must be 0 or a positive integer" }, 400);
   }
   if (!Number.isInteger(difficultyLevel) || difficultyLevel < 1) {
     return c.json({ error: "difficultyLevel must be a positive integer" }, 400);
