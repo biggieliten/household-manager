@@ -13,6 +13,7 @@ import { router } from "expo-router";
 import { useTheme } from "@/theme";
 import { createTaskBodySchema } from "@shared/schemas/task-schema";
 import type { CreateTaskBody } from "@shared/schemas/task-schema";
+import { createTask, HOUSEHOLD_ID } from "@/lib/api";
 
 const frequencyOptions = Array.from({ length: 30 }, (_, i) => i + 1);
 const difficultyOptions = [
@@ -48,20 +49,21 @@ export default function CreateTask() {
 
   const canSave = createTaskBodySchema.safeParse(task).success;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const result = createTaskBodySchema.safeParse(task);
     if (!result.success) return;
 
-    const payload = result.data;
+    try {
+      const created = await createTask(HOUSEHOLD_ID, result.data);
 
-    // TODO: send payload to the backend. It will add id, isArchived and householdId.
-    console.log("Create task", payload);
-
-    setTask(initialTask);
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      Alert.alert("Syssla skapad", payload.name);
+      setTask(initialTask);
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        Alert.alert("Syssla skapad", created.name);
+      }
+    } catch (error) {
+      Alert.alert("Något gick fel", String(error));
     }
   };
 
