@@ -22,3 +22,9 @@ export const updateTaskSchema = createTaskSchema
 export type Task = z.infer<typeof responseTaskSchema>;
 export type CreateTaskInput = z.input<typeof createTaskSchema>;
 export type UpdateTaskInput = z.input<typeof updateTaskSchema>;
+
+//create-task takes household id from the url
+export const createTaskBodySchema = createTaskSchema.omit({
+  householdId: true,
+});
+export type CreateTaskBody = z.input<typeof createTaskBodySchema>;
