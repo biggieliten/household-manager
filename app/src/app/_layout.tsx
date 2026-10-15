@@ -47,7 +47,7 @@ function RootStack() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="create-task"
-          options={{ presentation: "modal", title: "Skapa syssla" }}
+          options={{ presentation: "modal", title: "Lägg till syssla" }}
         />
       </Stack.Protected>
       <Stack.Protected guard={!isSignedIn}>

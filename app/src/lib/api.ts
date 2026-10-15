@@ -3,7 +3,7 @@ import type { HouseholdStatistics } from "@/types/statistics";
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // TODO: replace with the active household once auth/household selection exists
-export const HOUSEHOLD_ID = 11;
+export const HOUSEHOLD_ID = 1;
 
 export async function fetchHouseholdStatistics(
   householdId: number,
