@@ -15,7 +15,7 @@ import { createTaskBodySchema } from "@shared/schemas/task-schema";
 import type { CreateTaskBody } from "@shared/schemas/task-schema";
 import { createTask, HOUSEHOLD_ID } from "@/lib/api";
 
-const frequencyOptions = Array.from({ length: 30 }, (_, i) => i + 1);
+const frequencyOptions = Array.from({ length: 31 }, (_, i) => i);
 const difficultyOptions = [
   { value: 1, label: "Lätt" },
   { value: 2, label: "Normal" },
@@ -153,15 +153,28 @@ export default function CreateTask() {
             Återkommer
           </Text>
           <View style={[styles.badge, { backgroundColor: colors.background }]}>
-            <Text style={[styles.badgeText, { color: colors.text }]}>var</Text>
-            <View
-              style={[styles.badgeValue, { backgroundColor: colors.primary }]}
-            >
-              <Text style={styles.selectedText}>{task.frequency}</Text>
-            </View>
-            <Text style={[styles.badgeText, { color: colors.text }]}>
-              dag{task.frequency === 1 ? "" : "ar"}
-            </Text>
+            {task.frequency === 0 ? (
+              <Text style={[styles.badgeText, { color: colors.text }]}>
+                Endast en gång
+              </Text>
+            ) : (
+              <>
+                <Text style={[styles.badgeText, { color: colors.text }]}>
+                  var
+                </Text>
+                <View
+                  style={[
+                    styles.badgeValue,
+                    { backgroundColor: colors.primary },
+                  ]}
+                >
+                  <Text style={styles.selectedText}>{task.frequency}</Text>
+                </View>
+                <Text style={[styles.badgeText, { color: colors.text }]}>
+                  dag{task.frequency === 1 ? "" : "ar"}
+                </Text>
+              </>
+            )}
           </View>
         </View>
         <FrequencyPicker
