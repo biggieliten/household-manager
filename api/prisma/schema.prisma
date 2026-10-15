@@ -4,161 +4,161 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+    provider = "prisma-client"
+    output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "sqlite"
+    provider = "sqlite"
 }
 
 model Household {
-  id         Int       @id @default(autoincrement())
-  name       String
-  accessCode String    @unique
-  members    Member[]
-  tasks      Task[]
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime?
-  deletedAt  DateTime?
+    id         Int       @id @default(autoincrement())
+    name       String
+    accessCode String    @unique
+    members    Member[]
+    tasks      Task[]
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    deletedAt  DateTime?
 }
 
 // Better Auth models (user, session, account, verification).
 // Account here is a login method (GitHub, email/password) linked to a User.
 model User {
-  id            String    @id
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
-  members       Member[]
+    id            String    @id
+    name          String
+    email         String    @unique
+    emailVerified Boolean   @default(false)
+    image         String?
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+    sessions      Session[]
+    accounts      Account[]
+    members       Member[]
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
+    id        String   @id
+    expiresAt DateTime
+    token     String   @unique
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    ipAddress String?
+    userAgent String?
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId    String
 
-  @@index([userId])
+    @@index([userId])
 }
 
 model Account {
-  id                    String    @id
-  accountId             String
-  providerId            String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId                String
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
-  password              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+    id                    String    @id
+    accountId             String
+    providerId            String
+    user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId                String
+    accessToken           String?
+    refreshToken          String?
+    idToken               String?
+    accessTokenExpiresAt  DateTime?
+    refreshTokenExpiresAt DateTime?
+    scope                 String?
+    password              String?
+    createdAt             DateTime  @default(now())
+    updatedAt             DateTime  @updatedAt
 
-  @@index([userId])
+    @@index([userId])
 }
 
 model Verification {
-  id         String   @id
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+    id         String   @id
+    identifier String
+    value      String
+    expiresAt  DateTime
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
 
-  @@index([identifier])
+    @@index([identifier])
 }
 
 model Member {
-  id             Int             @id @default(autoincrement())
-  nickname       String
-  avatar         Avatar
-  isAdmin        Boolean         @default(false)
-  household      Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  householdId    Int
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId         String
-  completedTasks CompletedTask[]
-  memberToTasks  MemberToTask[]
-  pauses         Pause[]
-  leftAt         DateTime?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime?
+    id             Int             @id @default(autoincrement())
+    nickname       String
+    avatar         Avatar
+    isAdmin        Boolean         @default(false)
+    household      Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+    householdId    Int
+    user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId         String
+    completedTasks CompletedTask[]
+    memberToTasks  MemberToTask[]
+    pauses         Pause[]
+    leftAt         DateTime?
+    createdAt      DateTime        @default(now())
+    updatedAt      DateTime        @updatedAt
 
-  @@unique([userId, householdId])
-  @@unique([householdId, avatar])
+    @@unique([userId, householdId])
+    @@unique([householdId, avatar])
 }
 
 model Task {
-  id              Int             @id @default(autoincrement())
-  name            String
-  description     String
-  frequency       Int
-  isArchived      Boolean         @default(true)
-  difficultyLevel Int
-  household       Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  householdId     Int
-  completedTasks  CompletedTask[]
-  memberToTasks   MemberToTask[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime?
-  deletedAt       DateTime?
+    id              Int             @id @default(autoincrement())
+    name            String
+    description     String
+    frequency       Int
+    isArchived      Boolean         @default(false)
+    difficultyLevel Int
+    household       Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+    householdId     Int
+    completedTasks  CompletedTask[]
+    memberToTasks   MemberToTask[]
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+    deletedAt       DateTime?
 }
 
 model MemberToTask {
-  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  memberId Int
-  task     Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  taskId   Int
+    member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+    memberId Int
+    task     Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+    taskId   Int
 
-  @@id([memberId, taskId])
+    @@id([memberId, taskId])
 }
 
 model CompletedTask {
-  id          Int       @id @default(autoincrement())
-  member      Member    @relation(fields: [memberId], references: [id])
-  memberId    Int
-  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  taskId      Int
-  completedAt DateTime
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime?
-  deletedAt   DateTime?
+    id          Int       @id @default(autoincrement())
+    member      Member    @relation(fields: [memberId], references: [id])
+    memberId    Int
+    task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+    taskId      Int
+    completedAt DateTime
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    deletedAt   DateTime?
 }
 
 model Pause {
-  id        Int       @id @default(autoincrement())
-  member    Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  memberId  Int
-  startDate DateTime  @default(now())
-  endDate   DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime?
-  deletedAt DateTime?
+    id        Int       @id @default(autoincrement())
+    member    Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+    memberId  Int
+    startDate DateTime  @default(now())
+    endDate   DateTime?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
 
-  @@index([memberId])
+    @@index([memberId])
 }
 
 enum Avatar {
-  FOX
-  PIG
-  FROG
-  CHICKEN
-  OCTOPUS
-  DOLPHIN
-  OWL
-  UNICORN
+    FOX
+    PIG
+    FROG
+    CHICKEN
+    OCTOPUS
+    DOLPHIN
+    OWL
+    UNICORN
 }
