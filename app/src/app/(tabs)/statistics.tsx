@@ -12,7 +12,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import ScreenHeader from "@/components/ScreenHeader";
-import { fetchHouseholdStatistics, HOUSEHOLD_ID } from "@/lib/api";
+import { HOUSEHOLD_ID } from "@/lib/api/client";
+import { fetchHouseholdStatistics } from "@/lib/api/statistics";
 import { useTheme } from "@/theme";
 import type { Avatar, MemberStatistics } from "@/types/statistics";
 
