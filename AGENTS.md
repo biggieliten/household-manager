@@ -165,7 +165,8 @@ household-manager/
 │       ├── db/
 │       │   └── seed.ts
 │       └── lib/
-│           └── prisma.ts
+│           ├── prisma.ts
+│           └── validate.ts
 └── app/
     ├── .gitignore
     ├── .vscode/
