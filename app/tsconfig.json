@@ -8,7 +8,10 @@
       ],
       "@/assets/*": [
         "./assets/*"
-      ]
+      ],
+      "@shared/*": [
+    "../shared/*"
+  ]
     }
   },
   "include": [

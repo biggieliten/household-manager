@@ -11,44 +11,59 @@ import {
 import { router } from "expo-router";
 
 import { useTheme } from "@/theme";
-import type { TaskCreate } from "@/types/task";
+import { createTaskBodySchema } from "@shared/schemas/task-schema";
+import type { CreateTaskBody } from "@shared/schemas/task-schema";
+import { createTask, HOUSEHOLD_ID } from "@/lib/api";
 
-const frequencyOptions = [1, 2, 3, 7, 14, 30];
-const difficultyOptions = [1, 2, 4, 6, 8];
+const frequencyOptions = Array.from({ length: 31 }, (_, i) => i);
+const difficultyOptions = [
+  { value: 1, label: "Lätt" },
+  { value: 2, label: "Normal" },
+  { value: 4, label: "Tung" },
+  { value: 6, label: "Krävande" },
+  { value: 8, label: "Mycket tung" },
+];
 
-const initialTask: TaskCreate = {
+// Placeholder avatars until household members are fetched from the backend.
+const exampleAssignees = ["🦊", "🐸", "🐷"];
+
+const initialTask: CreateTaskBody = {
   name: "",
   description: "",
   frequency: 7,
   difficultyLevel: 2,
 };
 
+function close() {
+  if (router.canGoBack()) router.back();
+}
+
 export default function CreateTask() {
   const { colors } = useTheme();
-  const [task, setTask] = useState<TaskCreate>(initialTask);
+  const [task, setTask] = useState<CreateTaskBody>(initialTask);
 
-  const update = <K extends keyof TaskCreate>(key: K, value: TaskCreate[K]) =>
-    setTask((prev) => ({ ...prev, [key]: value }));
+  const update = <K extends keyof CreateTaskBody>(
+    key: K,
+    value: CreateTaskBody[K],
+  ) => setTask((prev) => ({ ...prev, [key]: value }));
 
-  const canSave = task.name.trim().length > 0;
+  const canSave = createTaskBodySchema.safeParse(task).success;
 
-  const handleSave = () => {
-    if (!canSave) return;
+  const handleSave = async () => {
+    const result = createTaskBodySchema.safeParse(task);
+    if (!result.success) return;
 
-    const payload: TaskCreate = {
-      ...task,
-      name: task.name.trim(),
-      description: task.description.trim(),
-    };
+    try {
+      const created = await createTask(HOUSEHOLD_ID, result.data);
 
-    // TODO: send payload to the backend. It will add id, isActive and houseHoldId.
-    console.log("Create task", payload);
-
-    setTask(initialTask);
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      Alert.alert("Syssla skapad", payload.name);
+      setTask(initialTask);
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        Alert.alert("Syssla skapad", created.name);
+      }
+    } catch (error) {
+      Alert.alert("Något gick fel", String(error));
     }
   };
 
@@ -60,6 +75,8 @@ export default function CreateTask() {
       color: colors.text,
     },
   ];
+  const labelStyle = [styles.label, { color: colors.textMuted }];
+  const panelStyle = [styles.panel, { backgroundColor: colors.surface }];
 
   return (
     <ScrollView
@@ -67,87 +84,207 @@ export default function CreateTask() {
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
     >
+      <View style={styles.header}>
+        <View style={[styles.dot, { backgroundColor: colors.primary }]} />
+        <Text style={[styles.heading, { color: colors.text }]}>
+          Skapa en ny syssla
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Stäng"
+          onPress={close}
+          style={[styles.closeButton, { backgroundColor: colors.surface }]}
+        >
+          <Text style={[styles.closeText, { color: colors.text }]}>✕</Text>
+        </Pressable>
+      </View>
+
       <View style={styles.section}>
-        <Text style={[styles.label, { color: colors.textMuted }]}>Titel</Text>
+        <Text style={labelStyle}>Titel</Text>
         <TextInput
           value={task.name}
           onChangeText={(value) => update("name", value)}
-          placeholder="t.ex. Dammsuga"
+          placeholder="T.ex. Dammsuga vardagsrummet"
           placeholderTextColor={colors.textMuted}
           style={inputStyle}
         />
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.label, { color: colors.textMuted }]}>
-          Beskrivning
-        </Text>
+        <Text style={labelStyle}>Beskrivning</Text>
         <TextInput
           value={task.description}
           onChangeText={(value) => update("description", value)}
-          placeholder="Beskriv sysslan"
+          placeholder="Beskriv vad som ska göras eller speciella önskemål…"
           placeholderTextColor={colors.textMuted}
           multiline
           style={[inputStyle, styles.multiline]}
         />
       </View>
 
+      {/* Not functional yet: attachments are not part of the task model. */}
       <View style={styles.section}>
-        <Text style={[styles.label, { color: colors.textMuted }]}>
-          Återkommer var {task.frequency} dag{task.frequency === 1 ? "" : "ar"}
+        <Text style={[labelStyle, styles.caps]}>
+          Hjälpmedel & instruktioner
         </Text>
-        <OptionRow
-          options={frequencyOptions}
+        <View style={styles.row}>
+          {["📷  Lägg till bild", "🎙  Spela in röst"].map((label) => (
+            <Pressable
+              key={label}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: true }}
+              disabled
+              style={[
+                styles.aidButton,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.aidText, { color: colors.text }]}>
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <View style={panelStyle}>
+        <View style={styles.panelHeader}>
+          <Text style={[styles.panelTitle, { color: colors.text }]}>
+            Återkommer
+          </Text>
+          <View style={[styles.badge, { backgroundColor: colors.background }]}>
+            {task.frequency === 0 ? (
+              <Text style={[styles.badgeText, { color: colors.text }]}>
+                Endast en gång
+              </Text>
+            ) : (
+              <>
+                <Text style={[styles.badgeText, { color: colors.text }]}>
+                  var
+                </Text>
+                <View
+                  style={[
+                    styles.badgeValue,
+                    { backgroundColor: colors.primary },
+                  ]}
+                >
+                  <Text style={styles.selectedText}>{task.frequency}</Text>
+                </View>
+                <Text style={[styles.badgeText, { color: colors.text }]}>
+                  dag{task.frequency === 1 ? "" : "ar"}
+                </Text>
+              </>
+            )}
+          </View>
+        </View>
+        <FrequencyPicker
           selected={task.frequency}
           onSelect={(value) => update("frequency", value)}
         />
       </View>
 
-      <View style={styles.section}>
-        <Text style={[styles.label, { color: colors.textMuted }]}>Värde</Text>
-        <OptionRow
-          options={difficultyOptions}
+      <View style={panelStyle}>
+        <View style={styles.panelHeader}>
+          <Text style={[styles.panelTitle, { color: colors.text }]}>
+            Värde (Energi)
+          </Text>
+          <View style={[styles.badge, { backgroundColor: colors.background }]}>
+            <Text style={[styles.badgeText, { color: colors.text }]}>
+              {task.difficultyLevel}
+            </Text>
+          </View>
+        </View>
+        <DifficultyPicker
           selected={task.difficultyLevel}
           onSelect={(value) => update("difficultyLevel", value)}
         />
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ disabled: !canSave }}
-        disabled={!canSave}
-        onPress={handleSave}
-        style={[
-          styles.button,
-          { backgroundColor: colors.primary, opacity: canSave ? 1 : 0.5 },
-        ]}
-      >
-        <Text style={styles.buttonText}>Spara</Text>
-      </Pressable>
+      {/* Not functional yet: assignment will use the household's members. */}
+      <View style={styles.assignRow}>
+        <Text style={[styles.panelTitle, { color: colors.text }]}>
+          Tilldela
+        </Text>
+        <View style={styles.avatars}>
+          {exampleAssignees.map((emoji, index) => (
+            <View
+              key={emoji}
+              style={[
+                styles.avatar,
+                index > 0 && styles.avatarOverlap,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.background,
+                },
+              ]}
+            >
+              <Text style={styles.avatarEmoji}>{emoji}</Text>
+            </View>
+          ))}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Tilldela medlem"
+            accessibilityState={{ disabled: true }}
+            disabled
+            style={[
+              styles.avatar,
+              styles.avatarOverlap,
+              styles.disabled,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.background,
+              },
+            ]}
+          >
+            <Text style={[styles.addText, { color: colors.text }]}>+</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      <View style={styles.actions}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !canSave }}
+          disabled={!canSave}
+          onPress={handleSave}
+          style={[
+            styles.button,
+            { backgroundColor: colors.primary, opacity: canSave ? 1 : 0.5 },
+          ]}
+        >
+          <Text style={styles.buttonText}>Spara syssla</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={close}
+          style={styles.cancelButton}
+        >
+          <Text style={[styles.cancelText, { color: colors.text }]}>
+            Avbryt
+          </Text>
+        </Pressable>
+      </View>
     </ScrollView>
   );
 }
 
-function OptionRow({
-  options,
+function FrequencyPicker({
   selected,
   onSelect,
 }: {
-  options: number[];
   selected: number;
   onSelect: (value: number) => void;
 }) {
   const { colors } = useTheme();
 
   return (
-    <View
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
       accessibilityRole="radiogroup"
-      style={[
-        styles.optionRow,
-        { backgroundColor: colors.surface, borderColor: colors.border },
-      ]}
+      contentContainerStyle={styles.frequencyRow}
     >
-      {options.map((value) => {
+      {frequencyOptions.map((value) => {
         const isSelected = value === selected;
         return (
           <Pressable
@@ -156,17 +293,73 @@ function OptionRow({
             accessibilityState={{ checked: isSelected }}
             onPress={() => onSelect(value)}
             style={[
-              styles.option,
-              isSelected && { backgroundColor: colors.primary },
+              styles.circle,
+              {
+                backgroundColor: isSelected
+                  ? colors.primary
+                  : colors.background,
+              },
             ]}
           >
             <Text
               style={[
-                styles.optionText,
-                { color: isSelected ? "#FFFFFF" : colors.text },
+                styles.circleText,
+                isSelected ? styles.selectedText : { color: colors.text },
               ]}
             >
               {value}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+function DifficultyPicker({
+  selected,
+  onSelect,
+}: {
+  selected: number;
+  onSelect: (value: number) => void;
+}) {
+  const { colors } = useTheme();
+
+  return (
+    <View accessibilityRole="radiogroup" style={styles.row}>
+      {difficultyOptions.map(({ value, label }) => {
+        const isSelected = value === selected;
+        return (
+          <Pressable
+            key={value}
+            accessibilityRole="radio"
+            accessibilityLabel={`${value}, ${label}`}
+            accessibilityState={{ checked: isSelected }}
+            onPress={() => onSelect(value)}
+            style={[
+              styles.tile,
+              {
+                backgroundColor: isSelected
+                  ? colors.primary
+                  : colors.background,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.tileValue,
+                isSelected ? styles.selectedText : { color: colors.text },
+              ]}
+            >
+              {value}
+            </Text>
+            <Text
+              style={[
+                styles.tileLabel,
+                isSelected ? styles.selectedText : { color: colors.textMuted },
+              ]}
+            >
+              {label}
             </Text>
           </Pressable>
         );
@@ -178,8 +371,34 @@ function OptionRow({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    paddingVertical: 24,
-    gap: 24,
+    paddingVertical: 20,
+    gap: 20,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  heading: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   section: {
     gap: 8,
@@ -187,6 +406,8 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "600",
+  },
+  caps: {
     textTransform: "uppercase",
   },
   input: {
@@ -200,21 +421,123 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: "top",
   },
-  optionRow: {
+  row: {
     flexDirection: "row",
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    padding: 2,
+    gap: 8,
   },
-  option: {
+  aidButton: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    opacity: 0.5,
   },
-  optionText: {
+  aidText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  panel: {
+    borderRadius: 14,
+    padding: 12,
+    gap: 12,
+  },
+  panelHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  panelTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minWidth: 28,
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  badgeText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  badgeValue: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  frequencyRow: {
+    gap: 8,
+  },
+  circle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  circleText: {
     fontSize: 15,
     fontWeight: "600",
+  },
+  selectedText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+  tile: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 2,
+    borderRadius: 10,
+    gap: 2,
+  },
+  tileValue: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  tileLabel: {
+    fontSize: 11,
+    textAlign: "center",
+  },
+  assignRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  avatars: {
+    flexDirection: "row",
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarOverlap: {
+    marginLeft: -10,
+  },
+  avatarEmoji: {
+    fontSize: 18,
+  },
+  addText: {
+    fontSize: 18,
+    fontWeight: "600",
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  actions: {
+    gap: 4,
   },
   button: {
     alignItems: "center",
@@ -225,5 +548,13 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "600",
+  },
+  cancelButton: {
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  cancelText: {
+    fontSize: 15,
+    fontWeight: "500",
   },
 });

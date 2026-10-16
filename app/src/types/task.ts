@@ -4,11 +4,10 @@ export interface Task {
   name: string;
   description: string;
   frequency: number;
-  isActive: boolean;
+  isArchived: boolean;
   difficultyLevel: number;
-  houseHoldId: number;
+  householdId: number;
 }
-export type TaskCreate = Omit<Task, "id" | "isActive" | "houseHoldId">;
 
 // Mirrors the avatar values and latest completion relation in api/prisma/schema.prisma.
 export type Avatar =
