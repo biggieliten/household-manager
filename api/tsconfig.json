@@ -12,11 +12,11 @@
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "rootDir": "./src",
+    "rootDir": "..",
     "outDir": "./dist",
      "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true
   },
-  "include": ["src"],
+  "include": ["src", "../shared/schemas"],
   "exclude": ["node_modules"]
 }
