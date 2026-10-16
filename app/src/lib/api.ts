@@ -1,6 +1,6 @@
 import type { HouseholdStatistics } from "@/types/statistics";
-import { responseTaskSchema } from "@shared/schemas/task-schema";
 import type { CreateTaskBody, Task } from "@shared/schemas/task-schema";
+import { responseTaskSchema } from "@shared/schemas/task-schema";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -12,7 +12,9 @@ export async function fetchHouseholdStatistics(
 ): Promise<HouseholdStatistics> {
   if (!API_URL) throw new Error("EXPO_PUBLIC_API_URL saknas i app/.env");
 
-  const res = await fetch(`${API_URL}/households/${householdId}/statistics`);
+  const res = await fetch(
+    `${API_URL}/api/v1/households/${householdId}/statistics`,
+  );
   if (!res.ok) throw new Error(`Kunde inte hämta statistik (${res.status})`);
 
   return res.json() as Promise<HouseholdStatistics>;
@@ -24,7 +26,7 @@ export async function createTask(
 ): Promise<Task> {
   if (!API_URL) throw new Error("EXPO_PUBLIC_API_URL saknas i app/.env");
 
-  const res = await fetch(`${API_URL}/households/${householdId}/tasks`, {
+  const res = await fetch(`${API_URL}/api/v1/households/${householdId}/tasks`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
