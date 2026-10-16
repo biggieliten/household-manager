@@ -224,7 +224,10 @@ household-manager/
         ├── data/
         │   └── exampleTasks.ts
         ├── lib/
-        │   ├── api.ts
+        │   ├── api/
+        │   │   ├── client.ts
+        │   │   ├── statistics.ts
+        │   │   └── tasks.ts
         │   └── storage.ts
         ├── theme/
         │   ├── ThemePicker.tsx
