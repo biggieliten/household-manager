@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 
 import { auth } from "./lib/auth.ts";
 import { db } from "./lib/prisma.ts";
+import tasks from "./routes/tasks.ts";
 
 const app = new Hono();
 
@@ -88,6 +89,8 @@ app.get("/households/:id/statistics", async (c) => {
     })),
   });
 });
+
+app.route("/", tasks);
 
 serve(
   {
