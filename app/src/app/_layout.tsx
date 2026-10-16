@@ -49,7 +49,10 @@ function RootStack() {
           name="create-task"
           options={{ presentation: "modal", title: "Lägg till syssla" }}
         />
-        <Stack.Screen name="profile" options={{ title: "Profil" }} />
+        <Stack.Screen
+          name="profile"
+          options={{ title: "Profil", headerBackTitle: "Tillbaka" }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={!isSignedIn}>
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />

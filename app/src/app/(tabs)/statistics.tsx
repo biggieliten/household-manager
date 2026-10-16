@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import ScreenHeader from "@/components/ScreenHeader";
 import { fetchHouseholdStatistics, HOUSEHOLD_ID } from "@/lib/api";
 import { useTheme } from "@/theme";
 import type { Avatar, MemberStatistics } from "@/types/statistics";
@@ -34,6 +35,17 @@ function toChartData(members: MemberStatistics[], points: number[]) {
 }
 
 export default function Statistics() {
+  const { colors } = useTheme();
+
+  return (
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
+      <ScreenHeader />
+      <StatisticsContent />
+    </View>
+  );
+}
+
+function StatisticsContent() {
   const { colors } = useTheme();
   const { data, error, isPending, refetch, isRefetching } = useQuery({
     queryKey: ["statistics", HOUSEHOLD_ID],
@@ -72,7 +84,7 @@ export default function Statistics() {
 
   return (
     <SafeAreaView
-      edges={["top", "left", "right"]}
+      edges={["left", "right"]}
       style={[styles.safeArea, { backgroundColor: colors.background }]}
     >
       <ScrollView
@@ -180,6 +192,9 @@ export default function Statistics() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
   },

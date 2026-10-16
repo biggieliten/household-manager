@@ -217,6 +217,7 @@ household-manager/
         │       ├── index.tsx
         │       └── statistics.tsx
         ├── components/
+        │   ├── ScreenHeader.tsx
         │   ├── TaskCard.tsx
         │   └── TaskList.tsx
         ├── data/
