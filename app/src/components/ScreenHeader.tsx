@@ -8,12 +8,26 @@ import { useTheme } from "@/theme";
 // Placeholder until the signed-in member's avatar is fetched from the backend.
 const placeholderAvatar = "🦊";
 
+// Placeholder until the active household is fetched from the backend.
+const placeholderHousehold = { name: "Hushållet", accessCode: "HUSH7294" };
+
 export default function ScreenHeader(): React.JSX.Element {
   const { colors, scheme } = useTheme();
   const avatarBackground = scheme === "light" ? "#ECEBFD" : "#33354A";
 
   return (
     <SafeAreaView edges={["top"]} style={styles.container}>
+      <View style={styles.household}>
+        <Text
+          style={[styles.householdName, { color: colors.text }]}
+          numberOfLines={1}
+        >
+          {placeholderHousehold.name}
+        </Text>
+        <Text style={[styles.householdCode, { color: colors.textMuted }]}>
+          {placeholderHousehold.accessCode}
+        </Text>
+      </View>
       <Link href="/profile" asChild>
         <Pressable
           accessibilityRole="button"
@@ -41,9 +55,22 @@ export default function ScreenHeader(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 8,
+  },
+  household: {
+    flex: 1,
+  },
+  householdName: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  householdCode: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   avatar: {
     width: 40,
