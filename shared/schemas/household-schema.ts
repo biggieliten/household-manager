@@ -21,6 +21,11 @@ export const joinHouseholdSchema = z.object({
   accessCode: accessCodeSchema,
 });
 
+// Route params arrive as strings, e.g. /households/:householdId/tasks
+export const householdIdParamSchema = z.object({
+  householdId: z.coerce.number<string>().int().nonnegative(),
+});
+
 export type Household = z.infer<typeof responseHouseholdSchema>;
 export type CreateHouseholdInput = z.input<typeof createHouseholdSchema>;
 export type UpdateHouseholdInput = z.input<typeof updateHouseholdSchema>;
