@@ -2,7 +2,7 @@ import { FlatList, StyleSheet, Text } from "react-native";
 
 import TaskCard from "@/components/TaskCard";
 import { useTheme } from "@/theme";
-import type { TaskListItem } from "@/types/task";
+import type { TaskListItem } from "@shared/schemas/task-schema";
 
 interface Props {
   tasks: TaskListItem[];

@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { useTheme } from "@/theme";
-import type { Avatar, TaskListItem } from "@/types/task";
+import type { Avatar } from "@shared/schemas/member-schema";
+import type { TaskListItem } from "@shared/schemas/task-schema";
 
 const avatarEmoji: Record<Avatar, string> = {
   FOX: "🦊",

@@ -1,4 +1,5 @@
 import z from "zod";
+import { responseMemberSchema } from "./member-schema.ts";
 
 export const createTaskSchema = z.object({
   name: z.string().trim().min(2),
@@ -14,12 +15,26 @@ export const responseTaskSchema = createTaskSchema.extend({
   createdAt: z.coerce.date(),
 });
 
+export const responseTaskListItemSchema = responseTaskSchema.extend({
+  completedTasks: z.array(
+    z.object({
+      completedAt: z.coerce.date(),
+      member: responseMemberSchema.pick({
+        id: true,
+        nickname: true,
+        avatar: true,
+      }),
+    }),
+  ),
+});
+
 export const updateTaskSchema = createTaskSchema
   .omit({ householdId: true })
   .extend({ isArchived: z.boolean() })
   .partial();
 
 export type Task = z.infer<typeof responseTaskSchema>;
+export type TaskListItem = z.infer<typeof responseTaskListItemSchema>;
 export type CreateTaskInput = z.input<typeof createTaskSchema>;
 export type UpdateTaskInput = z.input<typeof updateTaskSchema>;
 
