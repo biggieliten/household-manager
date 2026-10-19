@@ -92,19 +92,17 @@ export default function CreateTask() {
     <ScrollView
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
+      keyboardShouldPersistTaps='handled'>
       <View style={styles.header}>
         <View style={[styles.dot, { backgroundColor: colors.primary }]} />
         <Text style={[styles.heading, { color: colors.text }]}>
           Skapa en ny syssla
         </Text>
         <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Stäng"
+          accessibilityRole='button'
+          accessibilityLabel='Stäng'
           onPress={close}
-          style={[styles.closeButton, { backgroundColor: colors.surface }]}
-        >
+          style={[styles.closeButton, { backgroundColor: colors.surface }]}>
           <Text style={[styles.closeText, { color: colors.text }]}>✕</Text>
         </Pressable>
       </View>
@@ -114,7 +112,7 @@ export default function CreateTask() {
         <TextInput
           value={task.name}
           onChangeText={(value) => update("name", value)}
-          placeholder="T.ex. Dammsuga vardagsrummet"
+          placeholder='T.ex. Dammsuga vardagsrummet'
           placeholderTextColor={colors.textMuted}
           style={inputStyle}
         />
@@ -125,7 +123,7 @@ export default function CreateTask() {
         <TextInput
           value={task.description}
           onChangeText={(value) => update("description", value)}
-          placeholder="Beskriv vad som ska göras eller speciella önskemål…"
+          placeholder='Beskriv vad som ska göras eller speciella önskemål…'
           placeholderTextColor={colors.textMuted}
           multiline
           style={[inputStyle, styles.multiline]}
@@ -141,14 +139,13 @@ export default function CreateTask() {
           {["📷  Lägg till bild", "🎙  Spela in röst"].map((label) => (
             <Pressable
               key={label}
-              accessibilityRole="button"
+              accessibilityRole='button'
               accessibilityState={{ disabled: true }}
               disabled
               style={[
                 styles.aidButton,
                 { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-            >
+              ]}>
               <Text style={[styles.aidText, { color: colors.text }]}>
                 {label}
               </Text>
@@ -176,8 +173,7 @@ export default function CreateTask() {
                   style={[
                     styles.badgeValue,
                     { backgroundColor: colors.primary },
-                  ]}
-                >
+                  ]}>
                   <Text style={styles.selectedText}>{task.frequency}</Text>
                 </View>
                 <Text style={[styles.badgeText, { color: colors.text }]}>
@@ -226,14 +222,13 @@ export default function CreateTask() {
                   backgroundColor: colors.surface,
                   borderColor: colors.background,
                 },
-              ]}
-            >
+              ]}>
               <Text style={styles.avatarEmoji}>{emoji}</Text>
             </View>
           ))}
           <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Tilldela medlem"
+            accessibilityRole='button'
+            accessibilityLabel='Tilldela medlem'
             accessibilityState={{ disabled: true }}
             disabled
             style={[
@@ -244,8 +239,7 @@ export default function CreateTask() {
                 backgroundColor: colors.surface,
                 borderColor: colors.background,
               },
-            ]}
-          >
+            ]}>
             <Text style={[styles.addText, { color: colors.text }]}>+</Text>
           </Pressable>
         </View>
@@ -253,22 +247,20 @@ export default function CreateTask() {
 
       <View style={styles.actions}>
         <Pressable
-          accessibilityRole="button"
+          accessibilityRole='button'
           accessibilityState={{ disabled: !canSave }}
           disabled={!canSave}
           onPress={handleSave}
           style={[
             styles.button,
             { backgroundColor: colors.primary, opacity: canSave ? 1 : 0.5 },
-          ]}
-        >
+          ]}>
           <Text style={styles.buttonText}>Spara syssla</Text>
         </Pressable>
         <Pressable
-          accessibilityRole="button"
+          accessibilityRole='button'
           onPress={close}
-          style={styles.cancelButton}
-        >
+          style={styles.cancelButton}>
           <Text style={[styles.cancelText, { color: colors.text }]}>
             Avbryt
           </Text>
@@ -291,15 +283,14 @@ function FrequencyPicker({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      accessibilityRole="radiogroup"
-      contentContainerStyle={styles.frequencyRow}
-    >
+      accessibilityRole='radiogroup'
+      contentContainerStyle={styles.frequencyRow}>
       {frequencyOptions.map((value) => {
         const isSelected = value === selected;
         return (
           <Pressable
             key={value}
-            accessibilityRole="radio"
+            accessibilityRole='radio'
             accessibilityState={{ checked: isSelected }}
             onPress={() => onSelect(value)}
             style={[
@@ -309,14 +300,12 @@ function FrequencyPicker({
                   ? colors.primary
                   : colors.background,
               },
-            ]}
-          >
+            ]}>
             <Text
               style={[
                 styles.circleText,
                 isSelected ? styles.selectedText : { color: colors.text },
-              ]}
-            >
+              ]}>
               {value}
             </Text>
           </Pressable>
@@ -336,13 +325,13 @@ function DifficultyPicker({
   const { colors } = useTheme();
 
   return (
-    <View accessibilityRole="radiogroup" style={styles.row}>
+    <View accessibilityRole='radiogroup' style={styles.row}>
       {difficultyOptions.map(({ value, label }) => {
         const isSelected = value === selected;
         return (
           <Pressable
             key={value}
-            accessibilityRole="radio"
+            accessibilityRole='radio'
             accessibilityLabel={`${value}, ${label}`}
             accessibilityState={{ checked: isSelected }}
             onPress={() => onSelect(value)}
@@ -353,22 +342,19 @@ function DifficultyPicker({
                   ? colors.primary
                   : colors.background,
               },
-            ]}
-          >
+            ]}>
             <Text
               style={[
                 styles.tileValue,
                 isSelected ? styles.selectedText : { color: colors.text },
-              ]}
-            >
+              ]}>
               {value}
             </Text>
             <Text
               style={[
                 styles.tileLabel,
                 isSelected ? styles.selectedText : { color: colors.textMuted },
-              ]}
-            >
+              ]}>
               {label}
             </Text>
           </Pressable>

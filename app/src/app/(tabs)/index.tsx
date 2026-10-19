@@ -18,11 +18,14 @@ export default function Index() {
 
   return (
     <View
+      // edges={["top"]}
       style={[
         styles.container,
-        { backgroundColor: scheme === "light" ? colors.surface : colors.background },
-      ]}
-    >
+        {
+          backgroundColor:
+            scheme === "light" ? colors.surface : colors.background,
+        },
+      ]}>
       <ScreenHeader />
       {isPending ? (
         <View style={styles.centered}>
@@ -43,15 +46,14 @@ export default function Index() {
         <TaskList tasks={data} today={today} />
       )}
 
-      <Link href="/create-task" asChild>
+      <Link href='/create-task' asChild>
         <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Skapa syssla"
+          accessibilityRole='button'
+          accessibilityLabel='Skapa syssla'
           style={StyleSheet.flatten([
             styles.addButton,
             { backgroundColor: colors.primary },
-          ])}
-        >
+          ])}>
           <Text style={styles.addButtonText}>+</Text>
         </Pressable>
       </Link>

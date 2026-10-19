@@ -1,3 +1,4 @@
+import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
 import { useTheme } from "@/theme";
@@ -69,6 +70,7 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
       : colors.textMuted;
 
   return (
+    <Link href={{ pathname: "/[id]", params: { id: String(task.id) } }}>
     <View
       accessible
       accessibilityLabel={`${task.name}, ${status}, ${
@@ -140,6 +142,7 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
         </View>
       )}
     </View>
+    </Link>
   );
 }
 
