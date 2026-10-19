@@ -51,6 +51,7 @@ function RootStack() {
           name='create-task'
           options={{ presentation: "modal", title: "Lägg till syssla" }}
         />
+        <Stack.Screen name='profile' options={{ title: "Profil" }} />
         <Stack.Screen
           name='[id]'
           options={({ route }) => {

@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { exampleTasks } from "@/data/exampleTasks";
@@ -77,6 +77,7 @@ function daysAgoLabel(days: number): string {
 
 export default function TaskById() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
   const task = exampleTasks.find((t) => t.id === Number(id));
@@ -84,7 +85,9 @@ export default function TaskById() {
   const screenBackground =
     scheme === "light" ? colors.surface : colors.background;
   const cardStyle = [styles.card, { backgroundColor: colors.background }];
-  const cardStyleDark = scheme === "dark" && { backgroundColor: colors.surface };
+  const cardStyleDark = scheme === "dark" && {
+    backgroundColor: colors.surface,
+  };
 
   if (!task) {
     return (
@@ -121,7 +124,10 @@ export default function TaskById() {
       <View style={[cardStyle, cardStyleDark]}>
         <View style={styles.rowBetween}>
           <View
-            style={[styles.categoryChip, { backgroundColor: accent.categoryBg }]}>
+            style={[
+              styles.categoryChip,
+              { backgroundColor: accent.categoryBg },
+            ]}>
             <Text style={[styles.categoryText, { color: accent.categoryText }]}>
               Städning & Golv
             </Text>
@@ -210,7 +216,9 @@ export default function TaskById() {
         {exampleHistory.map((entry, index) => (
           <View key={entry.nickname} style={styles.historyRow}>
             <View style={[styles.avatar, { backgroundColor: accent.chip }]}>
-              <Text style={styles.avatarEmoji}>{avatarEmoji[entry.avatar]}</Text>
+              <Text style={styles.avatarEmoji}>
+                {avatarEmoji[entry.avatar]}
+              </Text>
             </View>
             <View style={styles.tileContent}>
               <Text style={[styles.historyName, { color: colors.text }]}>
@@ -238,17 +246,22 @@ export default function TaskById() {
       <View style={styles.actionRow}>
         <Pressable
           accessibilityRole='button'
-          // TODO: navigate to edit screen
-          onPress={() => {}}
+          accessibilityLabel='Redigera inställningar'
+          onPress={() =>
+            router.push({
+              pathname: "/create-task",
+              params: { id: String(task.id) },
+            })
+          }
           style={({ pressed }) => [
             styles.editButton,
             { backgroundColor: accent.chip, opacity: pressed ? 0.8 : 1 },
           ]}>
-          <Text style={[styles.editButtonText, { color: colors.text }]}>
+          <Text style={[styles.editButtonText, { color: colors.text }]}> 
             ☰ Redigera inställningar
           </Text>
         </Pressable>
-        <Pressable
+        {/* <Pressable
           accessibilityRole='button'
           accessibilityLabel='Dela syssla'
           // TODO: share task
@@ -258,7 +271,7 @@ export default function TaskById() {
             { backgroundColor: accent.chip, opacity: pressed ? 0.8 : 1 },
           ]}>
           <Text style={[styles.editButtonText, { color: colors.text }]}>⤴</Text>
-        </Pressable>
+        </Pressable> */}
       </View>
 
       <Pressable

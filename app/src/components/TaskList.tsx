@@ -14,7 +14,7 @@ export default function TaskList({ tasks, today }: Props): React.JSX.Element {
   const { colors } = useTheme();
 
   return (
-    <SafeAreaView>
+    <SafeAreaView edges={["top"]}>
       <FlatList
         data={tasks}
         keyExtractor={(task) => String(task.id)}
