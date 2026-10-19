@@ -9,7 +9,7 @@ export interface Task {
   householdId: number;
 }
 
-// Mirrors the avatar values and latest completion relation in api/prisma/schema.prisma.
+// Mirrors the avatar values in api/prisma/schema.prisma.
 export type Avatar =
   | "FOX"
   | "PIG"
@@ -21,8 +21,8 @@ export type Avatar =
   | "UNICORN";
 
 export type TaskListItem = Task & {
-  latestCompletion: {
+  completedTasks: {
     completedAt: Date;
-    member: { avatar: Avatar };
-  } | null;
+    member: { id: number; nickname: string; avatar: Avatar };
+  }[];
 };

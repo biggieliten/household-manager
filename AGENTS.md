@@ -221,8 +221,6 @@ household-manager/
         │   ├── ScreenHeader.tsx
         │   ├── TaskCard.tsx
         │   └── TaskList.tsx
-        ├── data/
-        │   └── exampleTasks.ts
         ├── lib/
         │   ├── api/
         │   │   ├── client.ts

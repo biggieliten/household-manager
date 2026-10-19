@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -42,6 +42,7 @@ function close() {
 
 export default function CreateTask() {
   const { colors } = useTheme();
+  const queryClient = useQueryClient();
   const [task, setTask] = useState<CreateTaskBody>(initialTask);
 
   const update = <K extends keyof CreateTaskBody>(
@@ -51,7 +52,8 @@ export default function CreateTask() {
 
   const createTaskMutation = useMutation({
     mutationFn: (body: CreateTaskBody) => createTask(HOUSEHOLD_ID, body),
-    onSuccess: (created) => {
+    onSuccess: async (created) => {
+      await queryClient.invalidateQueries({ queryKey: ["tasks", HOUSEHOLD_ID] });
       setTask(initialTask);
       if (router.canGoBack()) {
         router.back();
