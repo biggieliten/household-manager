@@ -1,5 +1,4 @@
 import { Link } from "expo-router";
-import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -36,14 +35,6 @@ export default function ScreenHeader(): React.JSX.Element {
             { backgroundColor: avatarBackground },
           ])}>
           <Text style={styles.avatarEmoji}>{placeholderAvatar}</Text>
-          <View style={[styles.badge, { borderColor: colors.background }]}>
-            <SymbolView
-              name={{ ios: "person.fill", android: "person", web: "person" }}
-              size={10}
-              tintColor='#FFFFFF'
-              fallback={<Text style={styles.badgeFallback}>👤</Text>}
-            />
-          </View>
         </Pressable>
       </Link>
     </SafeAreaView>
