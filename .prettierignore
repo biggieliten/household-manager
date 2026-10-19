@@ -1,0 +1,16 @@
+# Dependencies and lockfiles
+node_modules/
+package-lock.json
+
+# Generated
+api/src/generated/
+api/dist/
+app/.expo/
+app/dist/
+app/web-build/
+app/ios/
+app/android/
+app/expo-env.d.ts
+
+# Local data
+*.db

@@ -71,19 +71,4 @@ const styles = StyleSheet.create({
   avatarEmoji: {
     fontSize: 22,
   },
-  badge: {
-    position: "absolute",
-    right: -3,
-    bottom: -3,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 1.5,
-    backgroundColor: "#D32F2F",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeFallback: {
-    fontSize: 8,
-  },
 });
