@@ -63,11 +63,6 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
       : scheme === "light"
         ? "#ECEBFD"
         : "#33354A";
-  const statusColor = doneToday
-    ? "#00513B"
-    : overdue
-      ? "#B42318"
-      : colors.textMuted;
 
   return (
     <Link href={{ pathname: "/[id]", params: { id: String(task.id) } }}>
@@ -80,14 +75,6 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
       }${members.length ? `, gjord av ${members.map((member) => member.nickname).join(", ")}` : ""}`}
       style={[styles.card, { backgroundColor: cardBackground }]}
     >
-      <View
-        style={[styles.statusCircle, { backgroundColor: statusBackground }]}
-      >
-        <Text style={[styles.statusIcon, { color: statusColor }]}>
-          {overdue ? "!" : "✓"}
-        </Text>
-      </View>
-
       <View style={styles.cardContent}>
         <View style={styles.titleRow}>
           <Text
@@ -154,14 +141,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 14,
   },
-  statusCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statusIcon: { fontSize: 26, fontWeight: "600" },
   cardContent: { flex: 1, minWidth: 0 },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   taskName: { fontSize: 19, fontWeight: "600", flexShrink: 1 },
