@@ -11,11 +11,9 @@ import {
   View,
 } from "react-native";
 
-import { exampleTasks } from "@/data/exampleTasks";
 import { HOUSEHOLD_ID } from "@/lib/api/client";
 import { createTask } from "@/lib/api/tasks";
 import { useTheme } from "@/theme";
-import { TaskListItem } from "@/types/task";
 import type { CreateTaskBody } from "@shared/schemas/task-schema";
 import { createTaskBodySchema } from "@shared/schemas/task-schema";
 
@@ -43,13 +41,6 @@ function close() {
 }
 
 export default function CreateTask(id?: string) {
-  const [updateTask, setUpdateTask] = useState<TaskListItem | undefined>();
-
-  if (id) {
-    const task = exampleTasks.find((task) => task.id === Number(id));
-    setUpdateTask(task ?? undefined);
-  }
-
   const { colors } = useTheme();
   const [task, setTask] = useState<CreateTaskBody>(initialTask);
 
@@ -119,9 +110,7 @@ export default function CreateTask(id?: string) {
         <TextInput
           value={task.name}
           onChangeText={(value) => update("name", value)}
-          placeholder={
-            updateTask?.name ? updateTask.name : "T.ex. Dammsuga vardagsrummet"
-          }
+          placeholder='T.ex. Dammsuga vardagsrummet'
           placeholderTextColor={colors.textMuted}
           style={inputStyle}
         />
