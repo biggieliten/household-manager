@@ -1,6 +1,13 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { HOUSEHOLD_ID } from "@/lib/api/client";
 import { fetchHouseholdTasks } from "@/lib/api/tasks";
@@ -17,20 +24,6 @@ const avatarEmoji: Record<Avatar, string> = {
   OWL: "🦉",
   UNICORN: "🦄",
 };
-
-type HistoryEntry = {
-  avatar: Avatar;
-  nickname: string;
-  daysAgo: number;
-  count: number;
-};
-
-// Placeholder history until completions are fetched from the backend.
-const exampleHistory: HistoryEntry[] = [
-  { avatar: "PIG", nickname: "Maja", daysAgo: 24, count: 6 },
-  { avatar: "FOX", nickname: "Sara", daysAgo: 38, count: 7 },
-  { avatar: "CHICKEN", nickname: "David", daysAgo: 49, count: 5 },
-];
 
 const accents = {
   light: {
@@ -88,6 +81,19 @@ export default function TaskById() {
   });
   const task = data?.find((task) => task.id === Number(id));
 
+  const history = task?.completedTasks
+    .filter(
+      (completion, index, all) =>
+        all.findIndex((other) => other.member.id === completion.member.id) ===
+        index,
+    )
+    .map((completion) => ({
+      ...completion,
+      count: task.completedTasks.filter(
+        (other) => other.member.id === completion.member.id,
+      ).length,
+    }));
+
   const screenBackground =
     scheme === "light" ? colors.surface : colors.background;
   const cardStyle = [styles.card, { backgroundColor: colors.background }];
@@ -130,7 +136,9 @@ export default function TaskById() {
   const lastDone = latestCompletion
     ? daysAgoLabel(daysSince(latestCompletion.completedAt, new Date()))
     : "Aldrig gjord";
-  const totalThisYear = exampleHistory.reduce((sum, e) => sum + e.count, 0);
+  const totalThisYear = task.completedTasks.filter(
+    (ct) => ct.completedAt.getUTCFullYear() === new Date().getUTCFullYear(),
+  ).length;
 
   return (
     <ScrollView
@@ -189,42 +197,47 @@ export default function TaskById() {
             Historik
           </Text>
           <Text style={[styles.historyTotal, { color: colors.text }]}>
-            {totalThisYear} ggr i år
+            {history && history.length > 0
+              ? `${totalThisYear} gg i år`
+              : "Inga utföranden ännu"}
           </Text>
         </View>
 
-        {exampleHistory.map((entry, index) => (
-          <View key={entry.nickname} style={styles.historyRow}>
-            <View style={[styles.avatar, { backgroundColor: accent.chip }]}>
-              <Text style={styles.avatarEmoji}>
-                {avatarEmoji[entry.avatar]}
+        {history &&
+          history.map((entry, index) => (
+            <View key={entry.member.id} style={styles.historyRow}>
+              <View style={[styles.avatar, { backgroundColor: accent.chip }]}>
+                <Text style={styles.avatarEmoji}>
+                  {avatarEmoji[entry.member.avatar]}
+                </Text>
+              </View>
+
+              <View style={styles.tileContent}>
+                <Text style={[styles.historyName, { color: colors.text }]}>
+                  {entry.member.nickname}
+                  {index === 0 && (
+                    <Text
+                      style={{ color: colors.textMuted, fontWeight: "400" }}>
+                      {" "}
+                      · Senast
+                    </Text>
+                  )}
+                </Text>
+
+                <Text style={[styles.tileBody, { color: colors.text }]}>
+                  {daysAgoLabel(daysSince(entry.completedAt, new Date()))}
+                </Text>
+              </View>
+
+              <Text style={[styles.historyCount, { color: colors.text }]}>
+                {entry.count} ggr
               </Text>
             </View>
-            <View style={styles.tileContent}>
-              <Text style={[styles.historyName, { color: colors.text }]}>
-                {entry.nickname}
-                {index === 0 && (
-                  <Text style={{ color: colors.textMuted, fontWeight: "400" }}>
-                    {" "}
-                    · Senast
-                  </Text>
-                )}
-              </Text>
-              <Text style={[styles.tileBody, { color: colors.text }]}>
-                {daysAgoLabel(entry.daysAgo)}
-              </Text>
-            </View>
-            <Text style={[styles.historyCount, { color: colors.text }]}>
-              {index === 0
-                ? `+${task.difficultyLevel} p`
-                : `${entry.count} ggr`}
-            </Text>
-          </View>
-        ))}
+          ))}
       </View>
 
       <Pressable
-        accessibilityRole='button'
+        accessibilityRole="button"
         accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
         // TODO: register a completion once the API supports it
         onPress={() => {}}
@@ -239,8 +252,8 @@ export default function TaskById() {
       </Pressable>
       <View style={styles.actionRow}>
         <Pressable
-          accessibilityRole='button'
-          accessibilityLabel='Redigera inställningar'
+          accessibilityRole="button"
+          accessibilityLabel="Redigera inställningar"
           onPress={() => {}}
           style={({ pressed }) => [
             styles.editButton,
@@ -253,7 +266,7 @@ export default function TaskById() {
       </View>
 
       <Pressable
-        accessibilityRole='button'
+        accessibilityRole="button"
         // TODO: archive task
         onPress={() => {}}
         style={styles.textButton}>
@@ -262,7 +275,7 @@ export default function TaskById() {
         </Text>
       </Pressable>
       <Pressable
-        accessibilityRole='button'
+        accessibilityRole="button"
         // TODO: delete task
         onPress={() => {}}
         style={styles.textButton}>

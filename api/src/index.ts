@@ -5,6 +5,7 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 
 import { auth } from "./lib/auth.ts";
+import completions from "./routes/completions.ts";
 import statistics from "./routes/statistics.ts";
 import tasks from "./routes/tasks.ts";
 
@@ -34,6 +35,7 @@ app.onError((err, c) => {
 
 const v1 = new Hono()
   .route("/households", tasks)
+  .route("/households", completions)
   .route("/households", statistics);
 
 const routes = app.route("/api/v1", v1);
