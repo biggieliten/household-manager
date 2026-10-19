@@ -28,7 +28,6 @@ export const sessionControl = (requireAdmin = false) =>
     if (requireAdmin && !member.isAdmin) {
       return c.json({ error: "Forbidden" }, 403);
     }
-    // TODO: Använd kontrollerna i befintliga endpoints för sysslor och statistik.
 
     // Continue to the route handler.
     await next();

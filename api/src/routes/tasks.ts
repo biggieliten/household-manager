@@ -3,9 +3,11 @@ import { householdIdParamSchema } from "../../../shared/schemas/household-schema
 import { createTaskBodySchema } from "../../../shared/schemas/task-schema.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
+import { sessionControl } from "../middleware/sessioncontrol.ts";
 
 const app = new Hono().get(
   "/:householdId/tasks",
+  sessionControl(),
   validate("param", householdIdParamSchema),
   async (c) => {
     const { householdId } = c.req.valid("param");
@@ -38,6 +40,7 @@ const app = new Hono().get(
   },
 ).post(
   "/:householdId/tasks",
+  sessionControl(true),
   validate("param", householdIdParamSchema),
   validate("json", createTaskBodySchema),
   async (c) => {
