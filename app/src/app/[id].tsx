@@ -1,9 +1,11 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useQuery } from "@tanstack/react-query";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { exampleTasks } from "@/data/exampleTasks";
+import { HOUSEHOLD_ID } from "@/lib/api/client";
+import { fetchHouseholdTasks } from "@/lib/api/tasks";
 import { useTheme } from "@/theme";
-import type { Avatar } from "@/types/task";
+import type { Avatar } from "@shared/schemas/member-schema";
 
 const avatarEmoji: Record<Avatar, string> = {
   FOX: "🦊",
@@ -80,7 +82,11 @@ export default function TaskById() {
   const router = useRouter();
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
-  const task = exampleTasks.find((t) => t.id === Number(id));
+  const { data, error, isPending, refetch } = useQuery({
+    queryKey: ["tasks", HOUSEHOLD_ID],
+    queryFn: () => fetchHouseholdTasks(HOUSEHOLD_ID),
+  });
+  const task = data?.find((task) => task.id === Number(id));
 
   const screenBackground =
     scheme === "light" ? colors.surface : colors.background;
@@ -88,6 +94,27 @@ export default function TaskById() {
   const cardStyleDark = scheme === "dark" && {
     backgroundColor: colors.surface,
   };
+
+  if (isPending) {
+    return (
+      <View style={[styles.notFound, { backgroundColor: screenBackground }]}>
+        <ActivityIndicator color={colors.textMuted} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.notFound, { backgroundColor: screenBackground }]}>
+        <Text style={[styles.notFoundText, { color: colors.textMuted }]}>
+          {error.message}
+        </Text>
+        <Pressable accessibilityRole="button" onPress={() => refetch()}>
+          <Text style={{ color: colors.primary }}>Försök igen</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   if (!task) {
     return (
@@ -99,8 +126,9 @@ export default function TaskById() {
     );
   }
 
-  const lastDone = task.latestCompletion
-    ? daysAgoLabel(daysSince(task.latestCompletion.completedAt, new Date()))
+  const latestCompletion = task.completedTasks[0];
+  const lastDone = latestCompletion
+    ? daysAgoLabel(daysSince(latestCompletion.completedAt, new Date()))
     : "Aldrig gjord";
   const totalThisYear = exampleHistory.reduce((sum, e) => sum + e.count, 0);
 

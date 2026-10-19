@@ -142,6 +142,7 @@ Top-level directory purposes:
 - `.github/`: repository automation and workflow configuration.
 - `api/`: Hono API, Prisma schema, seed data, and backend configuration.
 - `app/`: Expo/React Native application, source, assets, and development configuration.
+- `shared/`: shared Zod schemas and inferred data types.
 
 ```text
 household-manager/
@@ -167,6 +168,16 @@ household-manager/
 │       └── lib/
 │           ├── prisma.ts
 │           └── validate.ts
+├── shared/
+│   ├── package-lock.json
+│   ├── package.json
+│   └── schemas/
+│       ├── completed-task-schema.ts
+│       ├── household-schema.ts
+│       ├── member-schema.ts
+│       ├── member-to-task-schema.ts
+│       ├── pause-schema.ts
+│       └── task-schema.ts
 └── app/
     ├── .gitignore
     ├── .vscode/
@@ -221,8 +232,6 @@ household-manager/
         │   ├── ScreenHeader.tsx
         │   ├── TaskCard.tsx
         │   └── TaskList.tsx
-        ├── data/
-        │   └── exampleTasks.ts
         ├── lib/
         │   ├── api/
         │   │   ├── client.ts
@@ -237,6 +246,5 @@ household-manager/
         │   ├── index.ts
         │   └── useTheme.ts
         └── types/
-            ├── statistics.ts
-            └── task.ts
+            └── statistics.ts
 ```
