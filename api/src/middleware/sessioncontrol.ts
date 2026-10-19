@@ -1,9 +1,14 @@
 import { createMiddleware } from "hono/factory";
+import { auth } from "../lib/auth.ts";
 
 export const sessionControl = createMiddleware(async (c, next) => {
-  // TODO: Fetch the Better Auth session using c.req.raw.headers.
+  const session = await auth.api.getSession({
+    headers: c.req.raw.headers,
+  });
 
-  // TODO: Return 401 if there is no session.
+  if (!session) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
 
   // Continue to the route handler.
   await next();
