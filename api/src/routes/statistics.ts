@@ -2,10 +2,12 @@ import { Hono } from "hono";
 import { householdIdParamSchema } from "../../../shared/schemas/household-schema.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
+import { sessionControl } from "../middleware/sessioncontrol.ts";
 
 // Points = the task's difficultyLevel for every completion
 const app = new Hono().get(
   "/:householdId/statistics",
+  sessionControl(),
   validate("param", householdIdParamSchema),
   async (c) => {
     const { householdId } = c.req.valid("param");
