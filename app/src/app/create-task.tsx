@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { router } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -8,12 +10,12 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { router } from "expo-router";
 
+import { HOUSEHOLD_ID } from "@/lib/api/client";
+import { createTask } from "@/lib/api/tasks";
 import { useTheme } from "@/theme";
-import { createTaskBodySchema } from "@shared/schemas/task-schema";
 import type { CreateTaskBody } from "@shared/schemas/task-schema";
-import { createTask, HOUSEHOLD_ID } from "@/lib/api";
+import { createTaskBodySchema } from "@shared/schemas/task-schema";
 
 const frequencyOptions = Array.from({ length: 31 }, (_, i) => i);
 const difficultyOptions = [
@@ -47,24 +49,30 @@ export default function CreateTask() {
     value: CreateTaskBody[K],
   ) => setTask((prev) => ({ ...prev, [key]: value }));
 
-  const canSave = createTaskBodySchema.safeParse(task).success;
-
-  const handleSave = async () => {
-    const result = createTaskBodySchema.safeParse(task);
-    if (!result.success) return;
-
-    try {
-      const created = await createTask(HOUSEHOLD_ID, result.data);
-
+  const createTaskMutation = useMutation({
+    mutationFn: (body: CreateTaskBody) => createTask(HOUSEHOLD_ID, body),
+    onSuccess: (created) => {
       setTask(initialTask);
       if (router.canGoBack()) {
         router.back();
       } else {
         Alert.alert("Syssla skapad", created.name);
       }
-    } catch (error) {
+    },
+    onError: (error) => {
       Alert.alert("Något gick fel", String(error));
-    }
+    },
+  });
+
+  const canSave =
+    createTaskBodySchema.safeParse(task).success &&
+    !createTaskMutation.isPending;
+
+  const handleSave = () => {
+    const result = createTaskBodySchema.safeParse(task);
+    if (!result.success) return;
+
+    createTaskMutation.mutate(result.data);
   };
 
   const inputStyle = [

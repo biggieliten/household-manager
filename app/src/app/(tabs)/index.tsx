@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Link } from "expo-router";
 
+import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
 import { exampleTasks } from "@/data/exampleTasks";
 import { useTheme } from "@/theme";
@@ -16,6 +17,7 @@ export default function Index() {
         { backgroundColor: scheme === "light" ? colors.surface : colors.background },
       ]}
     >
+      <ScreenHeader />
       <TaskList tasks={exampleTasks} today={today} />
 
       <Link href="/create-task" asChild>

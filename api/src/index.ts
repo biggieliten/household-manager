@@ -1,15 +1,17 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
+import type { ApplyGlobalResponse } from "hono/client";
 import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
 
 import { auth } from "./lib/auth.ts";
-import { db } from "./lib/prisma.ts";
+import statistics from "./routes/statistics.ts";
 import tasks from "./routes/tasks.ts";
 
 const app = new Hono();
 
 app.use(
-  "/api/auth/*",
+  "/api/*",
   cors({
     origin: "http://localhost:3000",
     credentials: true,
@@ -20,77 +22,29 @@ app.on(["POST", "GET", "PUT", "DELETE"], "/api/auth/*", (c) =>
   auth.handler(c.req.raw),
 );
 
-app.get("/", (c) => {
-  return c.text("Hello Hono!");
+// Keeps the { error } shape for errors thrown outside route handlers,
+// e.g. malformed JSON bodies rejected by the validator
+app.onError((err, c) => {
+  if (err instanceof HTTPException) {
+    return c.json({ error: err.message }, err.status);
+  }
+  console.error(err);
+  return c.json({ error: "Internal Server Error" }, 500);
 });
 
-// Points = the task's difficultyLevel for every completion
-app.get("/households/:id/statistics", async (c) => {
-  const householdId = Number(c.req.param("id"));
-  if (!Number.isInteger(householdId)) {
-    return c.json({ error: "Invalid household id" }, 400);
-  }
+const v1 = new Hono()
+  .route("/households", tasks)
+  .route("/households", statistics);
 
-  const household = await db.household.findUnique({
-    where: { id: householdId },
-    include: {
-      members: { orderBy: { id: "asc" } },
-      tasks: {
-        orderBy: { id: "asc" },
-        include: { completedTasks: { select: { memberId: true } } },
-      },
-    },
-  });
-  if (!household) {
-    return c.json({ error: "Household not found" }, 404);
-  }
+const routes = app.route("/api/v1", v1);
 
-  const pointsPerMember = new Map<number, number>();
-  const tasks = household.tasks
-    .filter((task) => task.completedTasks.length > 0)
-    .map((task) => {
-      const taskPoints = new Map<number, number>();
-      for (const { memberId } of task.completedTasks) {
-        taskPoints.set(
-          memberId,
-          (taskPoints.get(memberId) ?? 0) + task.difficultyLevel,
-        );
-        pointsPerMember.set(
-          memberId,
-          (pointsPerMember.get(memberId) ?? 0) + task.difficultyLevel,
-        );
-      }
-      return {
-        id: task.id,
-        name: task.name,
-        count: task.completedTasks.length,
-        taskPoints,
-      };
-    });
+type ErrorBody = { error: string };
 
-  // Members who have left are only shown if they earned points
-  const members = household.members
-    .map((member) => ({
-      id: member.id,
-      nickname: member.nickname,
-      avatar: member.avatar,
-      points: pointsPerMember.get(member.id) ?? 0,
-      leftAt: member.leftAt,
-    }))
-    .filter((member) => !member.leftAt || member.points > 0)
-    .map(({ leftAt, ...member }) => member);
-
-  return c.json({
-    totalPoints: members.reduce((sum, member) => sum + member.points, 0),
-    members,
-    tasks: tasks.map(({ taskPoints, ...task }) => ({
-      ...task,
-      pointsByMember: members.map((member) => taskPoints.get(member.id) ?? 0),
-    })),
-  });
-});
-
-app.route("/", tasks);
+// Adds the responses produced by app.onError to every route's client types
+export type AppType = ApplyGlobalResponse<
+  typeof routes,
+  { 400: { json: ErrorBody }; 500: { json: ErrorBody } }
+>;
 
 serve(
   {
