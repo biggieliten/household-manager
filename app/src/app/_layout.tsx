@@ -12,7 +12,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <StatusBar style="auto" />
+        <StatusBar style='auto' />
         <RootStack />
       </ThemeProvider>
     </QueryClientProvider>
@@ -31,8 +31,7 @@ function RootStack() {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: colors.background,
-        }}
-      >
+        }}>
         <ActivityIndicator />
       </View>
     );
@@ -44,14 +43,27 @@ function RootStack() {
   return (
     <Stack>
       <Stack.Protected guard={isSignedIn}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
-          name="create-task"
+          name='(tabs)'
+          options={{ headerShown: false, title: "Tillbaka" }}
+        />
+        <Stack.Screen
+          name='create-task'
           options={{ presentation: "modal", title: "Lägg till syssla" }}
+        />
+        <Stack.Screen
+          name='[id]'
+          options={({ route }) => {
+            const params = route.params as { name?: string } | undefined;
+
+            return {
+              title: params?.name ?? "Syssla",
+            };
+          }}
         />
       </Stack.Protected>
       <Stack.Protected guard={!isSignedIn}>
-        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
+        <Stack.Screen name='sign-in' options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   );

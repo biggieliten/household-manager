@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { useTheme } from "@/theme";
 import type { Avatar, TaskListItem } from "@/types/task";
+import { Link, type Href } from "expo-router";
 
 const avatarEmoji: Record<Avatar, string> = {
   FOX: "🦊",
@@ -61,79 +62,74 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
       : colors.textMuted;
 
   return (
-    <View
-      accessible
-      accessibilityLabel={`${task.name}, ${status}, ${
-        elapsed === null
-          ? "aldrig gjord"
-          : `${elapsed} dagar sedan senast gjord`
-      }`}
-      style={[styles.card, { backgroundColor: cardBackground }]}
-    >
+    <Link href={`/${task.id}` as Href} key={task.id}>
       <View
-        style={[styles.statusCircle, { backgroundColor: statusBackground }]}
-      >
-        <Text style={[styles.statusIcon, { color: statusColor }]}>
-          {overdue ? "!" : "✓"}
-        </Text>
-      </View>
-
-      <View style={styles.cardContent}>
-        <View style={styles.titleRow}>
-          <Text
-            numberOfLines={1}
-            style={[styles.taskName, { color: colors.text }]}
-          >
-            {task.name}
+        accessible
+        accessibilityLabel={`${task.name}, ${status}, ${
+          elapsed === null
+            ? "aldrig gjord"
+            : `${elapsed} dagar sedan senast gjord`
+        }`}
+        style={[styles.card, { backgroundColor: cardBackground }]}>
+        <View
+          style={[styles.statusCircle, { backgroundColor: statusBackground }]}>
+          <Text style={[styles.statusIcon, { color: statusColor }]}>
+            {overdue ? "!" : "✓"}
           </Text>
-          <View
-            style={[
-              styles.label,
-              {
-                backgroundColor: overdue
-                  ? "#FFDDDA"
-                  : scheme === "light"
-                    ? "#ECEBFD"
-                    : "#33354A",
-              },
-            ]}
-          >
+        </View>
+
+        <View style={styles.cardContent}>
+          <View style={styles.titleRow}>
             <Text
-              style={[
-                styles.labelText,
-                { color: overdue ? "#B42318" : colors.text },
-              ]}
-            >
-              {overdue ? "Försenad" : `⚡ ${task.difficultyLevel}p`}
+              numberOfLines={1}
+              style={[styles.taskName, { color: colors.text }]}>
+              {task.name}
             </Text>
+            <View
+              style={[
+                styles.label,
+                {
+                  backgroundColor: overdue
+                    ? "#FFDDDA"
+                    : scheme === "light"
+                      ? "#ECEBFD"
+                      : "#33354A",
+                },
+              ]}>
+              <Text
+                style={[
+                  styles.labelText,
+                  { color: overdue ? "#B42318" : colors.text },
+                ]}>
+                {overdue ? "Försenad" : `⚡ ${task.difficultyLevel}p`}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      {doneToday && task.latestCompletion ? (
-        <View style={[styles.avatar, { backgroundColor: statusBackground }]}>
-          <Text style={styles.avatarEmoji}>
-            {avatarEmoji[task.latestCompletion.member.avatar]}
-          </Text>
-        </View>
-      ) : (
-        <View
-          style={[
-            styles.daysBadge,
-            { backgroundColor: overdue ? "#FF6B6B" : statusBackground },
-          ]}
-        >
-          <Text
+        {doneToday && task.latestCompletion ? (
+          <View style={[styles.avatar, { backgroundColor: statusBackground }]}>
+            <Text style={styles.avatarEmoji}>
+              {avatarEmoji[task.latestCompletion.member.avatar]}
+            </Text>
+          </View>
+        ) : (
+          <View
             style={[
-              styles.daysText,
-              { color: overdue ? "#6D0010" : colors.text },
-            ]}
-          >
-            {elapsed === null ? "Inte gjord än" : `${elapsed} d`}
-          </Text>
-        </View>
-      )}
-    </View>
+              styles.daysBadge,
+              { backgroundColor: overdue ? "#FF6B6B" : statusBackground },
+            ]}>
+            <Text
+              style={[
+                styles.daysText,
+                { color: overdue ? "#6D0010" : colors.text },
+              ]}>
+              {elapsed === null ? "Inte gjord än" : `${elapsed} d`}
+            </Text>
+          </View>
+        )}
+      </View>
+    </Link>
   );
 }
 
