@@ -3,8 +3,8 @@ import { Hono } from "hono";
 import type { ApplyGlobalResponse } from "hono/client";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
-
 import { auth } from "./lib/auth.ts";
+import households from "./routes/households.ts";
 import statistics from "./routes/statistics.ts";
 import tasks from "./routes/tasks.ts";
 
@@ -33,6 +33,7 @@ app.onError((err, c) => {
 });
 
 const v1 = new Hono()
+  .route("/households", households)
   .route("/households", tasks)
   .route("/households", statistics);
 
