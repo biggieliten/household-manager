@@ -165,7 +165,8 @@ household-manager/
 │       ├── db/
 │       │   └── seed.ts
 │       └── lib/
-│           └── prisma.ts
+│           ├── prisma.ts
+│           └── validate.ts
 └── app/
     ├── .gitignore
     ├── .vscode/
@@ -210,18 +211,23 @@ household-manager/
         ├── app/
         │   ├── _layout.tsx
         │   ├── create-task.tsx
+        │   ├── profile.tsx
         │   └── (tabs)/
         │       ├── _layout.tsx
         │       ├── household.tsx
         │       ├── index.tsx
         │       └── statistics.tsx
         ├── components/
+        │   ├── ScreenHeader.tsx
         │   ├── TaskCard.tsx
         │   └── TaskList.tsx
         ├── data/
         │   └── exampleTasks.ts
         ├── lib/
-        │   ├── api.ts
+        │   ├── api/
+        │   │   ├── client.ts
+        │   │   ├── statistics.ts
+        │   │   └── tasks.ts
         │   └── storage.ts
         ├── theme/
         │   ├── ThemePicker.tsx
