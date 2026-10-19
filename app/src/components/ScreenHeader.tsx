@@ -9,7 +9,7 @@ import { useTheme } from "@/theme";
 const placeholderAvatar = "🦊";
 
 // Placeholder until the active household is fetched from the backend.
-const placeholderHousehold = { name: "Hushållet", accessCode: "HUSH7294" };
+const placeholderHousehold = { name: "Hushållet" };
 
 export default function ScreenHeader(): React.JSX.Element {
   const { colors, scheme } = useTheme();
@@ -23,9 +23,6 @@ export default function ScreenHeader(): React.JSX.Element {
           numberOfLines={1}
         >
           {placeholderHousehold.name}
-        </Text>
-        <Text style={[styles.householdCode, { color: colors.textMuted }]}>
-          {placeholderHousehold.accessCode}
         </Text>
       </View>
       <Link href="/profile" asChild>
@@ -67,10 +64,6 @@ const styles = StyleSheet.create({
   householdName: {
     fontSize: 20,
     fontWeight: "700",
-  },
-  householdCode: {
-    fontSize: 13,
-    fontWeight: "600",
   },
   avatar: {
     width: 40,
