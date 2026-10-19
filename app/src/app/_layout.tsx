@@ -57,14 +57,24 @@ function RootStack() {
   return (
     <Stack>
       <Stack.Protected guard={isSignedIn}>
-        <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
         <Stack.Screen
-          name='create-task'
-          options={{ presentation: "modal", title: "Skapa syssla" }}
+          name='(tabs)'
+          options={{ headerShown: false, title: "Tillbaka" }}
         />
         <Stack.Screen
-          name="profile"
-          options={{ title: "Profil", headerBackTitle: "Tillbaka" }}
+          name='create-task'
+          options={{ presentation: "modal", title: "Lägg till syssla" }}
+        />
+        <Stack.Screen name='profile' options={{ title: "Profil" }} />
+        <Stack.Screen
+          name='[id]'
+          options={({ route }) => {
+            const params = route.params as { name?: string } | undefined;
+
+            return {
+              title: params?.name ?? "Syssla",
+            };
+          }}
         />
       </Stack.Protected>
       <Stack.Protected guard={!isSignedIn}>

@@ -20,29 +20,27 @@ export default function ScreenHeader(): React.JSX.Element {
       <View style={styles.household}>
         <Text
           style={[styles.householdName, { color: colors.text }]}
-          numberOfLines={1}
-        >
+          numberOfLines={1}>
           {placeholderHousehold.name}
         </Text>
         <Text style={[styles.householdCode, { color: colors.textMuted }]}>
           {placeholderHousehold.accessCode}
         </Text>
       </View>
-      <Link href="/profile" asChild>
+      <Link href='/profile' asChild>
         <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Profil"
+          accessibilityRole='button'
+          accessibilityLabel='Profil'
           style={StyleSheet.flatten([
             styles.avatar,
             { backgroundColor: avatarBackground },
-          ])}
-        >
+          ])}>
           <Text style={styles.avatarEmoji}>{placeholderAvatar}</Text>
           <View style={[styles.badge, { borderColor: colors.background }]}>
             <SymbolView
               name={{ ios: "person.fill", android: "person", web: "person" }}
               size={10}
-              tintColor="#FFFFFF"
+              tintColor='#FFFFFF'
               fallback={<Text style={styles.badgeFallback}>👤</Text>}
             />
           </View>
