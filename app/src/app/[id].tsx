@@ -10,7 +10,6 @@ import {
 } from "react-native";
 
 import useActiveHouseholdTasks from "@/hooks/use-active-household-tasks";
-import { HOUSEHOLD_ID } from "@/lib/api/client";
 import { archiveTask, completeTask } from "@/lib/api/tasks";
 import { tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
@@ -79,11 +78,15 @@ export default function TaskById() {
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
 
+  const { householdId, tasks, error, isPending, refetch } =
+    useActiveHouseholdTasks();
+  const task = tasks?.find((task) => task.id === Number(id));
+
   const archiveMutation = useMutation({
-    mutationFn: (taskId: number) => archiveTask(HOUSEHOLD_ID, taskId),
+    mutationFn: (taskId: number) => archiveTask(Number(householdId), taskId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["tasks", HOUSEHOLD_ID],
+        queryKey: ["tasks", householdId],
       });
       router.push("/");
     },
@@ -97,10 +100,6 @@ export default function TaskById() {
       archiveMutation.mutate(task.id);
     }
   };
-  const { householdId, tasks, error, isPending, refetch } =
-    useActiveHouseholdTasks();
-  const task = tasks?.find((task) => task.id === Number(id));
-
   const completeTaskMutation = useMutation({
     mutationFn: (taskId: number) => {
       if (!householdId) throw new Error("Inget aktivt hushåll");
