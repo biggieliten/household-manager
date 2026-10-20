@@ -15,7 +15,7 @@ import { useTheme } from "@/theme";
 export default function Index() {
   const { colors, scheme } = useTheme();
   const today = new Date();
-  const { householdId, tasks, isPending, error, refetch } =
+  const { householdId, tasks, memberId, assignments, isPending, error, refetch } =
     useActiveHouseholdTasks();
 
   return (
@@ -50,7 +50,14 @@ export default function Index() {
           </Text>
         </View>
       ) : (
-        tasks && <TaskList tasks={tasks} today={today} />
+        tasks && (
+          <TaskList
+            tasks={tasks}
+            today={today}
+            memberId={memberId}
+            assignments={assignments}
+          />
+        )
       )}
 
       {householdId !== null && (

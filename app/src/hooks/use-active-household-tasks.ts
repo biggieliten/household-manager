@@ -1,17 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { activeHouseholdIdQueryOptions } from "@/options/households";
-import { tasksQueryOptions } from "@/options/tasks";
+import {
+  activeHouseholdIdQueryOptions,
+  householdsQueryOptions,
+} from "@/options/households";
+import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
 
-// Tasks for the active household, with one loading/error state for both queries
+// Tasks, assignments and own membership for the active household
 export default function useActiveHouseholdTasks() {
   const activeHousehold = useQuery(activeHouseholdIdQueryOptions);
   const householdId = activeHousehold.data;
   const tasks = useQuery(tasksQueryOptions(householdId));
+  const households = useQuery(householdsQueryOptions);
+  const assignments = useQuery(taskAssignmentsQueryOptions(householdId));
+  const memberId = households.data?.find(
+    (household) => household.id === householdId,
+  )?.member.id;
 
   return {
     householdId,
     tasks: tasks.data,
+    memberId,
+    assignments: assignments.data ?? [],
     isPending:
       activeHousehold.isPending || (householdId !== null && tasks.isPending),
     error: activeHousehold.error ?? tasks.error,
