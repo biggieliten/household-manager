@@ -2,9 +2,14 @@ import Storage from "expo-sqlite/kv-store";
 
 import type {
   CreateMyHouseholdInput,
+  HouseholdPreview,
+  JoinMyHouseholdInput,
   MyHousehold,
 } from "@shared/schemas/household-schema";
-import { responseMyHouseholdSchema } from "@shared/schemas/household-schema";
+import {
+  householdPreviewSchema,
+  responseMyHouseholdSchema,
+} from "@shared/schemas/household-schema";
 import { getClient } from "./client";
 
 const ACTIVE_HOUSEHOLD_KEY = "active-household-id";
@@ -20,6 +25,35 @@ export async function createHousehold(
 ): Promise<MyHousehold> {
   const res = await getClient().api.v1.households.$post({ json: input });
   if (!res.ok) throw new Error(`Kunde inte skapa hushållet (${res.status})`);
+
+  return responseMyHouseholdSchema.parse(await res.json());
+}
+
+export async function fetchHouseholdPreview(
+  accessCode: string,
+): Promise<HouseholdPreview> {
+  const res = await getClient().api.v1.households.join[":accessCode"].$get({
+    param: { accessCode },
+  });
+  if (res.status === 404)
+    throw new Error("Det finns inget hushåll med den koden");
+  if (res.status === 409)
+    throw new Error("Du är redan med i det här hushållet");
+  if (!res.ok) throw new Error(`Kunde inte hitta hushållet (${res.status})`);
+
+  return householdPreviewSchema.parse(await res.json());
+}
+
+export async function joinHousehold(
+  input: JoinMyHouseholdInput,
+): Promise<MyHousehold> {
+  const res = await getClient().api.v1.households.join.$post({ json: input });
+  if (res.status === 404)
+    throw new Error("Det finns inget hushåll med den koden");
+  // The code was checked first, so a conflict here is almost always the avatar
+  if (res.status === 409)
+    throw new Error("Avataren är redan tagen, välj en annan");
+  if (!res.ok) throw new Error(`Kunde inte gå med i hushållet (${res.status})`);
 
   return responseMyHouseholdSchema.parse(await res.json());
 }
