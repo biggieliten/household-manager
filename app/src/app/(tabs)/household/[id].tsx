@@ -13,7 +13,7 @@ import {
 import ScreenHeader from "@/components/ScreenHeader";
 import { fetchHousehold } from "@/lib/api/households";
 import { useTheme } from "@/theme";
-import type { Avatar } from "@/types/task";
+import type { Avatar } from "@shared/schemas/member-schema";
 
 // TODO: share with TaskCard
 const avatarEmoji: Record<Avatar, string> = {
@@ -127,6 +127,9 @@ function HouseholdContent() {
             <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
             <Text style={[styles.memberName, { color: colors.text }]}>
               {member.nickname}
+              {member.isMe && (
+                <Text style={{ color: colors.textMuted }}> (Du)</Text>
+              )}
             </Text>
             <View style={[styles.badge, { backgroundColor: colors.border }]}>
               <Text style={[styles.badgeText, { color: colors.textMuted }]}>
