@@ -242,30 +242,40 @@ function HouseholdContent({ householdId }: { householdId: number }) {
                 </View>
               </View>
 
-              {isAdmin && !member.isAdmin && (
+              {(member.isMe || (isAdmin && !member.isAdmin)) && (
                 <MemberMenu
                   open={openMenuId === member.id}
                   onToggle={() =>
                     setOpenMenuId(openMenuId === member.id ? null : member.id)
                   }
                   items={
-                    member.isPaused
+                    member.isMe
                       ? [
                           {
-                            label: "Återaktivera medlem",
-                            onPress: () => resumeMutation.mutate(member.id),
+                            label: "Lämna hushåll",
+                            onPress: () =>
+                              isLastOwner
+                                ? setShowLastOwnerNotice(true)
+                                : setConfirmLeave(true),
                           },
                         ]
-                      : [
-                          {
-                            label: "Pausa medlem",
-                            onPress: () => pauseMutation.mutate(member.id),
-                          },
-                          {
-                            label: "Gör till ägare",
-                            onPress: () => setConfirmPromoteId(member.id),
-                          },
-                        ]
+                      : member.isPaused
+                        ? [
+                            {
+                              label: "Återaktivera medlem",
+                              onPress: () => resumeMutation.mutate(member.id),
+                            },
+                          ]
+                        : [
+                            {
+                              label: "Pausa medlem",
+                              onPress: () => pauseMutation.mutate(member.id),
+                            },
+                            {
+                              label: "Gör till ägare",
+                              onPress: () => setConfirmPromoteId(member.id),
+                            },
+                          ]
                   }
                 />
               )}
@@ -281,6 +291,27 @@ function HouseholdContent({ householdId }: { householdId: number }) {
                   promoteMutation.mutate(member.id);
                 }}
               />
+            )}
+
+            {member.isMe && confirmLeave && (
+              <ConfirmBox
+                message="Vill du lämna hushållet?"
+                confirmLabel="Ja, lämna"
+                onCancel={() => setConfirmLeave(false)}
+                onConfirm={() => {
+                  setConfirmLeave(false);
+                  leaveMutation.mutate();
+                }}
+              />
+            )}
+
+            {member.isMe && showLastOwnerNotice && isLastOwner && (
+              <Text
+                style={{ color: colors.textMuted }}
+                onPress={() => setShowLastOwnerNotice(false)}>
+                Du är den enda ägaren. Gör någon annan till ägare innan du
+                lämnar hushållet.
+              </Text>
             )}
           </View>
         ))}
