@@ -68,6 +68,9 @@ const app = new Hono()
       if (!member) {
         return c.json({ error: "Member not found" }, 404);
       }
+      if (member.isAdmin) {
+        return c.json({ error: "Admins cannot be paused" }, 403);
+      }
       if (member.pauses.length > 0) {
         return c.json({ error: "Member is already paused" }, 409);
       }

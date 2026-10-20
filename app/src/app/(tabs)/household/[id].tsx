@@ -173,7 +173,7 @@ function HouseholdContent() {
               </View>
             </View>
 
-            {isAdmin && (
+            {isAdmin && !member.isAdmin && (
               <MemberMenu
                 open={openMenuId === member.id}
                 onToggle={() =>
