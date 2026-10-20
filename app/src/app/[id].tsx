@@ -87,9 +87,14 @@ export default function TaskById() {
       return completeTask(householdId, taskId);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: tasksQueryOptions(householdId).queryKey,
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: tasksQueryOptions(householdId).queryKey,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["statistics", householdId],
+        }),
+      ]);
     },
   });
 
@@ -213,7 +218,7 @@ export default function TaskById() {
           </Text>
           <Text style={[styles.historyTotal, { color: colors.text }]}>
             {history && history.length > 0
-              ? `${totalThisYear} gg i år`
+              ? `${totalThisYear} ggr i år`
               : "Inga utföranden ännu"}
           </Text>
         </View>
