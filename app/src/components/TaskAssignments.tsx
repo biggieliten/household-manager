@@ -7,6 +7,7 @@ import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
 type Props = {
   taskId: number;
   isOwner?: boolean;
+  isPending?: boolean;
   onAssign?: (assignment: MemberToTask) => void;
   onRemove?: (assignment: MemberToTask) => void;
   assignments: readonly MemberToTask[];
@@ -20,6 +21,7 @@ export default function TaskAssignments({
   assignments,
   members,
   isOwner = false,
+  isPending = false,
   onAssign,
   onRemove,
 }: Props) {
@@ -53,11 +55,13 @@ export default function TaskAssignments({
               {isOwner && onRemove && (
                 <Pressable
                   accessibilityRole="button"
+                  disabled={isPending}
+                  accessibilityState={{ disabled: isPending, busy: isPending }}
                   accessibilityLabel={`Ta bort tilldelning för ${member?.nickname ?? `Medlem #${memberId}`}`}
                   onPress={() => onRemove({ taskId, memberId })}
                   style={({ pressed }) => [
                     styles.action,
-                    { opacity: pressed ? 0.6 : 1 },
+                    { opacity: isPending ? 0.5 : pressed ? 0.6 : 1 },
                   ]}>
                   <Text style={{ color: colors.primary }}>Ta bort</Text>
                 </Pressable>
@@ -81,11 +85,13 @@ export default function TaskAssignments({
             {isOwner && onAssign && !assignedMemberIds.has(member.id) && (
               <Pressable
                 accessibilityRole="button"
+                disabled={isPending}
+                accessibilityState={{ disabled: isPending, busy: isPending }}
                 accessibilityLabel={`Tilldela sysslan till ${member.nickname}`}
                 onPress={() => onAssign({ taskId, memberId: member.id })}
                 style={({ pressed }) => [
                   styles.action,
-                  { opacity: pressed ? 0.6 : 1 },
+                  { opacity: isPending ? 0.5 : pressed ? 0.6 : 1 },
                 ]}>
                 <Text style={{ color: colors.primary }}>Tilldela</Text>
               </Pressable>
@@ -124,7 +130,6 @@ const styles = StyleSheet.create({
   },
 });
 
-// TODO(#51): Koppla medlemsvalen till API-anropen för tilldelningar.
 // TODO(#51): Visa laddning och fel inline samt hindra upprepade ändringar medan sparande pågår.
 // TODO(#51): Uppdatera visade tilldelningar efter att servern har bekräftat ändringen.
 // TODO(#51): Följ befintligt tema och verifiera tillgänglighet på mobil.
