@@ -7,6 +7,7 @@ import { auth } from "./lib/auth.ts";
 import households from "./routes/households.ts";
 import statistics from "./routes/statistics.ts";
 import tasks from "./routes/tasks.ts";
+import taskAssignments from "./routes/task-assignments.ts";
 
 const app = new Hono();
 
@@ -32,10 +33,10 @@ app.onError((err, c) => {
   return c.json({ error: "Internal Server Error" }, 500);
 });
 
-// TODO(#51): Registrera tilldelningsroutes här när task-assignments.ts är implementerad.
 const v1 = new Hono()
   .route("/households", households)
   .route("/households", tasks)
+  .route("/households", taskAssignments)
   .route("/households", statistics);
 
 const routes = app.route("/api/v1", v1);
