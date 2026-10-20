@@ -160,9 +160,6 @@ function CreateForm() {
         <Text style={[styles.title, { color: colors.text }]}>
           Välkommen hem
         </Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          Ge ert hushåll ett namn för att komma igång.
-        </Text>
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
