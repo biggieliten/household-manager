@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import {
   ActivityIndicator,
@@ -18,6 +17,7 @@ import {
   promoteMember,
 } from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
+import { activeHouseholdIdQueryOptions } from "@/options/households";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
 import ConfirmBox from "@/components/ConfirmBox";
@@ -40,15 +40,48 @@ export default function Household() {
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScreenHeader />
-      <HouseholdContent />
+      <ActiveHousehold />
     </View>
   );
 }
 
-function HouseholdContent() {
+function ActiveHousehold() {
   const { colors } = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const householdId = Number(id);
+  const { data: householdId, error, isPending } = useQuery(
+    activeHouseholdIdQueryOptions,
+  );
+
+  if (isPending) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator color={colors.textMuted} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={{ color: colors.text }}>{error.message}</Text>
+      </View>
+    );
+  }
+
+  if (householdId === null) {
+    return (
+      <View style={styles.centered}>
+        <Text style={{ color: colors.textMuted }}>
+          Du är inte med i något hushåll än
+        </Text>
+      </View>
+    );
+  }
+
+  return <HouseholdContent householdId={householdId} />;
+}
+
+function HouseholdContent({ householdId }: { householdId: number }) {
+  const { colors } = useTheme();
 
   const { data, error, isPending, refetch, isRefetching } = useQuery({
     queryKey: ["household", householdId],
