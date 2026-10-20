@@ -226,6 +226,7 @@ household-manager/
     └── src/
         ├── app/
         │   ├── _layout.tsx
+        │   ├── create-household.tsx
         │   ├── create-task.tsx
         │   ├── profile.tsx
         │   └── (tabs)/

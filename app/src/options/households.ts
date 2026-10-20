@@ -1,6 +1,7 @@
 import { mutationOptions, queryOptions } from "@tanstack/react-query";
-
+import type { CreateMyHouseholdInput } from "@shared/schemas/household-schema";
 import {
+  createHousehold,
   fetchMyHouseholds,
   getActiveHouseholdId,
   setActiveHouseholdId,
@@ -29,4 +30,14 @@ export const switchHouseholdMutationOptions = mutationOptions({
       activeHouseholdIdQueryOptions.queryKey,
       householdId,
     ),
+});
+// The new household becomes the active one. The households list is not
+// invalidated here, so the create screen can show the code first
+export const createHouseholdMutationOptions = mutationOptions({
+  mutationKey: ["households", "create"],
+  mutationFn: async (input: CreateMyHouseholdInput) => {
+    const household = await createHousehold(input);
+    await setActiveHouseholdId(household.id);
+    return household;
+  },
 });

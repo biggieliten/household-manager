@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import {
   householdIdParamSchema,
   memberIdParamSchema,
+  createMyHouseholdSchema,
 } from "../../../shared/schemas/household-schema.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
@@ -36,6 +37,36 @@ const app = new Hono()
       200,
     );
   })
+  // Creates a household with the signed-in user as its first owner
+  .post(
+    "/",
+    requireSession(),
+    validate("json", createMyHouseholdSchema),
+    async (c) => {
+      const user = c.get("user");
+      const { name, nickname, avatar } = c.req.valid("json");
+
+      const household = await db.household.create({
+        data: {
+          name,
+          members: {
+            create: { userId: user.id, nickname, avatar, isAdmin: true },
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          accessCode: true,
+          members: {
+            select: { id: true, nickname: true, avatar: true, isAdmin: true },
+          },
+        },
+      });
+
+      const { members, ...rest } = household;
+      return c.json({ ...rest, member: members[0] }, 201);
+    },
+  )
   .get(
     "/:householdId",
     sessionControl(),
