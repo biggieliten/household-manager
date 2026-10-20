@@ -20,7 +20,6 @@ export default function Index() {
 
   return (
     <View
-      // edges={["top"]}
       style={[
         styles.container,
         {
