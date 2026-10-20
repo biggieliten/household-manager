@@ -34,9 +34,7 @@ export default function TaskAssignments({
       .filter((assignment) => assignment.taskId === taskId)
       .map((assignment) => assignment.memberId),
   );
-  const activeMembers = members.filter(
-    (member) => member.leftAt === null && !member.isPaused,
-  );
+  const householdMembers = members.filter((member) => member.leftAt === null);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
@@ -86,12 +84,12 @@ export default function TaskAssignments({
       )}
 
       <Text accessibilityRole="header" style={[styles.heading, { color: colors.text }]}>
-        Aktiva medlemmar
+        Medlemmar
       </Text>
-      {activeMembers.length === 0 ? (
-        <Text style={{ color: colors.textMuted }}>Inga aktiva medlemmar.</Text>
+      {householdMembers.length === 0 ? (
+        <Text style={{ color: colors.textMuted }}>Inga medlemmar.</Text>
       ) : (
-        activeMembers.map((member) => (
+        householdMembers.map((member) => (
           <View key={member.id} style={styles.memberRow}>
             <Text style={[styles.memberName, { color: colors.text }]}>
               {member.nickname}
@@ -145,5 +143,3 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
 });
-
-// TODO(#51): Följ befintligt tema och verifiera tillgänglighet på mobil.
