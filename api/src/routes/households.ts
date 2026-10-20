@@ -76,6 +76,33 @@ const app = new Hono()
 
       return c.json(pause, 201);
     },
+  )
+  .post(
+    "/:householdId/members/:memberId/resume",
+    sessionControl(true),
+    validate("param", memberIdParamSchema),
+    async (c) => {
+      const { householdId, memberId } = c.req.valid("param");
+
+      const activePause = await db.pause.findFirst({
+        where: {
+          memberId,
+          endDate: null,
+          deletedAt: null,
+          member: { householdId, leftAt: null },
+        },
+      });
+      if (!activePause) {
+        return c.json({ error: "Member is not paused" }, 404);
+      }
+
+      const pause = await db.pause.update({
+        where: { id: activePause.id },
+        data: { endDate: new Date() },
+      });
+
+      return c.json(pause, 200);
+    },
   );
 
 export default app;
