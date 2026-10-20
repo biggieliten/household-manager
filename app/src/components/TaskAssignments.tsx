@@ -146,5 +146,4 @@ const styles = StyleSheet.create({
   },
 });
 
-// TODO(#51): Uppdatera visade tilldelningar efter att servern har bekräftat ändringen.
 // TODO(#51): Följ befintligt tema och verifiera tillgänglighet på mobil.
