@@ -163,6 +163,34 @@ const app = new Hono()
 
       return c.json(promoted, 200);
     },
+  )
+  .post(
+    "/:householdId/leave",
+    sessionControl(),
+    validate("param", householdIdParamSchema),
+    async (c) => {
+      const { householdId } = c.req.valid("param");
+      const { member: me } = c.var;
+
+      // The last owner must appoint a new owner first, unless no one else is left
+      if (me.isAdmin) {
+        const otherMembers = await db.member.findMany({
+          where: { householdId, leftAt: null, id: { not: me.id } },
+          select: { isAdmin: true },
+        });
+        const hasOtherOwner = otherMembers.some((member) => member.isAdmin);
+        if (otherMembers.length > 0 && !hasOtherOwner) {
+          return c.json({ error: "Appoint a new owner before leaving" }, 409);
+        }
+      }
+
+      const member = await db.member.update({
+        where: { id: me.id },
+        data: { leftAt: new Date() },
+      });
+
+      return c.json(member, 200);
+    },
   );
 
 export default app;
