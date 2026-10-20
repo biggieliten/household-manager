@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import {
   ActivityIndicator,
@@ -9,14 +10,20 @@ import {
 
 import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
-import useActiveHouseholdTasks from "@/hooks/use-active-household-tasks";
+import useActiveHouseholdId from "@/hooks/use-active-household-id";
+import { tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 
 export default function Index() {
   const { colors, scheme } = useTheme();
   const today = new Date();
-  const { householdId, tasks, isPending, error, refetch } =
-    useActiveHouseholdTasks();
+  const householdId = useActiveHouseholdId();
+  const {
+    data: tasks,
+    isPending,
+    error,
+    refetch,
+  } = useQuery(tasksQueryOptions(householdId));
 
   return (
     <View
@@ -43,29 +50,21 @@ export default function Index() {
             <Text style={styles.retryButtonText}>Försök igen</Text>
           </Pressable>
         </View>
-      ) : householdId === null ? (
-        <View style={styles.centered}>
-          <Text style={{ color: colors.textMuted }}>
-            Du är inte med i något hushåll än
-          </Text>
-        </View>
       ) : (
-        tasks && <TaskList tasks={tasks} today={today} />
+        <TaskList tasks={tasks} today={today} />
       )}
 
-      {householdId !== null && (
-        <Link href="/create-task" asChild>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Skapa syssla"
-            style={StyleSheet.flatten([
-              styles.addButton,
-              { backgroundColor: colors.primary },
-            ])}>
-            <Text style={styles.addButtonText}>+</Text>
-          </Pressable>
-        </Link>
-      )}
+      <Link href="/create-task" asChild>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Skapa syssla"
+          style={StyleSheet.flatten([
+            styles.addButton,
+            { backgroundColor: colors.primary },
+          ])}>
+          <Text style={styles.addButtonText}>+</Text>
+        </Pressable>
+      </Link>
     </View>
   );
 }

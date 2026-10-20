@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -8,7 +9,8 @@ import {
   View,
 } from "react-native";
 
-import useActiveHouseholdTasks from "@/hooks/use-active-household-tasks";
+import useActiveHouseholdId from "@/hooks/use-active-household-id";
+import { tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
 
@@ -87,7 +89,13 @@ export default function TaskById() {
   const router = useRouter();
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
-  const { tasks, error, isPending, refetch } = useActiveHouseholdTasks();
+  const householdId = useActiveHouseholdId();
+  const {
+    data: tasks,
+    error,
+    isPending,
+    refetch,
+  } = useQuery(tasksQueryOptions(householdId));
   const task = tasks?.find((task) => task.id === Number(id));
 
   const screenBackground =

@@ -13,14 +13,14 @@ import { useState } from "react";
 import { useRouter } from "expo-router";
 import MemberMenu from "@/components/MemberMenu";
 import {
-  fetchHousehold,
   pauseMember,
   resumeMember,
   promoteMember,
   leaveHousehold,
 } from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
-import { activeHouseholdIdQueryOptions } from "@/options/households";
+import useActiveHouseholdId from "@/hooks/use-active-household-id";
+import { householdQueryOptions } from "@/options/households";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
 import ConfirmBox from "@/components/ConfirmBox";
@@ -43,55 +43,18 @@ export default function Household() {
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScreenHeader />
-      <ActiveHousehold />
+      <HouseholdContent />
     </View>
   );
 }
 
-function ActiveHousehold() {
-  const { colors } = useTheme();
-  const {
-    data: householdId,
-    error,
-    isPending,
-  } = useQuery(activeHouseholdIdQueryOptions);
-
-  if (isPending) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.textMuted} />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.centered}>
-        <Text style={{ color: colors.text }}>{error.message}</Text>
-      </View>
-    );
-  }
-
-  if (householdId === null) {
-    return (
-      <View style={styles.centered}>
-        <Text style={{ color: colors.textMuted }}>
-          Du är inte med i något hushåll än
-        </Text>
-      </View>
-    );
-  }
-
-  return <HouseholdContent householdId={householdId} />;
-}
-
-function HouseholdContent({ householdId }: { householdId: number }) {
+function HouseholdContent() {
   const { colors } = useTheme();
 
-  const { data, error, isPending, refetch, isRefetching } = useQuery({
-    queryKey: ["household", householdId],
-    queryFn: () => fetchHousehold(householdId),
-  });
+  const householdId = useActiveHouseholdId();
+  const { data, error, isPending, refetch, isRefetching } = useQuery(
+    householdQueryOptions(householdId),
+  );
   const queryClient = useQueryClient();
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
@@ -99,25 +62,35 @@ function HouseholdContent({ householdId }: { householdId: number }) {
   const [showLastOwnerNotice, setShowLastOwnerNotice] = useState(false);
   const router = useRouter();
 
+  const requireHouseholdId = () => {
+    if (!householdId) throw new Error("Inget aktivt hushåll");
+    return householdId;
+  };
+
   const invalidateHousehold = () =>
-    queryClient.invalidateQueries({ queryKey: ["household", householdId] });
+    queryClient.invalidateQueries({
+      queryKey: householdQueryOptions(householdId).queryKey,
+    });
 
   const pauseMutation = useMutation({
-    mutationFn: (memberId: number) => pauseMember(householdId, memberId),
+    mutationFn: (memberId: number) =>
+      pauseMember(requireHouseholdId(), memberId),
     onSuccess: invalidateHousehold,
   });
 
   const resumeMutation = useMutation({
-    mutationFn: (memberId: number) => resumeMember(householdId, memberId),
+    mutationFn: (memberId: number) =>
+      resumeMember(requireHouseholdId(), memberId),
     onSuccess: invalidateHousehold,
   });
 
   const promoteMutation = useMutation({
-    mutationFn: (memberId: number) => promoteMember(householdId, memberId),
+    mutationFn: (memberId: number) =>
+      promoteMember(requireHouseholdId(), memberId),
     onSuccess: invalidateHousehold,
   });
   const leaveMutation = useMutation({
-    mutationFn: () => leaveHousehold(householdId),
+    mutationFn: () => leaveHousehold(requireHouseholdId()),
     onSuccess: async () => {
       // The active household is re-picked from the updated list
       await queryClient.invalidateQueries({ queryKey: ["households"] });
