@@ -1,14 +1,19 @@
 import { Hono } from "hono";
 import { householdIdParamSchema } from "../../../shared/schemas/household-schema.ts";
+import { statisticsPeriodQuerySchema } from "../../../shared/schemas/statistics-schema.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
+import { sessionControl } from "../middleware/sessioncontrol.ts";
 
 // Points = the task's difficultyLevel for every completion
 const app = new Hono().get(
   "/:householdId/statistics",
+  sessionControl(),
   validate("param", householdIdParamSchema),
+  validate("query", statisticsPeriodQuerySchema),
   async (c) => {
     const { householdId } = c.req.valid("param");
+    const { from, to } = c.req.valid("query");
 
     const household = await db.household.findUnique({
       where: { id: householdId },
@@ -16,7 +21,12 @@ const app = new Hono().get(
         members: { orderBy: { id: "asc" } },
         tasks: {
           orderBy: { id: "asc" },
-          include: { completedTasks: { select: { memberId: true } } },
+          include: {
+            completedTasks: {
+              where: { completedAt: { gte: from, lt: to }, deletedAt: null },
+              select: { memberId: true },
+            },
+          },
         },
       },
     });

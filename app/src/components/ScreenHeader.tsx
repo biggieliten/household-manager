@@ -1,5 +1,4 @@
 import { Link } from "expo-router";
-import { SymbolView } from "expo-symbols";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -20,29 +19,19 @@ export default function ScreenHeader(): React.JSX.Element {
       <View style={styles.household}>
         <Text
           style={[styles.householdName, { color: colors.text }]}
-          numberOfLines={1}
-        >
+          numberOfLines={1}>
           {placeholderHousehold.name}
         </Text>
       </View>
-      <Link href="/profile" asChild>
+      <Link href='/profile' asChild>
         <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Profil"
+          accessibilityRole='button'
+          accessibilityLabel='Profil'
           style={StyleSheet.flatten([
             styles.avatar,
             { backgroundColor: avatarBackground },
-          ])}
-        >
+          ])}>
           <Text style={styles.avatarEmoji}>{placeholderAvatar}</Text>
-          <View style={[styles.badge, { borderColor: colors.background }]}>
-            <SymbolView
-              name={{ ios: "person.fill", android: "person", web: "person" }}
-              size={10}
-              tintColor="#FFFFFF"
-              fallback={<Text style={styles.badgeFallback}>👤</Text>}
-            />
-          </View>
         </Pressable>
       </Link>
     </SafeAreaView>
@@ -74,20 +63,5 @@ const styles = StyleSheet.create({
   },
   avatarEmoji: {
     fontSize: 22,
-  },
-  badge: {
-    position: "absolute",
-    right: -3,
-    bottom: -3,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 1.5,
-    backgroundColor: "#D32F2F",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeFallback: {
-    fontSize: 8,
   },
 });

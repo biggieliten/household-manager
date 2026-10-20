@@ -1,12 +1,13 @@
+import Feather from "@expo/vector-icons/Feather";
 import * as WebBrowser from "expo-web-browser";
 import { useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 
+import { fonts, useAuthColors } from "@/components/auth/authColors";
 import { authClient } from "@/lib/auth-client";
-import { useTheme } from "@/theme";
 
 export function GithubSignInButton() {
-  const { colors } = useTheme();
+  const colors = useAuthColors();
   const inFlight = useRef(false);
   const [loading, setLoading] = useState(false);
 
@@ -45,19 +46,21 @@ export function GithubSignInButton() {
   return (
     <Pressable
       accessibilityRole='button'
+      accessibilityLabel='Fortsätt med GitHub'
       accessibilityState={{ disabled: loading }}
       disabled={loading}
       onPress={signInGithub}
-      style={[
+      style={({ pressed }) => [
         styles.button,
-        { backgroundColor: colors.surface, borderColor: colors.border },
+        { backgroundColor: colors.field, opacity: pressed ? 0.7 : 1 },
       ]}>
       {loading ? (
-        <ActivityIndicator />
+        <ActivityIndicator color={colors.text} />
       ) : (
-        <Text style={[styles.text, { color: colors.text }]}>
-          Fortsätt med GitHub
-        </Text>
+        <>
+          <Feather name='github' size={20} color={colors.text} />
+          <Text style={[styles.text, { color: colors.text }]}>GitHub</Text>
+        </>
       )}
     </Pressable>
   );
@@ -65,13 +68,15 @@ export function GithubSignInButton() {
 
 const styles = StyleSheet.create({
   button: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
+    justifyContent: "center",
+    gap: 10,
+    height: 56,
+    borderRadius: 14,
   },
   text: {
-    fontSize: 17,
-    fontWeight: "600",
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
   },
 });
