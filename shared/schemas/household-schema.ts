@@ -39,6 +39,11 @@ export const householdIdParamSchema = z.object({
   householdId: z.coerce.number<string>().int().nonnegative(),
 });
 
+// e.g. /households/:householdId/members/:memberId/pause
+export const memberIdParamSchema = householdIdParamSchema.extend({
+  memberId: z.coerce.number<string>().int().nonnegative(),
+});
+
 export type Household = z.infer<typeof responseHouseholdSchema>;
 export type MyHousehold = z.infer<typeof responseMyHouseholdSchema>;
 export type CreateHouseholdInput = z.input<typeof createHouseholdSchema>;

@@ -1,22 +1,45 @@
 import { Hono } from "hono";
 import { householdIdParamSchema } from "../../../shared/schemas/household-schema.ts";
+import { statisticsPeriodQuerySchema } from "../../../shared/schemas/statistics-schema.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
+import { sessionControl } from "../middleware/sessioncontrol.ts";
 
 // Points = the task's difficultyLevel for every completion
 const app = new Hono().get(
   "/:householdId/statistics",
+  sessionControl(),
   validate("param", householdIdParamSchema),
+  validate("query", statisticsPeriodQuerySchema),
   async (c) => {
     const { householdId } = c.req.valid("param");
+    const { from, to } = c.req.valid("query");
 
     const household = await db.household.findUnique({
       where: { id: householdId },
       include: {
-        members: { orderBy: { id: "asc" } },
+        members: {
+          orderBy: { id: "asc" },
+          include: {
+            // Pauses that cover the whole period
+            pauses: {
+              where: {
+                deletedAt: null,
+                startDate: { lte: from },
+                OR: [{ endDate: null }, { endDate: { gte: to } }],
+              },
+              select: { id: true },
+            },
+          },
+        },
         tasks: {
           orderBy: { id: "asc" },
-          include: { completedTasks: { select: { memberId: true } } },
+          include: {
+            completedTasks: {
+              where: { completedAt: { gte: from, lt: to }, deletedAt: null },
+              select: { memberId: true },
+            },
+          },
         },
       },
     });
@@ -47,7 +70,7 @@ const app = new Hono().get(
         };
       });
 
-    // Members who have left are only shown if they earned points
+    // Members who have left or were paused the whole period are only shown if they earned points
     const members = household.members
       .map((member) => ({
         id: member.id,
@@ -55,9 +78,13 @@ const app = new Hono().get(
         avatar: member.avatar,
         points: pointsPerMember.get(member.id) ?? 0,
         leftAt: member.leftAt,
+        pausedWholePeriod: member.pauses.length > 0,
       }))
-      .filter((member) => !member.leftAt || member.points > 0)
-      .map(({ leftAt, ...member }) => member);
+      .filter(
+        (member) =>
+          (!member.leftAt && !member.pausedWholePeriod) || member.points > 0,
+      )
+      .map(({ leftAt, pausedWholePeriod, ...member }) => member);
 
     return c.json(
       {

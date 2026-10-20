@@ -3,7 +3,6 @@ import { Hono } from "hono";
 import type { ApplyGlobalResponse } from "hono/client";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
-
 import { auth } from "./lib/auth.ts";
 import households from "./routes/households.ts";
 import statistics from "./routes/statistics.ts";

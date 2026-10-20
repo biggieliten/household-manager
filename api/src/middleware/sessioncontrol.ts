@@ -2,25 +2,12 @@ import { createMiddleware } from "hono/factory";
 import { auth } from "../lib/auth.ts";
 import { db } from "../lib/prisma.ts";
 
-// For routes without a :householdId, e.g. listing the user's own households
-export const requireSession = () =>
-  createMiddleware<{ Variables: { user: typeof auth.$Infer.Session.user } }>(
-    async (c, next) => {
-      const session = await auth.api.getSession({
-        headers: c.req.raw.headers,
-      });
-
-      if (!session) {
-        return c.json({ error: "Unauthorized" }, 401);
-      }
-
-      c.set("user", session.user);
-      await next();
-    },
-  );
+export type SessionEnv = {
+  Variables: { member: { id: number; isAdmin: boolean } };
+};
 
 export const sessionControl = (requireAdmin = false) =>
-  createMiddleware(async (c, next) => {
+  createMiddleware<SessionEnv>(async (c, next) => {
     const session = await auth.api.getSession({
       headers: c.req.raw.headers,
     });
@@ -46,6 +33,28 @@ export const sessionControl = (requireAdmin = false) =>
       return c.json({ error: "Forbidden" }, 403);
     }
 
+    // Expose the member to the route handler as c.var.member.
+    c.set("member", member);
+
     // Continue to the route handler.
+    await next();
+  });
+
+export type UserEnv = {
+  Variables: { user: typeof auth.$Infer.Session.user };
+};
+
+// For routes without a :householdId, e.g. listing the user's own households
+export const requireSession = () =>
+  createMiddleware<UserEnv>(async (c, next) => {
+    const session = await auth.api.getSession({
+      headers: c.req.raw.headers,
+    });
+
+    if (!session) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    c.set("user", session.user);
     await next();
   });

@@ -14,6 +14,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import ScreenHeader from "@/components/ScreenHeader";
 import { HOUSEHOLD_ID } from "@/lib/api/client";
 import { fetchHouseholdStatistics } from "@/lib/api/statistics";
+import {
+  currentWeek,
+  formatPeriodRange,
+  isoWeekNumber,
+  type StatisticsPeriod,
+} from "@/lib/statistics-period";
 import { useTheme } from "@/theme";
 import type { Avatar, MemberStatistics } from "@/types/statistics";
 
@@ -37,20 +43,31 @@ function toChartData(members: MemberStatistics[], points: number[]) {
 
 export default function Statistics() {
   const { colors } = useTheme();
+  const period = currentWeek();
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScreenHeader />
-      <StatisticsContent />
+      <View style={[styles.periodCard, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.periodTitle, { color: colors.text }]}>
+          Denna vecka
+        </Text>
+        <Text style={[styles.periodSubtitle, { color: colors.textMuted }]}>
+          v. {isoWeekNumber(period.from)} • {formatPeriodRange(period)}
+        </Text>
+      </View>
+      <StatisticsContent period={period} />
     </View>
   );
 }
 
-function StatisticsContent() {
+function StatisticsContent({ period }: { period: StatisticsPeriod }) {
   const { colors } = useTheme();
+  const from = period.from.toISOString();
+  const to = period.to.toISOString();
   const { data, error, isPending, refetch, isRefetching } = useQuery({
-    queryKey: ["statistics", HOUSEHOLD_ID],
-    queryFn: () => fetchHouseholdStatistics(HOUSEHOLD_ID),
+    queryKey: ["statistics", HOUSEHOLD_ID, from, to],
+    queryFn: () => fetchHouseholdStatistics(HOUSEHOLD_ID, period),
   });
 
   if (isPending) {
@@ -97,7 +114,7 @@ function StatisticsContent() {
       >
         {totalPoints === 0 ? (
           <Text style={[styles.empty, { color: colors.textMuted }]}>
-            Inga utförda sysslor än
+            Inga utförda sysslor den här perioden
           </Text>
         ) : (
           <>
@@ -195,6 +212,22 @@ function StatisticsContent() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+  },
+  periodCard: {
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    gap: 2,
+  },
+  periodTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  periodSubtitle: {
+    fontSize: 16,
+    fontWeight: "600",
   },
   safeArea: {
     flex: 1,
