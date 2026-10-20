@@ -1,3 +1,4 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -9,6 +10,8 @@ import {
 } from "react-native";
 
 import useActiveHouseholdTasks from "@/hooks/use-active-household-tasks";
+import { completeTask } from "@/lib/api/tasks";
+import { tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
 
@@ -71,10 +74,24 @@ function daysAgoLabel(days: number): string {
 export default function TaskById() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
-  const { tasks, error, isPending, refetch } = useActiveHouseholdTasks();
+  const { householdId, tasks, error, isPending, refetch } =
+    useActiveHouseholdTasks();
   const task = tasks?.find((task) => task.id === Number(id));
+
+  const completeTaskMutation = useMutation({
+    mutationFn: (taskId: number) => {
+      if (!householdId) throw new Error("Inget aktivt hushåll");
+      return completeTask(householdId, taskId);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: tasksQueryOptions(householdId).queryKey,
+      });
+    },
+  });
 
   const history = task?.completedTasks
     .filter(
@@ -147,22 +164,10 @@ export default function TaskById() {
             <Text style={{ color: accent.danger }}>⚡</Text>{" "}
             {task.difficultyLevel} p ({difficultyLabel(task.difficultyLevel)})
           </Text>
+          <Text style={[styles.stat, { color: colors.textMuted }]}>
+            {frequencyLabel(task.frequency)}
+          </Text>
         </View>
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
-          // TODO: register a completion once the API supports it
-          onPress={() => {}}
-          style={({ pressed }) => [
-            styles.doneButton,
-            { backgroundColor: accent.danger, opacity: pressed ? 0.8 : 1 },
-          ]}>
-          <Text style={styles.doneButtonText}>✓ Markera som klar</Text>
-          <View style={styles.doneBadge}>
-            <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
-          </View>
-        </Pressable>
       </View>
 
       <View style={[cardStyle, cardStyleDark]}>
@@ -249,17 +254,33 @@ export default function TaskById() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
-        // TODO: register a completion once the API supports it
-        onPress={() => {}}
+        accessibilityState={{
+          disabled: !householdId || completeTaskMutation.isPending,
+        }}
+        disabled={!householdId || completeTaskMutation.isPending}
+        onPress={() => completeTaskMutation.mutate(task.id)}
         style={({ pressed }) => [
           styles.doneButton,
-          { backgroundColor: accent.danger, opacity: pressed ? 0.8 : 1 },
+          {
+            backgroundColor: accent.danger,
+            opacity: completeTaskMutation.isPending ? 0.5 : pressed ? 0.8 : 1,
+          },
         ]}>
-        <Text style={styles.doneButtonText}>✓ Markera som klar</Text>
+        <Text style={styles.doneButtonText}>
+          {completeTaskMutation.isPending ? "Sparar…" : "✓ Markera som klar"}
+        </Text>
         <View style={styles.doneBadge}>
           <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
         </View>
       </Pressable>
+      {completeTaskMutation.isError && (
+        <Text style={{ color: accent.dangerText }}>
+          {completeTaskMutation.error.message}
+        </Text>
+      )}
+      {completeTaskMutation.isSuccess && (
+        <Text style={{ color: colors.primary }}>Sysslan är markerad som klar</Text>
+      )}
       <View style={styles.actionRow}>
         <Pressable
           accessibilityRole="button"
