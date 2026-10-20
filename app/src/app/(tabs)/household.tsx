@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SymbolView } from "expo-symbols";
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -154,168 +155,174 @@ function HouseholdContent({ householdId }: { householdId: number }) {
 
   return (
     <ScrollView
-      contentContainerStyle={styles.content}
+      contentContainerStyle={styles.grow}
       refreshControl={
         <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
       }>
-      <View
-        style={[styles.card, styles.row, { backgroundColor: colors.surface }]}>
-        <View style={[styles.iconCircle, { backgroundColor: colors.border }]}>
-          <SymbolView
-            name={{ ios: "house.fill", android: "home", web: "home" }}
-            size={22}
-            tintColor={colors.primary}
-            fallback={<Text>🏠</Text>}
-          />
+      {/* Tapping anywhere outside an open menu closes it */}
+      <Pressable
+        accessible={false}
+        onPress={() => setOpenMenuId(null)}
+        style={[styles.content, styles.grow]}>
+        <View
+          style={[styles.card, styles.row, { backgroundColor: colors.surface }]}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.border }]}>
+            <SymbolView
+              name={{ ios: "house.fill", android: "home", web: "home" }}
+              size={22}
+              tintColor={colors.primary}
+              fallback={<Text>🏠</Text>}
+            />
+          </View>
+          <View style={styles.flex}>
+            <View style={styles.nameRow}>
+              <Text style={[styles.householdName, { color: colors.text }]}>
+                {name}
+              </Text>
+              <View style={[styles.badge, { backgroundColor: colors.border }]}>
+                <Text style={[styles.badgeText, { color: colors.text }]}>
+                  {accessCode}
+                </Text>
+              </View>
+            </View>
+            <Text style={{ color: colors.primary }}>
+              {members.length} medlemmar
+            </Text>
+          </View>
         </View>
-        <View style={styles.flex}>
-          <View style={styles.nameRow}>
-            <Text style={[styles.householdName, { color: colors.text }]}>
-              {name}
+
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <View style={styles.row}>
+            <Text
+              style={[styles.sectionTitle, styles.flex, { color: colors.text }]}>
+              Medlemmar i hushållet
             </Text>
             <View style={[styles.badge, { backgroundColor: colors.border }]}>
               <Text style={[styles.badgeText, { color: colors.text }]}>
-                {accessCode}
+                {members.length} personer
               </Text>
             </View>
           </View>
-          <Text style={{ color: colors.primary }}>
-            {members.length} medlemmar
-          </Text>
-        </View>
-      </View>
 
-      <View style={[styles.card, { backgroundColor: colors.surface }]}>
-        <View style={styles.row}>
-          <Text
-            style={[styles.sectionTitle, styles.flex, { color: colors.text }]}>
-            Medlemmar i hushållet
-          </Text>
-          <View style={[styles.badge, { backgroundColor: colors.border }]}>
-            <Text style={[styles.badgeText, { color: colors.text }]}>
-              {members.length} personer
+          {mutationError && (
+            <Text style={{ color: colors.textMuted }}>
+              {mutationError.message}
             </Text>
-          </View>
-        </View>
+          )}
 
-        {mutationError && (
-          <Text style={{ color: colors.textMuted }}>
-            {mutationError.message}
-          </Text>
-        )}
-
-        {members.map((member) => (
-          <View
-            key={member.id}
-            style={[
-              styles.memberItem,
-              openMenuId === member.id && styles.rowOnTop,
-            ]}>
+          {members.map((member) => (
             <View
+              key={member.id}
               style={[
-                styles.row,
-                styles.memberRow,
-                { backgroundColor: colors.background },
+                styles.memberItem,
+                openMenuId === member.id && styles.rowOnTop,
               ]}>
               <View
                 style={[
                   styles.row,
-                  styles.flex,
-                  member.isPaused && styles.paused,
+                  styles.memberRow,
+                  { backgroundColor: colors.background },
                 ]}>
-                <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
-                <Text style={[styles.memberName, { color: colors.text }]}>
-                  {member.nickname}
-                  {member.isMe && (
-                    <Text style={{ color: colors.textMuted }}> (Du)</Text>
-                  )}
-                </Text>
                 <View
-                  style={[styles.badge, { backgroundColor: colors.border }]}>
-                  <Text style={[styles.badgeText, { color: colors.textMuted }]}>
-                    {member.isPaused
-                      ? "Pausad"
-                      : member.isAdmin
-                        ? "Ägare"
-                        : "Medlem"}
+                  style={[
+                    styles.row,
+                    styles.flex,
+                    member.isPaused && styles.paused,
+                  ]}>
+                  <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
+                  <Text style={[styles.memberName, { color: colors.text }]}>
+                    {member.nickname}
+                    {member.isMe && (
+                      <Text style={{ color: colors.textMuted }}> (Du)</Text>
+                    )}
                   </Text>
+                  <View
+                    style={[styles.badge, { backgroundColor: colors.border }]}>
+                    <Text style={[styles.badgeText, { color: colors.textMuted }]}>
+                      {member.isPaused
+                        ? "Pausad"
+                        : member.isAdmin
+                          ? "Ägare"
+                          : "Medlem"}
+                    </Text>
+                  </View>
                 </View>
-              </View>
 
-              {(member.isMe || (isAdmin && !member.isAdmin)) && (
-                <MemberMenu
-                  open={openMenuId === member.id}
-                  onToggle={() =>
-                    setOpenMenuId(openMenuId === member.id ? null : member.id)
-                  }
-                  items={
-                    member.isMe
-                      ? [
-                          {
-                            label: "Lämna hushåll",
-                            onPress: () =>
-                              isLastOwner
-                                ? setShowLastOwnerNotice(true)
-                                : setConfirmLeave(true),
-                          },
-                        ]
-                      : member.isPaused
+                {(member.isMe || (isAdmin && !member.isAdmin)) && (
+                  <MemberMenu
+                    open={openMenuId === member.id}
+                    onToggle={() =>
+                      setOpenMenuId(openMenuId === member.id ? null : member.id)
+                    }
+                    items={
+                      member.isMe
                         ? [
                             {
-                              label: "Återaktivera medlem",
-                              onPress: () => resumeMutation.mutate(member.id),
+                              label: "Lämna hushåll",
+                              onPress: () =>
+                                isLastOwner
+                                  ? setShowLastOwnerNotice(true)
+                                  : setConfirmLeave(true),
                             },
                           ]
-                        : [
-                            {
-                              label: "Pausa medlem",
-                              onPress: () => pauseMutation.mutate(member.id),
-                            },
-                            {
-                              label: "Gör till ägare",
-                              onPress: () => setConfirmPromoteId(member.id),
-                            },
-                          ]
-                  }
+                        : member.isPaused
+                          ? [
+                              {
+                                label: "Återaktivera medlem",
+                                onPress: () => resumeMutation.mutate(member.id),
+                              },
+                            ]
+                          : [
+                              {
+                                label: "Pausa medlem",
+                                onPress: () => pauseMutation.mutate(member.id),
+                              },
+                              {
+                                label: "Gör till ägare",
+                                onPress: () => setConfirmPromoteId(member.id),
+                              },
+                            ]
+                    }
+                  />
+                )}
+              </View>
+
+              {confirmPromoteId === member.id && (
+                <ConfirmBox
+                  message={`Göra ${member.nickname} till ägare?`}
+                  confirmLabel="Ja, gör till ägare"
+                  onCancel={() => setConfirmPromoteId(null)}
+                  onConfirm={() => {
+                    setConfirmPromoteId(null);
+                    promoteMutation.mutate(member.id);
+                  }}
                 />
               )}
+
+              {member.isMe && confirmLeave && (
+                <ConfirmBox
+                  message="Vill du lämna hushållet?"
+                  confirmLabel="Ja, lämna"
+                  onCancel={() => setConfirmLeave(false)}
+                  onConfirm={() => {
+                    setConfirmLeave(false);
+                    leaveMutation.mutate();
+                  }}
+                />
+              )}
+
+              {member.isMe && showLastOwnerNotice && isLastOwner && (
+                <Text
+                  style={{ color: colors.textMuted }}
+                  onPress={() => setShowLastOwnerNotice(false)}>
+                  Du är den enda ägaren. Gör någon annan till ägare innan du
+                  lämnar hushållet.
+                </Text>
+              )}
             </View>
-
-            {confirmPromoteId === member.id && (
-              <ConfirmBox
-                message={`Göra ${member.nickname} till ägare?`}
-                confirmLabel="Ja, gör till ägare"
-                onCancel={() => setConfirmPromoteId(null)}
-                onConfirm={() => {
-                  setConfirmPromoteId(null);
-                  promoteMutation.mutate(member.id);
-                }}
-              />
-            )}
-
-            {member.isMe && confirmLeave && (
-              <ConfirmBox
-                message="Vill du lämna hushållet?"
-                confirmLabel="Ja, lämna"
-                onCancel={() => setConfirmLeave(false)}
-                onConfirm={() => {
-                  setConfirmLeave(false);
-                  leaveMutation.mutate();
-                }}
-              />
-            )}
-
-            {member.isMe && showLastOwnerNotice && isLastOwner && (
-              <Text
-                style={{ color: colors.textMuted }}
-                onPress={() => setShowLastOwnerNotice(false)}>
-                Du är den enda ägaren. Gör någon annan till ägare innan du
-                lämnar hushållet.
-              </Text>
-            )}
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -332,6 +339,9 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     gap: 16,
+  },
+  grow: {
+    flexGrow: 1,
   },
   card: {
     borderRadius: 16,
