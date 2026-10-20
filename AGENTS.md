@@ -245,8 +245,11 @@ household-manager/
         │   │   └── tasks.ts
         │   ├── statistics-period.ts
         │   └── storage.ts
+        ├── hooks/
+        │   └── use-active-household-tasks.ts
         ├── options/
-        │   └── households.ts
+        │   ├── households.ts
+        │   └── tasks.ts
         ├── theme/
         │   ├── ThemePicker.tsx
         │   ├── ThemeProvider.tsx
