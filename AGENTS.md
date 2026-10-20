@@ -182,6 +182,7 @@ household-manager/
 │       │   └── sessioncontrol.ts
 │       └── routes/
 │           ├── completions.ts
+│           ├── households.ts
 │           ├── statistics.ts
 │           └── tasks.ts
 ├── shared/
@@ -194,6 +195,7 @@ household-manager/
 │       ├── member-schema.ts
 │       ├── member-to-task-schema.ts
 │       ├── pause-schema.ts
+│       ├── statistics-schema.ts
 │       └── task-schema.ts
 └── app/
     ├── .gitignore
@@ -237,8 +239,6 @@ household-manager/
     │           ├── home@2x.png
     │           └── home@3x.png
     └── src/
-        ├── api/
-        │   └── tasks.ts
         ├── app/
         │   ├── [id].tsx
         │   ├── _layout.tsx
@@ -251,7 +251,9 @@ household-manager/
         │       ├── index.tsx
         │       └── statistics.tsx
         ├── components/
+        │   ├── ConfirmBox.tsx
         │   ├── GithubSignInButton.tsx
+        │   ├── MemberMenu.tsx
         │   ├── ScreenHeader.tsx
         │   ├── TaskCard.tsx
         │   ├── TaskList.tsx
@@ -260,10 +262,17 @@ household-manager/
         ├── lib/
         │   ├── api/
         │   │   ├── client.ts
+        │   │   ├── households.ts
         │   │   ├── statistics.ts
         │   │   └── tasks.ts
         │   ├── auth-client.ts
+        │   ├── statistics-period.ts
         │   └── storage.ts
+        ├── hooks/
+        │   └── use-active-household-tasks.ts
+        ├── options/
+        │   ├── households.ts
+        │   └── tasks.ts
         ├── theme/
         │   ├── ThemePicker.tsx
         │   ├── ThemeProvider.tsx

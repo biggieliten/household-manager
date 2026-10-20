@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { authClient } from "@/lib/auth-client";
@@ -5,6 +6,7 @@ import { ThemePicker, useTheme } from "@/theme";
 
 export default function Profile() {
   const { colors } = useTheme();
+  const queryClient = useQueryClient();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -17,12 +19,15 @@ export default function Profile() {
 
       <Pressable
         accessibilityRole="button"
-        onPress={() => authClient.signOut()}
+        onPress={async () => {
+          await authClient.signOut();
+          // The next user must not see this user's cached households and tasks
+          queryClient.clear();
+        }}
         style={[
           styles.signOut,
           { backgroundColor: colors.surface, borderColor: colors.border },
-        ]}
-      >
+        ]}>
         <Text style={[styles.signOutText, { color: "#D32F2F" }]}>Logga ut</Text>
       </Pressable>
     </View>

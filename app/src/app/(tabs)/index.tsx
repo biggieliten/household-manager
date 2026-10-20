@@ -1,20 +1,22 @@
-import { useQuery } from "@tanstack/react-query";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { Link } from "expo-router";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
-import { HOUSEHOLD_ID } from "@/lib/api/client";
-import { fetchHouseholdTasks } from "@/lib/api/tasks";
+import useActiveHouseholdTasks from "@/hooks/use-active-household-tasks";
 import { useTheme } from "@/theme";
 
 export default function Index() {
   const { colors, scheme } = useTheme();
   const today = new Date();
-  const { data, error, isPending, refetch } = useQuery({
-    queryKey: ["tasks", HOUSEHOLD_ID],
-    queryFn: () => fetchHouseholdTasks(HOUSEHOLD_ID),
-  });
+  const { householdId, tasks, isPending, error, refetch } =
+    useActiveHouseholdTasks();
 
   return (
     <View
@@ -37,26 +39,33 @@ export default function Index() {
           <Pressable
             accessibilityRole="button"
             onPress={() => refetch()}
-            style={[styles.retryButton, { backgroundColor: colors.primary }]}
-          >
+            style={[styles.retryButton, { backgroundColor: colors.primary }]}>
             <Text style={styles.retryButtonText}>Försök igen</Text>
           </Pressable>
         </View>
+      ) : householdId === null ? (
+        <View style={styles.centered}>
+          <Text style={{ color: colors.textMuted }}>
+            Du är inte med i något hushåll än
+          </Text>
+        </View>
       ) : (
-        <TaskList tasks={data} today={today} />
+        tasks && <TaskList tasks={tasks} today={today} />
       )}
 
-      <Link href='/create-task' asChild>
-        <Pressable
-          accessibilityRole='button'
-          accessibilityLabel='Skapa syssla'
-          style={StyleSheet.flatten([
-            styles.addButton,
-            { backgroundColor: colors.primary },
-          ])}>
-          <Text style={styles.addButtonText}>+</Text>
-        </Pressable>
-      </Link>
+      {householdId !== null && (
+        <Link href="/create-task" asChild>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Skapa syssla"
+            style={StyleSheet.flatten([
+              styles.addButton,
+              { backgroundColor: colors.primary },
+            ])}>
+            <Text style={styles.addButtonText}>+</Text>
+          </Pressable>
+        </Link>
+      )}
     </View>
   );
 }

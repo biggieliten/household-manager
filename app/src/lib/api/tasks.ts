@@ -2,6 +2,7 @@ import type {
   CreateTaskBody,
   Task,
   TaskListItem,
+  UpdateTaskInput,
 } from "@shared/schemas/task-schema";
 import {
   responseTaskListItemSchema,
@@ -20,6 +21,29 @@ export async function fetchHouseholdTasks(
   return responseTaskListItemSchema.array().parse(await res.json());
 }
 
+export async function getTaskById(
+  householdId: number,
+  taskId: number,
+): Promise<Task> {
+  const tasks = getClient().api.v1.households[":householdId"]
+    .tasks as unknown as {
+    ":taskId": {
+      $get: (args: {
+        param: { householdId: string; taskId: string };
+      }) => Promise<Response>;
+    };
+  };
+  const res = await tasks[":taskId"].$get({
+    param: {
+      householdId: String(householdId),
+      taskId: String(taskId),
+    },
+  });
+  if (!res.ok) throw new Error(`Kunde inte hämta syssla (${res.status})`);
+
+  return responseTaskSchema.parse(await res.json());
+}
+
 export async function createTask(
   householdId: number,
   body: CreateTaskBody,
@@ -29,6 +53,32 @@ export async function createTask(
     json: body,
   });
   if (!res.ok) throw new Error(`Kunde inte skapa syssla (${res.status})`);
+
+  return responseTaskSchema.parse(await res.json());
+}
+
+export async function updateTask(
+  householdId: number,
+  taskId: number,
+  body: UpdateTaskInput,
+): Promise<Task> {
+  const tasks = getClient().api.v1.households[":householdId"]
+    .tasks as unknown as {
+    ":taskId": {
+      $patch: (args: {
+        param: { householdId: string; taskId: string };
+        json: UpdateTaskInput;
+      }) => Promise<Response>;
+    };
+  };
+  const res = await tasks[":taskId"].$patch({
+    param: {
+      householdId: String(householdId),
+      taskId: String(taskId),
+    },
+    json: body,
+  });
+  if (!res.ok) throw new Error(`Kunde inte uppdatera syssla (${res.status})`);
 
   return responseTaskSchema.parse(await res.json());
 }

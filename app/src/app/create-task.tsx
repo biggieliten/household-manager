@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { router } from "expo-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -11,8 +11,9 @@ import {
   View,
 } from "react-native";
 
-import { HOUSEHOLD_ID } from "@/lib/api/client";
-import { createTask } from "@/lib/api/tasks";
+import { createTask, updateTask } from "@/lib/api/tasks";
+import { activeHouseholdIdQueryOptions } from "@/options/households";
+import { taskQueryOptions, tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 import type { CreateTaskBody } from "@shared/schemas/task-schema";
 import { createTaskBodySchema } from "@shared/schemas/task-schema";
@@ -41,24 +42,55 @@ function close() {
 }
 
 export default function CreateTask() {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [task, setTask] = useState<CreateTaskBody>(initialTask);
+
+  const { data: householdId } = useQuery(activeHouseholdIdQueryOptions);
+  const { data: taskById } = useQuery(
+    taskQueryOptions(householdId, id ? Number(id) : undefined),
+  );
+
+  const [prefilledId, setPrefilledId] = useState<number | null>(null);
+
+  if (taskById && prefilledId !== taskById.id) {
+    setPrefilledId(taskById.id);
+    setTask({
+      name: taskById.name,
+      description: taskById.description,
+      frequency: taskById.frequency,
+      difficultyLevel: taskById.difficultyLevel,
+    });
+  }
 
   const update = <K extends keyof CreateTaskBody>(
     key: K,
     value: CreateTaskBody[K],
   ) => setTask((prev) => ({ ...prev, [key]: value }));
 
-  const createTaskMutation = useMutation({
-    mutationFn: (body: CreateTaskBody) => createTask(HOUSEHOLD_ID, body),
-    onSuccess: async (created) => {
-      await queryClient.invalidateQueries({ queryKey: ["tasks", HOUSEHOLD_ID] });
+  const isEditing = !!id;
+
+  const saveTaskMutation = useMutation({
+    mutationFn: (body: CreateTaskBody) => {
+      if (!householdId) throw new Error("Inget aktivt hushåll");
+      return isEditing
+        ? updateTask(householdId, Number(id), body)
+        : createTask(householdId, body);
+    },
+    onSuccess: async (saved) => {
+      // Also covers the single task, whose key starts with the list's key
+      await queryClient.invalidateQueries({
+        queryKey: tasksQueryOptions(householdId).queryKey,
+      });
       setTask(initialTask);
       if (router.canGoBack()) {
-        router.back();
+        router.push("/");
       } else {
-        Alert.alert("Syssla skapad", created.name);
+        Alert.alert(
+          isEditing ? "Syssla uppdaterad" : "Syssla skapad",
+          saved.name,
+        );
       }
     },
     onError: (error) => {
@@ -67,14 +99,15 @@ export default function CreateTask() {
   });
 
   const canSave =
+    !!householdId &&
     createTaskBodySchema.safeParse(task).success &&
-    !createTaskMutation.isPending;
+    !saveTaskMutation.isPending;
 
   const handleSave = () => {
     const result = createTaskBodySchema.safeParse(task);
     if (!result.success) return;
 
-    createTaskMutation.mutate(result.data);
+    saveTaskMutation.mutate(result.data);
   };
 
   const inputStyle = [
@@ -92,27 +125,18 @@ export default function CreateTask() {
     <ScrollView
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps='handled'>
-      <View style={styles.header}>
-        <View style={[styles.dot, { backgroundColor: colors.primary }]} />
-        <Text style={[styles.heading, { color: colors.text }]}>
-          Skapa en ny syssla
-        </Text>
-        <Pressable
-          accessibilityRole='button'
-          accessibilityLabel='Stäng'
-          onPress={close}
-          style={[styles.closeButton, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.closeText, { color: colors.text }]}>✕</Text>
-        </Pressable>
-      </View>
+      keyboardShouldPersistTaps="handled">
+      {/*
+       */}
 
       <View style={styles.section}>
         <Text style={labelStyle}>Titel</Text>
         <TextInput
           value={task.name}
           onChangeText={(value) => update("name", value)}
-          placeholder='T.ex. Dammsuga vardagsrummet'
+          placeholder={
+            taskById?.name ? taskById.name : "T.ex. Dammsuga vardagsrummet"
+          }
           placeholderTextColor={colors.textMuted}
           style={inputStyle}
         />
@@ -123,7 +147,7 @@ export default function CreateTask() {
         <TextInput
           value={task.description}
           onChangeText={(value) => update("description", value)}
-          placeholder='Beskriv vad som ska göras eller speciella önskemål…'
+          placeholder="Beskriv vad som ska göras eller speciella önskemål…"
           placeholderTextColor={colors.textMuted}
           multiline
           style={[inputStyle, styles.multiline]}
@@ -139,7 +163,7 @@ export default function CreateTask() {
           {["📷  Lägg till bild", "🎙  Spela in röst"].map((label) => (
             <Pressable
               key={label}
-              accessibilityRole='button'
+              accessibilityRole="button"
               accessibilityState={{ disabled: true }}
               disabled
               style={[
@@ -227,8 +251,8 @@ export default function CreateTask() {
             </View>
           ))}
           <Pressable
-            accessibilityRole='button'
-            accessibilityLabel='Tilldela medlem'
+            accessibilityRole="button"
+            accessibilityLabel="Tilldela medlem"
             accessibilityState={{ disabled: true }}
             disabled
             style={[
@@ -247,7 +271,7 @@ export default function CreateTask() {
 
       <View style={styles.actions}>
         <Pressable
-          accessibilityRole='button'
+          accessibilityRole="button"
           accessibilityState={{ disabled: !canSave }}
           disabled={!canSave}
           onPress={handleSave}
@@ -258,7 +282,7 @@ export default function CreateTask() {
           <Text style={styles.buttonText}>Spara syssla</Text>
         </Pressable>
         <Pressable
-          accessibilityRole='button'
+          accessibilityRole="button"
           onPress={close}
           style={styles.cancelButton}>
           <Text style={[styles.cancelText, { color: colors.text }]}>
@@ -283,14 +307,14 @@ function FrequencyPicker({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      accessibilityRole='radiogroup'
+      accessibilityRole="radiogroup"
       contentContainerStyle={styles.frequencyRow}>
       {frequencyOptions.map((value) => {
         const isSelected = value === selected;
         return (
           <Pressable
             key={value}
-            accessibilityRole='radio'
+            accessibilityRole="radio"
             accessibilityState={{ checked: isSelected }}
             onPress={() => onSelect(value)}
             style={[
@@ -325,13 +349,13 @@ function DifficultyPicker({
   const { colors } = useTheme();
 
   return (
-    <View accessibilityRole='radiogroup' style={styles.row}>
+    <View accessibilityRole="radiogroup" style={styles.row}>
       {difficultyOptions.map(({ value, label }) => {
         const isSelected = value === selected;
         return (
           <Pressable
             key={value}
-            accessibilityRole='radio'
+            accessibilityRole="radio"
             accessibilityLabel={`${value}, ${label}`}
             accessibilityState={{ checked: isSelected }}
             onPress={() => onSelect(value)}

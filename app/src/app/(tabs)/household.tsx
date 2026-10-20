@@ -1,7 +1,41 @@
-import { Text, View, StyleSheet } from "react-native";
-
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { SymbolView } from "expo-symbols";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useState } from "react";
+import { useRouter } from "expo-router";
+import MemberMenu from "@/components/MemberMenu";
+import {
+  fetchHousehold,
+  pauseMember,
+  resumeMember,
+  promoteMember,
+  leaveHousehold,
+} from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
+import { activeHouseholdIdQueryOptions } from "@/options/households";
 import { useTheme } from "@/theme";
+import type { Avatar } from "@shared/schemas/member-schema";
+import ConfirmBox from "@/components/ConfirmBox";
+
+// TODO: share with TaskCard
+const avatarEmoji: Record<Avatar, string> = {
+  FOX: "🦊",
+  PIG: "🐷",
+  FROG: "🐸",
+  CHICKEN: "🐥",
+  OCTOPUS: "🐙",
+  DOLPHIN: "🐬",
+  OWL: "🦉",
+  UNICORN: "🦄",
+};
 
 export default function Household() {
   const { colors } = useTheme();
@@ -9,10 +43,287 @@ export default function Household() {
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScreenHeader />
-      <View style={styles.container}>
-        <Text style={[styles.title, { color: colors.text }]}>Hushåll</Text>
-      </View>
+      <ActiveHousehold />
     </View>
+  );
+}
+
+function ActiveHousehold() {
+  const { colors } = useTheme();
+  const {
+    data: householdId,
+    error,
+    isPending,
+  } = useQuery(activeHouseholdIdQueryOptions);
+
+  if (isPending) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator color={colors.textMuted} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={{ color: colors.text }}>{error.message}</Text>
+      </View>
+    );
+  }
+
+  if (householdId === null) {
+    return (
+      <View style={styles.centered}>
+        <Text style={{ color: colors.textMuted }}>
+          Du är inte med i något hushåll än
+        </Text>
+      </View>
+    );
+  }
+
+  return <HouseholdContent householdId={householdId} />;
+}
+
+function HouseholdContent({ householdId }: { householdId: number }) {
+  const { colors } = useTheme();
+
+  const { data, error, isPending, refetch, isRefetching } = useQuery({
+    queryKey: ["household", householdId],
+    queryFn: () => fetchHousehold(householdId),
+  });
+  const queryClient = useQueryClient();
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [showLastOwnerNotice, setShowLastOwnerNotice] = useState(false);
+  const router = useRouter();
+
+  const invalidateHousehold = () =>
+    queryClient.invalidateQueries({ queryKey: ["household", householdId] });
+
+  const pauseMutation = useMutation({
+    mutationFn: (memberId: number) => pauseMember(householdId, memberId),
+    onSuccess: invalidateHousehold,
+  });
+
+  const resumeMutation = useMutation({
+    mutationFn: (memberId: number) => resumeMember(householdId, memberId),
+    onSuccess: invalidateHousehold,
+  });
+
+  const promoteMutation = useMutation({
+    mutationFn: (memberId: number) => promoteMember(householdId, memberId),
+    onSuccess: invalidateHousehold,
+  });
+  const leaveMutation = useMutation({
+    mutationFn: () => leaveHousehold(householdId),
+    onSuccess: async () => {
+      // The active household is re-picked from the updated list
+      await queryClient.invalidateQueries({ queryKey: ["households"] });
+      // TODO: decide with the group where to go after leaving (e.g. "Mina hushåll")
+      router.replace("/profile");
+    },
+  });
+
+  if (isPending) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator color={colors.textMuted} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={{ color: colors.text }}>{error.message}</Text>
+      </View>
+    );
+  }
+
+  const { name, accessCode, members } = data;
+  const isAdmin = members.some((member) => member.isMe && member.isAdmin);
+  const others = members.filter((member) => !member.isMe);
+  const isLastOwner =
+    isAdmin && others.length > 0 && !others.some((member) => member.isAdmin);
+  const mutationError =
+    pauseMutation.error ??
+    resumeMutation.error ??
+    promoteMutation.error ??
+    leaveMutation.error;
+
+  return (
+    <ScrollView
+      contentContainerStyle={styles.grow}
+      refreshControl={
+        <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+      }>
+      {/* Tapping anywhere outside an open menu closes it */}
+      <Pressable
+        accessible={false}
+        onPress={() => setOpenMenuId(null)}
+        style={[styles.content, styles.grow]}>
+        <View
+          style={[styles.card, styles.row, { backgroundColor: colors.surface }]}>
+          <View style={[styles.iconCircle, { backgroundColor: colors.border }]}>
+            <SymbolView
+              name={{ ios: "house.fill", android: "home", web: "home" }}
+              size={22}
+              tintColor={colors.primary}
+              fallback={<Text>🏠</Text>}
+            />
+          </View>
+          <View style={styles.flex}>
+            <View style={styles.nameRow}>
+              <Text style={[styles.householdName, { color: colors.text }]}>
+                {name}
+              </Text>
+              <View style={[styles.badge, { backgroundColor: colors.border }]}>
+                <Text style={[styles.badgeText, { color: colors.text }]}>
+                  {accessCode}
+                </Text>
+              </View>
+            </View>
+            <Text style={{ color: colors.primary }}>
+              {members.length} medlemmar
+            </Text>
+          </View>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <View style={styles.row}>
+            <Text
+              style={[styles.sectionTitle, styles.flex, { color: colors.text }]}>
+              Medlemmar i hushållet
+            </Text>
+            <View style={[styles.badge, { backgroundColor: colors.border }]}>
+              <Text style={[styles.badgeText, { color: colors.text }]}>
+                {members.length} personer
+              </Text>
+            </View>
+          </View>
+
+          {mutationError && (
+            <Text style={{ color: colors.textMuted }}>
+              {mutationError.message}
+            </Text>
+          )}
+
+          {members.map((member) => (
+            <View
+              key={member.id}
+              style={[
+                styles.memberItem,
+                openMenuId === member.id && styles.rowOnTop,
+              ]}>
+              <View
+                style={[
+                  styles.row,
+                  styles.memberRow,
+                  { backgroundColor: colors.background },
+                ]}>
+                <View
+                  style={[
+                    styles.row,
+                    styles.flex,
+                    member.isPaused && styles.paused,
+                  ]}>
+                  <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
+                  <Text style={[styles.memberName, { color: colors.text }]}>
+                    {member.nickname}
+                    {member.isMe && (
+                      <Text style={{ color: colors.textMuted }}> (Du)</Text>
+                    )}
+                  </Text>
+                  <View
+                    style={[styles.badge, { backgroundColor: colors.border }]}>
+                    <Text style={[styles.badgeText, { color: colors.textMuted }]}>
+                      {member.isPaused
+                        ? "Pausad"
+                        : member.isAdmin
+                          ? "Ägare"
+                          : "Medlem"}
+                    </Text>
+                  </View>
+                </View>
+
+                {(member.isMe || (isAdmin && !member.isAdmin)) && (
+                  <MemberMenu
+                    open={openMenuId === member.id}
+                    onToggle={() =>
+                      setOpenMenuId(openMenuId === member.id ? null : member.id)
+                    }
+                    items={
+                      member.isMe
+                        ? [
+                            {
+                              label: "Lämna hushåll",
+                              onPress: () =>
+                                isLastOwner
+                                  ? setShowLastOwnerNotice(true)
+                                  : setConfirmLeave(true),
+                            },
+                          ]
+                        : member.isPaused
+                          ? [
+                              {
+                                label: "Återaktivera medlem",
+                                onPress: () => resumeMutation.mutate(member.id),
+                              },
+                            ]
+                          : [
+                              {
+                                label: "Pausa medlem",
+                                onPress: () => pauseMutation.mutate(member.id),
+                              },
+                              {
+                                label: "Gör till ägare",
+                                onPress: () => setConfirmPromoteId(member.id),
+                              },
+                            ]
+                    }
+                  />
+                )}
+              </View>
+
+              {confirmPromoteId === member.id && (
+                <ConfirmBox
+                  message={`Göra ${member.nickname} till ägare?`}
+                  confirmLabel="Ja, gör till ägare"
+                  onCancel={() => setConfirmPromoteId(null)}
+                  onConfirm={() => {
+                    setConfirmPromoteId(null);
+                    promoteMutation.mutate(member.id);
+                  }}
+                />
+              )}
+
+              {member.isMe && confirmLeave && (
+                <ConfirmBox
+                  message="Vill du lämna hushållet?"
+                  confirmLabel="Ja, lämna"
+                  onCancel={() => setConfirmLeave(false)}
+                  onConfirm={() => {
+                    setConfirmLeave(false);
+                    leaveMutation.mutate();
+                  }}
+                />
+              )}
+
+              {member.isMe && showLastOwnerNotice && isLastOwner && (
+                <Text
+                  style={{ color: colors.textMuted }}
+                  onPress={() => setShowLastOwnerNotice(false)}>
+                  Du är den enda ägaren. Gör någon annan till ägare innan du
+                  lämnar hushållet.
+                </Text>
+              )}
+            </View>
+          ))}
+        </View>
+      </Pressable>
+    </ScrollView>
   );
 }
 
@@ -20,14 +331,80 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
   },
-  container: {
+  centered: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 16,
-    gap: 32,
   },
-  title: {
-    fontSize: 17,
+  content: {
+    padding: 16,
+    gap: 16,
+  },
+  grow: {
+    flexGrow: 1,
+  },
+  card: {
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  flex: {
+    flex: 1,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  householdName: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  badge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  memberRow: {
+    borderRadius: 12,
+    padding: 12,
+  },
+  avatar: {
+    fontSize: 24,
+  },
+  memberName: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+  rowOnTop: {
+    zIndex: 1,
+    elevation: 6,
+  },
+  paused: {
+    opacity: 0.4,
+  },
+  memberItem: {
+    gap: 8,
   },
 });

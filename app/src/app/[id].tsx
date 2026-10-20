@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -9,8 +8,7 @@ import {
   View,
 } from "react-native";
 
-import { HOUSEHOLD_ID } from "@/lib/api/client";
-import { fetchHouseholdTasks } from "@/lib/api/tasks";
+import useActiveHouseholdTasks from "@/hooks/use-active-household-tasks";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
 
@@ -75,11 +73,8 @@ export default function TaskById() {
   const router = useRouter();
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
-  const { data, error, isPending, refetch } = useQuery({
-    queryKey: ["tasks", HOUSEHOLD_ID],
-    queryFn: () => fetchHouseholdTasks(HOUSEHOLD_ID),
-  });
-  const task = data?.find((task) => task.id === Number(id));
+  const { tasks, error, isPending, refetch } = useActiveHouseholdTasks();
+  const task = tasks?.find((task) => task.id === Number(id));
 
   const history = task?.completedTasks
     .filter(
@@ -153,6 +148,21 @@ export default function TaskById() {
             {task.difficultyLevel} p ({difficultyLabel(task.difficultyLevel)})
           </Text>
         </View>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
+          // TODO: register a completion once the API supports it
+          onPress={() => {}}
+          style={({ pressed }) => [
+            styles.doneButton,
+            { backgroundColor: accent.danger, opacity: pressed ? 0.8 : 1 },
+          ]}>
+          <Text style={styles.doneButtonText}>✓ Markera som klar</Text>
+          <View style={styles.doneBadge}>
+            <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
+          </View>
+        </Pressable>
       </View>
 
       <View style={[cardStyle, cardStyleDark]}>
@@ -254,7 +264,12 @@ export default function TaskById() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Redigera inställningar"
-          onPress={() => {}}
+          onPress={() =>
+            router.push({
+              pathname: "/create-task",
+              params: { id: String(task.id) },
+            })
+          }
           style={({ pressed }) => [
             styles.editButton,
             { backgroundColor: accent.chip, opacity: pressed ? 0.8 : 1 },
@@ -272,15 +287,6 @@ export default function TaskById() {
         style={styles.textButton}>
         <Text style={[styles.archiveText, { color: colors.text }]}>
           Arkivera syssla
-        </Text>
-      </Pressable>
-      <Pressable
-        accessibilityRole="button"
-        // TODO: delete task
-        onPress={() => {}}
-        style={styles.textButton}>
-        <Text style={[styles.deleteText, { color: accent.dangerText }]}>
-          Ta bort syssla permanent
         </Text>
       </Pressable>
     </ScrollView>
