@@ -37,7 +37,6 @@ app.onError((err, c) => {
 const v1 = new Hono()
   .route("/households", households)
   .route("/households", tasks)
-  .route("/households", completions)
   .route("/households", taskAssignments)
   .route("/households", statistics);
 
