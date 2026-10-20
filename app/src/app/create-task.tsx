@@ -11,8 +11,9 @@ import {
   View,
 } from "react-native";
 
-import { HOUSEHOLD_ID } from "@/lib/api/client";
-import { createTask, getTaskById, updateTask } from "@/lib/api/tasks";
+import { createTask, updateTask } from "@/lib/api/tasks";
+import { activeHouseholdIdQueryOptions } from "@/options/households";
+import { taskQueryOptions, tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 import type { CreateTaskBody } from "@shared/schemas/task-schema";
 import { createTaskBodySchema } from "@shared/schemas/task-schema";
@@ -46,11 +47,10 @@ export default function CreateTask() {
   const queryClient = useQueryClient();
   const [task, setTask] = useState<CreateTaskBody>(initialTask);
 
-  const { data: taskById } = useQuery({
-    queryKey: ["taskById", HOUSEHOLD_ID, id],
-    queryFn: () => getTaskById(HOUSEHOLD_ID, Number(id)),
-    enabled: !!id,
-  });
+  const { data: householdId } = useQuery(activeHouseholdIdQueryOptions);
+  const { data: taskById } = useQuery(
+    taskQueryOptions(householdId, id ? Number(id) : undefined),
+  );
 
   const [prefilledId, setPrefilledId] = useState<number | null>(null);
 
@@ -72,17 +72,17 @@ export default function CreateTask() {
   const isEditing = !!id;
 
   const saveTaskMutation = useMutation({
-    mutationFn: (body: CreateTaskBody) =>
-      isEditing
-        ? updateTask(HOUSEHOLD_ID, Number(id), body)
-        : createTask(HOUSEHOLD_ID, body),
+    mutationFn: (body: CreateTaskBody) => {
+      if (!householdId) throw new Error("Inget aktivt hushåll");
+      return isEditing
+        ? updateTask(householdId, Number(id), body)
+        : createTask(householdId, body);
+    },
     onSuccess: async (saved) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["tasks", HOUSEHOLD_ID] }),
-        queryClient.invalidateQueries({
-          queryKey: ["taskById", HOUSEHOLD_ID, id],
-        }),
-      ]);
+      // Also covers the single task, whose key starts with the list's key
+      await queryClient.invalidateQueries({
+        queryKey: tasksQueryOptions(householdId).queryKey,
+      });
       setTask(initialTask);
       if (router.canGoBack()) {
         router.push("/");
@@ -99,7 +99,9 @@ export default function CreateTask() {
   });
 
   const canSave =
-    createTaskBodySchema.safeParse(task).success && !saveTaskMutation.isPending;
+    !!householdId &&
+    createTaskBodySchema.safeParse(task).success &&
+    !saveTaskMutation.isPending;
 
   const handleSave = () => {
     const result = createTaskBodySchema.safeParse(task);

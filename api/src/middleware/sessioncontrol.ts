@@ -39,3 +39,22 @@ export const sessionControl = (requireAdmin = false) =>
     // Continue to the route handler.
     await next();
   });
+
+export type UserEnv = {
+  Variables: { user: typeof auth.$Infer.Session.user };
+};
+
+// For routes without a :householdId, e.g. listing the user's own households
+export const requireSession = () =>
+  createMiddleware<UserEnv>(async (c, next) => {
+    const session = await auth.api.getSession({
+      headers: c.req.raw.headers,
+    });
+
+    if (!session) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    c.set("user", session.user);
+    await next();
+  });

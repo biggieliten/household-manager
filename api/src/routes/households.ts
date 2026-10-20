@@ -5,9 +5,37 @@ import {
 } from "../../../shared/schemas/household-schema.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
-import { sessionControl } from "../middleware/sessioncontrol.ts";
+import {
+  requireSession,
+  sessionControl,
+} from "../middleware/sessioncontrol.ts";
 
 const app = new Hono()
+  // Households the signed-in user is an active member of, with their own membership
+  .get("/", requireSession(), async (c) => {
+    const user = c.get("user");
+
+    const members = await db.member.findMany({
+      where: {
+        userId: user.id,
+        leftAt: null,
+        household: { deletedAt: null },
+      },
+      orderBy: { householdId: "asc" },
+      select: {
+        id: true,
+        nickname: true,
+        avatar: true,
+        isAdmin: true,
+        household: { select: { id: true, name: true, accessCode: true } },
+      },
+    });
+
+    return c.json(
+      members.map(({ household, ...member }) => ({ ...household, member })),
+      200,
+    );
+  })
   .get(
     "/:householdId",
     sessionControl(),
@@ -105,6 +133,63 @@ const app = new Hono()
       });
 
       return c.json(pause, 200);
+    },
+  )
+  .post(
+    "/:householdId/members/:memberId/promote",
+    sessionControl(true),
+    validate("param", memberIdParamSchema),
+    async (c) => {
+      const { householdId, memberId } = c.req.valid("param");
+
+      const member = await db.member.findFirst({
+        where: { id: memberId, householdId, leftAt: null },
+        include: { pauses: { where: { endDate: null, deletedAt: null } } },
+      });
+      if (!member) {
+        return c.json({ error: "Member not found" }, 404);
+      }
+      if (member.isAdmin) {
+        return c.json({ error: "Member is already an admin" }, 409);
+      }
+      if (member.pauses.length > 0) {
+        return c.json({ error: "Paused members cannot be promoted" }, 409);
+      }
+
+      const promoted = await db.member.update({
+        where: { id: memberId },
+        data: { isAdmin: true },
+      });
+
+      return c.json(promoted, 200);
+    },
+  )
+  .post(
+    "/:householdId/leave",
+    sessionControl(),
+    validate("param", householdIdParamSchema),
+    async (c) => {
+      const { householdId } = c.req.valid("param");
+      const { member: me } = c.var;
+
+      // The last owner must appoint a new owner first, unless no one else is left
+      if (me.isAdmin) {
+        const otherMembers = await db.member.findMany({
+          where: { householdId, leftAt: null, id: { not: me.id } },
+          select: { isAdmin: true },
+        });
+        const hasOtherOwner = otherMembers.some((member) => member.isAdmin);
+        if (otherMembers.length > 0 && !hasOtherOwner) {
+          return c.json({ error: "Appoint a new owner before leaving" }, 409);
+        }
+      }
+
+      const member = await db.member.update({
+        where: { id: me.id },
+        data: { leftAt: new Date() },
+      });
+
+      return c.json(member, 200);
     },
   );
 
