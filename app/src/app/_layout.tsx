@@ -11,7 +11,12 @@ import { ActivityIndicator, View } from "react-native";
 
 import { authClient } from "@/lib/auth-client";
 import { ThemeProvider, useTheme } from "@/theme";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
+import { householdsQueryOptions } from "@/options/households";
 
 const queryClient = new QueryClient();
 
@@ -28,7 +33,8 @@ export default function RootLayout() {
 
 function RootStack() {
   const { colors } = useTheme();
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending: isSessionPending } =
+    authClient.useSession();
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
@@ -36,8 +42,18 @@ function RootStack() {
     PlusJakartaSans_700Bold,
   });
 
+  const isSignedIn = !!session;
+  const households = useQuery({
+    ...householdsQueryOptions,
+    enabled: isSignedIn,
+  });
+
   // Fall back to the system font if loading fails
-  if (isPending || (!fontsLoaded && !fontError)) {
+  if (
+    isSessionPending ||
+    (isSignedIn && households.isPending) ||
+    (!fontsLoaded && !fontError)
+  ) {
     return (
       <View
         style={{
@@ -51,12 +67,13 @@ function RootStack() {
     );
   }
 
-  const isSignedIn = !!session;
+  // On error, show the tabs: their screens already show the error message
+  const hasHousehold = households.isError || (households.data?.length ?? 0) > 0;
 
   // Expo Router redirects automatically when a guard flips, e.g. after sign-in/out
   return (
     <Stack>
-      <Stack.Protected guard={isSignedIn}>
+      <Stack.Protected guard={isSignedIn && hasHousehold}>
         <Stack.Screen
           name="(tabs)"
           options={{ headerShown: false, title: "Tillbaka" }}
@@ -82,6 +99,12 @@ function RootStack() {
               title: params?.name ?? "Syssla",
             };
           }}
+        />
+      </Stack.Protected>
+      <Stack.Protected guard={isSignedIn && !hasHousehold}>
+        <Stack.Screen
+          name="create-household"
+          options={{ title: "Skapa hushåll" }}
         />
       </Stack.Protected>
       <Stack.Protected guard={!isSignedIn}>

@@ -25,20 +25,6 @@ const avatarEmoji: Record<Avatar, string> = {
   UNICORN: "🦄",
 };
 
-type HistoryEntry = {
-  avatar: Avatar;
-  nickname: string;
-  daysAgo: number;
-  count: number;
-};
-
-// Placeholder history until completions are fetched from the backend.
-const exampleHistory: HistoryEntry[] = [
-  { avatar: "PIG", nickname: "Maja", daysAgo: 24, count: 6 },
-  { avatar: "FOX", nickname: "Sara", daysAgo: 38, count: 7 },
-  { avatar: "CHICKEN", nickname: "David", daysAgo: 49, count: 5 },
-];
-
 const accents = {
   light: {
     tile: "#EEEDFC",
@@ -116,6 +102,36 @@ export default function TaskById() {
     }
   };
 
+  const completeTaskMutation = useMutation({
+    mutationFn: (taskId: number) => {
+      if (!householdId) throw new Error("Inget aktivt hushåll");
+      return completeTask(householdId, taskId);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: tasksQueryOptions(householdId).queryKey,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["statistics", householdId],
+        }),
+      ]);
+    },
+  });
+
+  const history = task?.completedTasks
+    .filter(
+      (completion, index, all) =>
+        all.findIndex((other) => other.member.id === completion.member.id) ===
+        index,
+    )
+    .map((completion) => ({
+      ...completion,
+      count: task.completedTasks.filter(
+        (other) => other.member.id === completion.member.id,
+      ).length,
+    }));
+
   const screenBackground =
     scheme === "light" ? colors.surface : colors.background;
   const cardStyle = [styles.card, { backgroundColor: colors.background }];
@@ -158,7 +174,9 @@ export default function TaskById() {
   const lastDone = latestCompletion
     ? daysAgoLabel(daysSince(latestCompletion.completedAt, new Date()))
     : "Aldrig gjord";
-  const totalThisYear = exampleHistory.reduce((sum, e) => sum + e.count, 0);
+  const totalThisYear = task.completedTasks.filter(
+    (ct) => ct.completedAt.getUTCFullYear() === new Date().getUTCFullYear(),
+  ).length;
 
   return (
     <ScrollView
@@ -171,6 +189,9 @@ export default function TaskById() {
           <Text style={[styles.stat, { color: colors.textMuted }]}>
             <Text style={{ color: accent.danger }}>⚡</Text>{" "}
             {task.difficultyLevel} p ({difficultyLabel(task.difficultyLevel)})
+          </Text>
+          <Text style={[styles.stat, { color: colors.textMuted }]}>
+            {frequencyLabel(task.frequency)}
           </Text>
         </View>
       </View>
@@ -217,54 +238,75 @@ export default function TaskById() {
             Historik
           </Text>
           <Text style={[styles.historyTotal, { color: colors.text }]}>
-            {totalThisYear} ggr i år
+            {history && history.length > 0
+              ? `${totalThisYear} ggr i år`
+              : "Inga utföranden ännu"}
           </Text>
         </View>
 
-        {exampleHistory.map((entry, index) => (
-          <View key={entry.nickname} style={styles.historyRow}>
-            <View style={[styles.avatar, { backgroundColor: accent.chip }]}>
-              <Text style={styles.avatarEmoji}>
-                {avatarEmoji[entry.avatar]}
+        {history &&
+          history.map((entry, index) => (
+            <View key={entry.member.id} style={styles.historyRow}>
+              <View style={[styles.avatar, { backgroundColor: accent.chip }]}>
+                <Text style={styles.avatarEmoji}>
+                  {avatarEmoji[entry.member.avatar]}
+                </Text>
+              </View>
+
+              <View style={styles.tileContent}>
+                <Text style={[styles.historyName, { color: colors.text }]}>
+                  {entry.member.nickname}
+                  {index === 0 && (
+                    <Text
+                      style={{ color: colors.textMuted, fontWeight: "400" }}>
+                      {" "}
+                      · Senast
+                    </Text>
+                  )}
+                </Text>
+
+                <Text style={[styles.tileBody, { color: colors.text }]}>
+                  {daysAgoLabel(daysSince(entry.completedAt, new Date()))}
+                </Text>
+              </View>
+
+              <Text style={[styles.historyCount, { color: colors.text }]}>
+                {entry.count} ggr
               </Text>
             </View>
-            <View style={styles.tileContent}>
-              <Text style={[styles.historyName, { color: colors.text }]}>
-                {entry.nickname}
-                {index === 0 && (
-                  <Text style={{ color: colors.textMuted, fontWeight: "400" }}>
-                    {" "}
-                    · Senast
-                  </Text>
-                )}
-              </Text>
-              <Text style={[styles.tileBody, { color: colors.text }]}>
-                {daysAgoLabel(entry.daysAgo)}
-              </Text>
-            </View>
-            <Text style={[styles.historyCount, { color: colors.text }]}>
-              {index === 0
-                ? `+${task.difficultyLevel} p`
-                : `${entry.count} ggr`}
-            </Text>
-          </View>
-        ))}
+          ))}
       </View>
 
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
-        // TODO: register a completion once the API supports it
-        onPress={() => {}}
+        accessibilityState={{
+          disabled: !householdId || completeTaskMutation.isPending,
+        }}
+        disabled={!householdId || completeTaskMutation.isPending}
+        onPress={() => completeTaskMutation.mutate(task.id)}
         style={({ pressed }) => [
           styles.doneButton,
-          { backgroundColor: accent.danger, opacity: pressed ? 0.8 : 1 },
+          {
+            backgroundColor: accent.danger,
+            opacity: completeTaskMutation.isPending ? 0.5 : pressed ? 0.8 : 1,
+          },
         ]}>
-        <Text style={styles.doneButtonText}>✓ Markera som klar</Text>
+        <Text style={styles.doneButtonText}>
+          {completeTaskMutation.isPending ? "Sparar…" : "✓ Markera som klar"}
+        </Text>
         <View style={styles.doneBadge}>
           <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
         </View>
       </Pressable>
+      {completeTaskMutation.isError && (
+        <Text style={{ color: accent.dangerText }}>
+          {completeTaskMutation.error.message}
+        </Text>
+      )}
+      {completeTaskMutation.isSuccess && (
+        <Text style={{ color: colors.primary }}>Sysslan är markerad som klar</Text>
+      )}
       <View style={styles.actionRow}>
         <Pressable
           accessibilityRole="button"

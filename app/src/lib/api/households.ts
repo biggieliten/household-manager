@@ -1,6 +1,9 @@
 import Storage from "expo-sqlite/kv-store";
 
-import type { MyHousehold } from "@shared/schemas/household-schema";
+import type {
+  CreateMyHouseholdInput,
+  MyHousehold,
+} from "@shared/schemas/household-schema";
 import { responseMyHouseholdSchema } from "@shared/schemas/household-schema";
 import { getClient } from "./client";
 
@@ -11,6 +14,14 @@ export async function fetchMyHouseholds(): Promise<MyHousehold[]> {
   if (!res.ok) throw new Error(`Kunde inte hämta hushåll (${res.status})`);
 
   return responseMyHouseholdSchema.array().parse(await res.json());
+}
+export async function createHousehold(
+  input: CreateMyHouseholdInput,
+): Promise<MyHousehold> {
+  const res = await getClient().api.v1.households.$post({ json: input });
+  if (!res.ok) throw new Error(`Kunde inte skapa hushållet (${res.status})`);
+
+  return responseMyHouseholdSchema.parse(await res.json());
 }
 
 // The stored choice only counts while the user is still a member there
