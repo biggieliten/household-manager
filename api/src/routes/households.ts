@@ -18,7 +18,16 @@ const app = new Hono().get(
         members: {
           where: { leftAt: null },
           orderBy: { id: "asc" },
-          select: { id: true, nickname: true, avatar: true, isAdmin: true },
+          select: {
+            id: true,
+            nickname: true,
+            avatar: true,
+            isAdmin: true,
+            pauses: {
+              where: { endDate: null, deletedAt: null },
+              select: { id: true },
+            },
+          },
         },
       },
     });
@@ -31,9 +40,10 @@ const app = new Hono().get(
         id: household.id,
         name: household.name,
         accessCode: household.accessCode,
-        members: household.members.map((member) => ({
+        members: household.members.map(({ pauses, ...member }) => ({
           ...member,
           isMe: member.id === me.id,
+          isPaused: pauses.length > 0,
         })),
       },
       200,
