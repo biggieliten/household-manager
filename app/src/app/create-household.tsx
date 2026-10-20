@@ -14,18 +14,21 @@ import {
   type TextInputProps,
 } from "react-native";
 
+import { fetchHouseholdPreview } from "@/lib/api/households";
 import { authClient } from "@/lib/auth-client";
 import {
   createHouseholdMutationOptions,
   householdsQueryOptions,
+  joinHouseholdMutationOptions,
 } from "@/options/households";
 import { useTheme } from "@/theme";
 import { avatarSchema, type Avatar } from "@shared/schemas/member-schema";
 
 type Mode = "create" | "join";
 
-// Same minimum as the shared schemas
+// Same limits as the shared schemas
 const MIN_LENGTH = 2;
+const ACCESS_CODE_LENGTH = 8;
 
 // TODO: share with TaskCard and household
 const avatarEmoji: Record<Avatar, string> = {
@@ -81,16 +84,7 @@ export default function CreateHousehold() {
           />
         </View>
 
-        {mode === "create" ? (
-          <CreateForm />
-        ) : (
-          // TODO: join by code (#27)
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-              Kommer snart
-            </Text>
-          </View>
-        )}
+        {mode === "create" ? <CreateForm /> : <JoinForm />}
 
         {signOutError && (
           <Text style={[styles.error, { color: colors.text }]}>
@@ -178,34 +172,11 @@ function CreateForm() {
           editable={!created}
         />
 
-        <View style={styles.field}>
-          <Text style={[styles.label, { color: colors.textMuted }]}>
-            Välj avatar
-          </Text>
-          <View style={styles.avatars}>
-            {avatarSchema.options.map((option) => {
-              const selected = avatar === option;
-              return (
-                <Pressable
-                  key={option}
-                  accessibilityRole="radio"
-                  accessibilityLabel={option}
-                  accessibilityState={{ selected, disabled: !!created }}
-                  disabled={!!created}
-                  onPress={() => setAvatar(option)}
-                  style={[
-                    styles.avatar,
-                    {
-                      backgroundColor: colors.background,
-                      borderColor: selected ? colors.primary : colors.border,
-                    },
-                  ]}>
-                  <Text style={styles.avatarEmoji}>{avatarEmoji[option]}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
+        <AvatarPicker
+          value={avatar}
+          onChange={setAvatar}
+          disabled={!!created}
+        />
 
         <View
           style={[
@@ -234,35 +205,232 @@ function CreateForm() {
           </Text>
         )}
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !created && !canSubmit }}
+        <PrimaryButton
+          icon={created ? "arrow-right" : "plus-circle"}
+          label={created ? "Fortsätt" : "Skapa hushåll"}
           disabled={!created && !canSubmit}
+          loading={createMutation.isPending}
           onPress={created ? handleContinue : handleCreate}
-          style={({ pressed }) => [
-            styles.primaryButton,
-            {
-              backgroundColor: colors.primary,
-              opacity: !created && !canSubmit ? 0.5 : pressed ? 0.85 : 1,
-            },
-          ]}>
-          {createMutation.isPending ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <>
-              <Feather
-                name={created ? "arrow-right" : "plus-circle"}
-                size={20}
-                color="#FFFFFF"
-              />
-              <Text style={styles.primaryButtonText}>
-                {created ? "Fortsätt" : "Skapa hushåll"}
-              </Text>
-            </>
-          )}
-        </Pressable>
+        />
       </View>
     </>
+  );
+}
+
+// First the code is checked, then the user picks a nickname and a free avatar
+function JoinForm() {
+  const { colors } = useTheme();
+  const [accessCode, setAccessCode] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [avatar, setAvatar] = useState<Avatar | null>(null);
+
+  const previewMutation = useMutation({ mutationFn: fetchHouseholdPreview });
+  const joinMutation = useMutation(joinHouseholdMutationOptions);
+  const preview = previewMutation.data;
+
+  const code = accessCode.trim();
+  const canSearch =
+    code.length === ACCESS_CODE_LENGTH && !previewMutation.isPending;
+  const canJoin =
+    nickname.trim().length >= MIN_LENGTH &&
+    avatar !== null &&
+    !joinMutation.isPending;
+
+  const handleSearch = () => {
+    if (!canSearch) return;
+    previewMutation.mutate(code);
+  };
+
+  const handleJoin = () => {
+    if (!canJoin) return;
+    joinMutation.mutate({
+      accessCode: code,
+      nickname: nickname.trim(),
+      avatar,
+    });
+  };
+
+  const handleChangeCode = () => {
+    previewMutation.reset();
+    joinMutation.reset();
+    setAvatar(null);
+  };
+
+  return (
+    <>
+      <View
+        style={[
+          styles.card,
+          styles.welcome,
+          { backgroundColor: colors.surface },
+        ]}>
+        <View
+          style={[styles.welcomeIcon, { backgroundColor: colors.background }]}>
+          <Text style={styles.welcomeEmoji}>🔑</Text>
+        </View>
+        <Text style={[styles.title, { color: colors.text }]}>
+          {preview ? preview.name : "Gå med i ett hushåll"}
+        </Text>
+      </View>
+
+      <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        {preview ? (
+          <>
+            <Field
+              label="Ditt smeknamn"
+              placeholder="Så ser de andra dig i hushållet"
+              value={nickname}
+              onChangeText={setNickname}
+            />
+            <AvatarPicker
+              value={avatar}
+              onChange={setAvatar}
+              taken={preview.takenAvatars}
+            />
+
+            {joinMutation.error && (
+              <Text style={[styles.error, { color: colors.text }]}>
+                {joinMutation.error.message}
+              </Text>
+            )}
+
+            <PrimaryButton
+              icon="log-in"
+              label="Gå med"
+              disabled={!canJoin}
+              loading={joinMutation.isPending}
+              onPress={handleJoin}
+            />
+            <Pressable
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={handleChangeCode}
+              style={styles.link}>
+              <Text style={[styles.linkText, { color: colors.primary }]}>
+                Byt kod
+              </Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Field
+              label="Hushållets kod"
+              placeholder={`${ACCESS_CODE_LENGTH} tecken`}
+              value={accessCode}
+              onChangeText={setAccessCode}
+              onSubmitEditing={handleSearch}
+              autoCapitalize="none"
+              autoCorrect={false}
+              maxLength={ACCESS_CODE_LENGTH}
+              returnKeyType="search"
+            />
+
+            {previewMutation.error && (
+              <Text style={[styles.error, { color: colors.text }]}>
+                {previewMutation.error.message}
+              </Text>
+            )}
+
+            <PrimaryButton
+              icon="search"
+              label="Hitta hushåll"
+              disabled={!canSearch}
+              loading={previewMutation.isPending}
+              onPress={handleSearch}
+            />
+          </>
+        )}
+      </View>
+    </>
+  );
+}
+
+// Avatars already used in the household are shown faded and cannot be picked
+function AvatarPicker({
+  value,
+  onChange,
+  disabled = false,
+  taken = [],
+}: {
+  value: Avatar | null;
+  onChange: (avatar: Avatar) => void;
+  disabled?: boolean;
+  taken?: Avatar[];
+}) {
+  const { colors } = useTheme();
+
+  return (
+    <View style={styles.field}>
+      <Text style={[styles.label, { color: colors.textMuted }]}>
+        Välj avatar
+      </Text>
+      <View style={styles.avatars}>
+        {avatarSchema.options.map((option) => {
+          const selected = value === option;
+          const isTaken = taken.includes(option);
+          const isDisabled = disabled || isTaken;
+          return (
+            <Pressable
+              key={option}
+              accessibilityRole="radio"
+              accessibilityLabel={option}
+              accessibilityState={{ selected, disabled: isDisabled }}
+              disabled={isDisabled}
+              onPress={() => onChange(option)}
+              style={[
+                styles.avatar,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: selected ? colors.primary : colors.border,
+                },
+                isTaken && styles.avatarTaken,
+              ]}>
+              <Text style={styles.avatarEmoji}>{avatarEmoji[option]}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function PrimaryButton({
+  icon,
+  label,
+  disabled,
+  loading,
+  onPress,
+}: {
+  icon: keyof typeof Feather.glyphMap;
+  label: string;
+  disabled: boolean;
+  loading: boolean;
+  onPress: () => void;
+}) {
+  const { colors } = useTheme();
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.primaryButton,
+        {
+          backgroundColor: colors.primary,
+          opacity: disabled ? 0.5 : pressed ? 0.85 : 1,
+        },
+      ]}>
+      {loading ? (
+        <ActivityIndicator color="#FFFFFF" />
+      ) : (
+        <>
+          <Feather name={icon} size={20} color="#FFFFFF" />
+          <Text style={styles.primaryButtonText}>{label}</Text>
+        </>
+      )}
+    </Pressable>
   );
 }
 
@@ -399,6 +567,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  avatarTaken: {
+    opacity: 0.3,
+  },
   avatarEmoji: {
     fontSize: 22,
   },
@@ -439,6 +610,13 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 18,
+    fontWeight: "600",
+  },
+  link: {
+    alignSelf: "center",
+  },
+  linkText: {
+    fontSize: 14,
     fontWeight: "600",
   },
   signOut: {
