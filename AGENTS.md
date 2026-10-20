@@ -184,6 +184,7 @@ household-manager/
 │           ├── completions.ts
 │           ├── households.ts
 │           ├── statistics.ts
+│           ├── task-assignments.ts
 │           └── tasks.ts
 ├── shared/
 │   ├── .gitignore
@@ -256,6 +257,7 @@ household-manager/
         │   ├── GithubSignInButton.tsx
         │   ├── MemberMenu.tsx
         │   ├── ScreenHeader.tsx
+        │   ├── TaskAssignments.tsx
         │   ├── TaskCard.tsx
         │   ├── TaskList.tsx
         │   └── auth/
@@ -265,6 +267,7 @@ household-manager/
         │   │   ├── client.ts
         │   │   ├── households.ts
         │   │   ├── statistics.ts
+        │   │   ├── task-assignments.ts
         │   │   └── tasks.ts
         │   ├── auth-client.ts
         │   ├── statistics-period.ts
