@@ -85,6 +85,8 @@ function HouseholdContent() {
   }
 
   const { name, accessCode, members } = data;
+  const isAdmin = members.some((member) => member.isMe && member.isAdmin);
+  const mutationError = pauseMutation.error ?? resumeMutation.error;
 
   return (
     <ScrollView
@@ -132,6 +134,12 @@ function HouseholdContent() {
           </View>
         </View>
 
+        {mutationError && (
+          <Text style={{ color: colors.textMuted }}>
+            {mutationError.message}
+          </Text>
+        )}
+
         {members.map((member) => (
           <View
             key={member.id}
@@ -139,19 +147,55 @@ function HouseholdContent() {
               styles.row,
               styles.memberRow,
               { backgroundColor: colors.background },
+              openMenuId === member.id && styles.rowOnTop,
             ]}>
-            <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
-            <Text style={[styles.memberName, { color: colors.text }]}>
-              {member.nickname}
-              {member.isMe && (
-                <Text style={{ color: colors.textMuted }}> (Du)</Text>
-              )}
-            </Text>
-            <View style={[styles.badge, { backgroundColor: colors.border }]}>
-              <Text style={[styles.badgeText, { color: colors.textMuted }]}>
-                {member.isAdmin ? "Ägare" : "Medlem"}
+            <View
+              style={[
+                styles.row,
+                styles.flex,
+                member.isPaused && styles.paused,
+              ]}>
+              <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
+              <Text style={[styles.memberName, { color: colors.text }]}>
+                {member.nickname}
+                {member.isMe && (
+                  <Text style={{ color: colors.textMuted }}> (Du)</Text>
+                )}
               </Text>
+              <View style={[styles.badge, { backgroundColor: colors.border }]}>
+                <Text style={[styles.badgeText, { color: colors.textMuted }]}>
+                  {member.isPaused
+                    ? "Pausad"
+                    : member.isAdmin
+                      ? "Ägare"
+                      : "Medlem"}
+                </Text>
+              </View>
             </View>
+
+            {isAdmin && (
+              <MemberMenu
+                open={openMenuId === member.id}
+                onToggle={() =>
+                  setOpenMenuId(openMenuId === member.id ? null : member.id)
+                }
+                items={
+                  member.isPaused
+                    ? [
+                        {
+                          label: "Återaktivera medlem",
+                          onPress: () => resumeMutation.mutate(member.id),
+                        },
+                      ]
+                    : [
+                        {
+                          label: "Pausa medlem",
+                          onPress: () => pauseMutation.mutate(member.id),
+                        },
+                      ]
+                }
+              />
+            )}
           </View>
         ))}
       </View>
@@ -225,5 +269,12 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 15,
     fontWeight: "500",
+  },
+  rowOnTop: {
+    zIndex: 1,
+    elevation: 6,
+  },
+  paused: {
+    opacity: 0.4,
   },
 });
