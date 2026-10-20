@@ -15,6 +15,7 @@ import {
   fetchHousehold,
   pauseMember,
   resumeMember,
+  promoteMember,
 } from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
 import { useTheme } from "@/theme";
@@ -68,6 +69,11 @@ function HouseholdContent() {
     onSuccess: invalidateHousehold,
   });
 
+  const promoteMutation = useMutation({
+    mutationFn: (memberId: number) => promoteMember(householdId, memberId),
+    onSuccess: invalidateHousehold,
+  });
+
   if (isPending) {
     return (
       <View style={styles.centered}>
@@ -86,7 +92,8 @@ function HouseholdContent() {
 
   const { name, accessCode, members } = data;
   const isAdmin = members.some((member) => member.isMe && member.isAdmin);
-  const mutationError = pauseMutation.error ?? resumeMutation.error;
+  const mutationError =
+    pauseMutation.error ?? resumeMutation.error ?? promoteMutation.error;
 
   return (
     <ScrollView
@@ -191,6 +198,10 @@ function HouseholdContent() {
                         {
                           label: "Pausa medlem",
                           onPress: () => pauseMutation.mutate(member.id),
+                        },
+                        {
+                          label: "Gör till ägare",
+                          onPress: () => promoteMutation.mutate(member.id),
                         },
                       ]
                 }
