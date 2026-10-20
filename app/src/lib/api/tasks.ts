@@ -82,3 +82,28 @@ export async function updateTask(
 
   return responseTaskSchema.parse(await res.json());
 }
+
+export async function archiveTask(
+  householdId: number,
+  taskId: number,
+): Promise<Task> {
+  const tasks = getClient().api.v1.households[":householdId"]
+    .tasks as unknown as {
+    ":taskId": {
+      archive: {
+        $patch: (args: {
+          param: { householdId: string; taskId: string };
+        }) => Promise<Response>;
+      };
+    };
+  };
+  const res = await tasks[":taskId"].archive.$patch({
+    param: {
+      householdId: String(householdId),
+      taskId: String(taskId),
+    },
+  });
+  if (!res.ok) throw new Error(`Kunde inte arkivera syssla (${res.status})`);
+
+  return responseTaskSchema.parse(await res.json());
+}

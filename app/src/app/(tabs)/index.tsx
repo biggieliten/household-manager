@@ -13,6 +13,7 @@ import TaskList from "@/components/TaskList";
 import { HOUSEHOLD_ID } from "@/lib/api/client";
 import { fetchHouseholdTasks } from "@/lib/api/tasks";
 import { useTheme } from "@/theme";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
   const { colors, scheme } = useTheme();
@@ -48,7 +49,9 @@ export default function Index() {
           </Pressable>
         </View>
       ) : (
-        <TaskList tasks={data} today={today} />
+        <SafeAreaView edges={["bottom"]}>
+          <TaskList tasks={data} today={today} />
+        </SafeAreaView>
       )}
 
       <Link href="/create-task" asChild>

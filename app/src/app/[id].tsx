@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -10,7 +10,7 @@ import {
 } from "react-native";
 
 import { HOUSEHOLD_ID } from "@/lib/api/client";
-import { fetchHouseholdTasks } from "@/lib/api/tasks";
+import { archiveTask, fetchHouseholdTasks } from "@/lib/api/tasks";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
 
@@ -87,13 +87,34 @@ function daysAgoLabel(days: number): string {
 export default function TaskById() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
+
   const { data, error, isPending, refetch } = useQuery({
     queryKey: ["tasks", HOUSEHOLD_ID],
     queryFn: () => fetchHouseholdTasks(HOUSEHOLD_ID),
   });
   const task = data?.find((task) => task.id === Number(id));
+
+  const archiveMutation = useMutation({
+    mutationFn: (taskId: number) => archiveTask(HOUSEHOLD_ID, taskId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["tasks", HOUSEHOLD_ID],
+      });
+      router.push("/");
+    },
+    onError: (error) => {
+      console.error(error);
+    },
+  });
+
+  const handleArchive = () => {
+    if (task) {
+      archiveMutation.mutate(task.id);
+    }
+  };
 
   const screenBackground =
     scheme === "light" ? colors.surface : colors.background;
@@ -152,21 +173,6 @@ export default function TaskById() {
             {task.difficultyLevel} p ({difficultyLabel(task.difficultyLevel)})
           </Text>
         </View>
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
-          // TODO: register a completion once the API supports it
-          onPress={() => {}}
-          style={({ pressed }) => [
-            styles.doneButton,
-            { backgroundColor: accent.danger, opacity: pressed ? 0.8 : 1 },
-          ]}>
-          <Text style={styles.doneButtonText}>✓ Markera som klar</Text>
-          <View style={styles.doneBadge}>
-            <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
-          </View>
-        </Pressable>
       </View>
 
       <View style={[cardStyle, cardStyleDark]}>
@@ -281,8 +287,8 @@ export default function TaskById() {
 
       <Pressable
         accessibilityRole="button"
-        // TODO: archive task
-        onPress={() => {}}
+        onPress={handleArchive}
+        disabled={archiveMutation.isPending}
         style={styles.textButton}>
         <Text style={[styles.archiveText, { color: colors.text }]}>
           Arkivera syssla
