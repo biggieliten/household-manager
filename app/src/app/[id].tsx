@@ -82,6 +82,8 @@ function daysAgoLabel(days: number): string {
   return `${days} dagar sedan`;
 }
 
+// TODO(#51): Integrera TaskAssignments i detaljvyn när komponenten är implementerad.
+// TODO(#51): Uppdatera berörd frågedata enligt befintligt mönster efter sparade tilldelningar.
 export default function TaskById() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();

@@ -171,6 +171,7 @@ household-manager/
 │       └── routes/
 │           ├── households.ts
 │           ├── statistics.ts
+│           ├── task-assignments.ts
 │           └── tasks.ts
 ├── shared/
 │   ├── package-lock.json
@@ -237,6 +238,7 @@ household-manager/
         │   ├── ConfirmBox.tsx
         │   ├── MemberMenu.tsx
         │   ├── ScreenHeader.tsx
+        │   ├── TaskAssignments.tsx
         │   ├── TaskCard.tsx
         │   └── TaskList.tsx
         ├── lib/
@@ -244,6 +246,7 @@ household-manager/
         │   │   ├── client.ts
         │   │   ├── households.ts
         │   │   ├── statistics.ts
+        │   │   ├── task-assignments.ts
         │   │   └── tasks.ts
         │   ├── statistics-period.ts
         │   └── storage.ts

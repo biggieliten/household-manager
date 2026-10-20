@@ -32,6 +32,7 @@ app.onError((err, c) => {
   return c.json({ error: "Internal Server Error" }, 500);
 });
 
+// TODO(#51): Registrera tilldelningsroutes här när task-assignments.ts är implementerad.
 const v1 = new Hono()
   .route("/households", households)
   .route("/households", tasks)
