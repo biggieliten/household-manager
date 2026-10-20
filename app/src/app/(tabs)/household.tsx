@@ -9,12 +9,14 @@ import {
   View,
 } from "react-native";
 import { useState } from "react";
+import { useRouter } from "expo-router";
 import MemberMenu from "@/components/MemberMenu";
 import {
   fetchHousehold,
   pauseMember,
   resumeMember,
   promoteMember,
+  leaveHousehold,
 } from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
 import { activeHouseholdIdQueryOptions } from "@/options/households";
@@ -47,9 +49,11 @@ export default function Household() {
 
 function ActiveHousehold() {
   const { colors } = useTheme();
-  const { data: householdId, error, isPending } = useQuery(
-    activeHouseholdIdQueryOptions,
-  );
+  const {
+    data: householdId,
+    error,
+    isPending,
+  } = useQuery(activeHouseholdIdQueryOptions);
 
   if (isPending) {
     return (
@@ -90,6 +94,9 @@ function HouseholdContent({ householdId }: { householdId: number }) {
   const queryClient = useQueryClient();
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [showLastOwnerNotice, setShowLastOwnerNotice] = useState(false);
+  const router = useRouter();
 
   const invalidateHousehold = () =>
     queryClient.invalidateQueries({ queryKey: ["household", householdId] });
@@ -107,6 +114,15 @@ function HouseholdContent({ householdId }: { householdId: number }) {
   const promoteMutation = useMutation({
     mutationFn: (memberId: number) => promoteMember(householdId, memberId),
     onSuccess: invalidateHousehold,
+  });
+  const leaveMutation = useMutation({
+    mutationFn: () => leaveHousehold(householdId),
+    onSuccess: async () => {
+      // The active household is re-picked from the updated list
+      await queryClient.invalidateQueries({ queryKey: ["households"] });
+      // TODO: decide with the group where to go after leaving (e.g. "Mina hushåll")
+      router.replace("/profile");
+    },
   });
 
   if (isPending) {
@@ -127,8 +143,14 @@ function HouseholdContent({ householdId }: { householdId: number }) {
 
   const { name, accessCode, members } = data;
   const isAdmin = members.some((member) => member.isMe && member.isAdmin);
+  const others = members.filter((member) => !member.isMe);
+  const isLastOwner =
+    isAdmin && others.length > 0 && !others.some((member) => member.isAdmin);
   const mutationError =
-    pauseMutation.error ?? resumeMutation.error ?? promoteMutation.error;
+    pauseMutation.error ??
+    resumeMutation.error ??
+    promoteMutation.error ??
+    leaveMutation.error;
 
   return (
     <ScrollView
