@@ -70,3 +70,15 @@ export async function promoteMember(householdId: number, memberId: number) {
 
   return res.json();
 }
+export async function leaveHousehold(householdId: number) {
+  const res = await getClient().api.v1.households[":householdId"].leave.$post({
+    param: { householdId: String(householdId) },
+  });
+  if (res.status === 409)
+    throw new Error(
+      "Du måste först utse en ny ägare innan du lämnar hushållet",
+    );
+  if (!res.ok) throw new Error(`Kunde inte lämna hushållet (${res.status})`);
+
+  return res.json();
+}
