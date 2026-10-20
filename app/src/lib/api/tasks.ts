@@ -1,3 +1,7 @@
+import {
+  type CompletedTask,
+  responseCompletedTaskSchema,
+} from "@shared/schemas/completed-task-schema";
 import type {
   CreateTaskBody,
   Task,
@@ -57,6 +61,24 @@ export async function createTask(
   return responseTaskSchema.parse(await res.json());
 }
 
+export async function completeTask(
+  householdId: number,
+  taskId: number,
+): Promise<CompletedTask> {
+  const res = await getClient().api.v1.households[":householdId"].tasks[
+    ":taskId"
+  ].completions.$post({
+    param: {
+      householdId: String(householdId),
+      taskId: String(taskId),
+    },
+  });
+  if (!res.ok)
+    throw new Error(`Kunde inte markera sysslan som klar (${res.status})`);
+
+  return responseCompletedTaskSchema.parse(await res.json());
+}
+
 export async function updateTask(
   householdId: number,
   taskId: number,
@@ -79,6 +101,31 @@ export async function updateTask(
     json: body,
   });
   if (!res.ok) throw new Error(`Kunde inte uppdatera syssla (${res.status})`);
+
+  return responseTaskSchema.parse(await res.json());
+}
+
+export async function archiveTask(
+  householdId: number,
+  taskId: number,
+): Promise<Task> {
+  const tasks = getClient().api.v1.households[":householdId"]
+    .tasks as unknown as {
+    ":taskId": {
+      archive: {
+        $patch: (args: {
+          param: { householdId: string; taskId: string };
+        }) => Promise<Response>;
+      };
+    };
+  };
+  const res = await tasks[":taskId"].archive.$patch({
+    param: {
+      householdId: String(householdId),
+      taskId: String(taskId),
+    },
+  });
+  if (!res.ok) throw new Error(`Kunde inte arkivera syssla (${res.status})`);
 
   return responseTaskSchema.parse(await res.json());
 }

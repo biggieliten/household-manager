@@ -1,9 +1,18 @@
 import z from "zod";
-import { responseMemberSchema } from "./member-schema.ts";
+import {
+  avatarSchema,
+  createMemberSchema,
+  responseMemberSchema,
+} from "./member-schema.ts";
 
 export const createHouseholdSchema = z.object({
   name: z.string().min(2),
 });
+
+// Creating a household also creates the creator's membership
+export const createMyHouseholdSchema = createHouseholdSchema.extend(
+  createMemberSchema.pick({ nickname: true, avatar: true }).shape,
+);
 
 const accessCodeSchema = z
   .string()
@@ -34,6 +43,16 @@ export const joinHouseholdSchema = z.object({
   accessCode: accessCodeSchema,
 });
 
+// Joining also sets the joiner's membership
+export const joinMyHouseholdSchema = joinHouseholdSchema.extend(
+  createMemberSchema.pick({ nickname: true, avatar: true }).shape,
+);
+
+// What a user sees after entering a code, before joining
+export const householdPreviewSchema = responseHouseholdSchema
+  .pick({ id: true, name: true })
+  .extend({ takenAvatars: avatarSchema.array() });
+
 // Route params arrive as strings, e.g. /households/:householdId/tasks
 export const householdIdParamSchema = z.object({
   householdId: z.coerce.number<string>().int().nonnegative(),
@@ -47,5 +66,8 @@ export const memberIdParamSchema = householdIdParamSchema.extend({
 export type Household = z.infer<typeof responseHouseholdSchema>;
 export type MyHousehold = z.infer<typeof responseMyHouseholdSchema>;
 export type CreateHouseholdInput = z.input<typeof createHouseholdSchema>;
+export type CreateMyHouseholdInput = z.input<typeof createMyHouseholdSchema>;
 export type UpdateHouseholdInput = z.input<typeof updateHouseholdSchema>;
 export type JoinHouseholdInput = z.input<typeof joinHouseholdSchema>;
+export type JoinMyHouseholdInput = z.input<typeof joinMyHouseholdSchema>;
+export type HouseholdPreview = z.infer<typeof householdPreviewSchema>;
