@@ -177,6 +177,7 @@ household-manager/
 │       ├── member-schema.ts
 │       ├── member-to-task-schema.ts
 │       ├── pause-schema.ts
+│       ├── statistics-schema.ts
 │       └── task-schema.ts
 └── app/
     ├── .gitignore
@@ -237,6 +238,7 @@ household-manager/
         │   │   ├── client.ts
         │   │   ├── statistics.ts
         │   │   └── tasks.ts
+        │   ├── statistics-period.ts
         │   └── storage.ts
         ├── theme/
         │   ├── ThemePicker.tsx
