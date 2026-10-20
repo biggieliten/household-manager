@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import {
@@ -9,9 +9,14 @@ import {
   Text,
   View,
 } from "react-native";
-
+import { useState } from "react";
+import MemberMenu from "@/components/MemberMenu";
+import {
+  fetchHousehold,
+  pauseMember,
+  resumeMember,
+} from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
-import { fetchHousehold } from "@/lib/api/households";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
 
@@ -47,6 +52,21 @@ function HouseholdContent() {
     queryKey: ["household", householdId],
     queryFn: () => fetchHousehold(householdId),
   });
+  const queryClient = useQueryClient();
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
+  const invalidateHousehold = () =>
+    queryClient.invalidateQueries({ queryKey: ["household", householdId] });
+
+  const pauseMutation = useMutation({
+    mutationFn: (memberId: number) => pauseMember(householdId, memberId),
+    onSuccess: invalidateHousehold,
+  });
+
+  const resumeMutation = useMutation({
+    mutationFn: (memberId: number) => resumeMember(householdId, memberId),
+    onSuccess: invalidateHousehold,
+  });
 
   if (isPending) {
     return (
@@ -65,17 +85,17 @@ function HouseholdContent() {
   }
 
   const { name, accessCode, members } = data;
+  const isAdmin = members.some((member) => member.isMe && member.isAdmin);
+  const mutationError = pauseMutation.error ?? resumeMutation.error;
 
   return (
     <ScrollView
       contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-      }
-    >
+      }>
       <View
-        style={[styles.card, styles.row, { backgroundColor: colors.surface }]}
-      >
+        style={[styles.card, styles.row, { backgroundColor: colors.surface }]}>
         <View style={[styles.iconCircle, { backgroundColor: colors.border }]}>
           <SymbolView
             name={{ ios: "house.fill", android: "home", web: "home" }}
@@ -104,8 +124,7 @@ function HouseholdContent() {
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <View style={styles.row}>
           <Text
-            style={[styles.sectionTitle, styles.flex, { color: colors.text }]}
-          >
+            style={[styles.sectionTitle, styles.flex, { color: colors.text }]}>
             Medlemmar i hushållet
           </Text>
           <View style={[styles.badge, { backgroundColor: colors.border }]}>
@@ -115,6 +134,12 @@ function HouseholdContent() {
           </View>
         </View>
 
+        {mutationError && (
+          <Text style={{ color: colors.textMuted }}>
+            {mutationError.message}
+          </Text>
+        )}
+
         {members.map((member) => (
           <View
             key={member.id}
@@ -122,20 +147,55 @@ function HouseholdContent() {
               styles.row,
               styles.memberRow,
               { backgroundColor: colors.background },
-            ]}
-          >
-            <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
-            <Text style={[styles.memberName, { color: colors.text }]}>
-              {member.nickname}
-              {member.isMe && (
-                <Text style={{ color: colors.textMuted }}> (Du)</Text>
-              )}
-            </Text>
-            <View style={[styles.badge, { backgroundColor: colors.border }]}>
-              <Text style={[styles.badgeText, { color: colors.textMuted }]}>
-                {member.isAdmin ? "Ägare" : "Medlem"}
+              openMenuId === member.id && styles.rowOnTop,
+            ]}>
+            <View
+              style={[
+                styles.row,
+                styles.flex,
+                member.isPaused && styles.paused,
+              ]}>
+              <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
+              <Text style={[styles.memberName, { color: colors.text }]}>
+                {member.nickname}
+                {member.isMe && (
+                  <Text style={{ color: colors.textMuted }}> (Du)</Text>
+                )}
               </Text>
+              <View style={[styles.badge, { backgroundColor: colors.border }]}>
+                <Text style={[styles.badgeText, { color: colors.textMuted }]}>
+                  {member.isPaused
+                    ? "Pausad"
+                    : member.isAdmin
+                      ? "Ägare"
+                      : "Medlem"}
+                </Text>
+              </View>
             </View>
+
+            {isAdmin && !member.isAdmin && (
+              <MemberMenu
+                open={openMenuId === member.id}
+                onToggle={() =>
+                  setOpenMenuId(openMenuId === member.id ? null : member.id)
+                }
+                items={
+                  member.isPaused
+                    ? [
+                        {
+                          label: "Återaktivera medlem",
+                          onPress: () => resumeMutation.mutate(member.id),
+                        },
+                      ]
+                    : [
+                        {
+                          label: "Pausa medlem",
+                          onPress: () => pauseMutation.mutate(member.id),
+                        },
+                      ]
+                }
+              />
+            )}
           </View>
         ))}
       </View>
@@ -209,5 +269,12 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 15,
     fontWeight: "500",
+  },
+  rowOnTop: {
+    zIndex: 1,
+    elevation: 6,
+  },
+  paused: {
+    opacity: 0.4,
   },
 });

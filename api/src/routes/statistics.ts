@@ -18,7 +18,20 @@ const app = new Hono().get(
     const household = await db.household.findUnique({
       where: { id: householdId },
       include: {
-        members: { orderBy: { id: "asc" } },
+        members: {
+          orderBy: { id: "asc" },
+          include: {
+            // Pauses that cover the whole period
+            pauses: {
+              where: {
+                deletedAt: null,
+                startDate: { lte: from },
+                OR: [{ endDate: null }, { endDate: { gte: to } }],
+              },
+              select: { id: true },
+            },
+          },
+        },
         tasks: {
           orderBy: { id: "asc" },
           include: {
@@ -57,7 +70,7 @@ const app = new Hono().get(
         };
       });
 
-    // Members who have left are only shown if they earned points
+    // Members who have left or were paused the whole period are only shown if they earned points
     const members = household.members
       .map((member) => ({
         id: member.id,
@@ -65,9 +78,13 @@ const app = new Hono().get(
         avatar: member.avatar,
         points: pointsPerMember.get(member.id) ?? 0,
         leftAt: member.leftAt,
+        pausedWholePeriod: member.pauses.length > 0,
       }))
-      .filter((member) => !member.leftAt || member.points > 0)
-      .map(({ leftAt, ...member }) => member);
+      .filter(
+        (member) =>
+          (!member.leftAt && !member.pausedWholePeriod) || member.points > 0,
+      )
+      .map(({ leftAt, pausedWholePeriod, ...member }) => member);
 
     return c.json(
       {
