@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import {
@@ -9,9 +9,14 @@ import {
   Text,
   View,
 } from "react-native";
-
+import { useState } from "react";
+import MemberMenu from "@/components/MemberMenu";
+import {
+  fetchHousehold,
+  pauseMember,
+  resumeMember,
+} from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
-import { fetchHousehold } from "@/lib/api/households";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
 
@@ -47,6 +52,21 @@ function HouseholdContent() {
     queryKey: ["household", householdId],
     queryFn: () => fetchHousehold(householdId),
   });
+  const queryClient = useQueryClient();
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
+  const invalidateHousehold = () =>
+    queryClient.invalidateQueries({ queryKey: ["household", householdId] });
+
+  const pauseMutation = useMutation({
+    mutationFn: (memberId: number) => pauseMember(householdId, memberId),
+    onSuccess: invalidateHousehold,
+  });
+
+  const resumeMutation = useMutation({
+    mutationFn: (memberId: number) => resumeMember(householdId, memberId),
+    onSuccess: invalidateHousehold,
+  });
 
   if (isPending) {
     return (
@@ -71,11 +91,9 @@ function HouseholdContent() {
       contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-      }
-    >
+      }>
       <View
-        style={[styles.card, styles.row, { backgroundColor: colors.surface }]}
-      >
+        style={[styles.card, styles.row, { backgroundColor: colors.surface }]}>
         <View style={[styles.iconCircle, { backgroundColor: colors.border }]}>
           <SymbolView
             name={{ ios: "house.fill", android: "home", web: "home" }}
@@ -104,8 +122,7 @@ function HouseholdContent() {
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <View style={styles.row}>
           <Text
-            style={[styles.sectionTitle, styles.flex, { color: colors.text }]}
-          >
+            style={[styles.sectionTitle, styles.flex, { color: colors.text }]}>
             Medlemmar i hushållet
           </Text>
           <View style={[styles.badge, { backgroundColor: colors.border }]}>
@@ -122,8 +139,7 @@ function HouseholdContent() {
               styles.row,
               styles.memberRow,
               { backgroundColor: colors.background },
-            ]}
-          >
+            ]}>
             <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
             <Text style={[styles.memberName, { color: colors.text }]}>
               {member.nickname}
