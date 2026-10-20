@@ -165,9 +165,13 @@ household-manager/
 │       ├── index.ts
 │       ├── db/
 │       │   └── seed.ts
-│       └── lib/
-│           ├── prisma.ts
-│           └── validate.ts
+│       ├── lib/
+│       │   ├── prisma.ts
+│       │   └── validate.ts
+│       └── routes/
+│           ├── households.ts
+│           ├── statistics.ts
+│           └── tasks.ts
 ├── shared/
 │   ├── package-lock.json
 │   ├── package.json
@@ -236,10 +240,16 @@ household-manager/
         ├── lib/
         │   ├── api/
         │   │   ├── client.ts
+        │   │   ├── households.ts
         │   │   ├── statistics.ts
         │   │   └── tasks.ts
         │   ├── statistics-period.ts
         │   └── storage.ts
+        ├── hooks/
+        │   └── use-active-household-tasks.ts
+        ├── options/
+        │   ├── households.ts
+        │   └── tasks.ts
         ├── theme/
         │   ├── ThemePicker.tsx
         │   ├── ThemeProvider.tsx

@@ -1,4 +1,8 @@
+import { auth } from "../lib/auth.ts";
 import { db } from "../lib/prisma.ts";
+
+// Shared password for the local test logins, never used outside the seed
+const SEED_PASSWORD = "password123";
 
 const DAY = 24 * 60 * 60 * 1000;
 const daysAgo = (days: number) => new Date(Date.now() - days * DAY);
@@ -14,15 +18,20 @@ async function main() {
   await db.account.deleteMany();
   await db.user.deleteMany();
 
-  // Users (created without login credentials, for test data only)
+  // Users with email/password logins, created like a normal sign-up
   const [anna, erik, sara, johan, lisa] = await Promise.all(
     [
-      { id: "anna", name: "Anna Andersson", email: "anna@example.com" },
-      { id: "erik", name: "Erik Svensson", email: "erik@example.com" },
-      { id: "sara", name: "Sara Nilsson", email: "sara@example.com" },
-      { id: "johan", name: "Johan Berg", email: "johan@example.com" },
-      { id: "lisa", name: "Lisa Karlsson", email: "lisa@example.com" },
-    ].map((data) => db.user.create({ data })),
+      { name: "Anna Andersson", email: "anna@example.com" },
+      { name: "Erik Svensson", email: "erik@example.com" },
+      { name: "Sara Nilsson", email: "sara@example.com" },
+      { name: "Johan Berg", email: "johan@example.com" },
+      { name: "Lisa Karlsson", email: "lisa@example.com" },
+    ].map(async (user) => {
+      const result = await auth.api.signUpEmail({
+        body: { ...user, password: SEED_PASSWORD },
+      });
+      return result.user;
+    }),
   );
 
   // Households
@@ -213,7 +222,7 @@ async function main() {
   await db.completedTask.createMany({ data: completions });
 
   console.log(
-    `Seeded: 5 accounts, 2 households, 6 members, ${tasks.length} tasks, ${completions.length} completed tasks`,
+    `Seeded: 5 email logins (password "${SEED_PASSWORD}"), 2 households, 6 members, ${tasks.length} tasks, ${completions.length} completed tasks`,
   );
 }
 
