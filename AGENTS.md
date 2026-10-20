@@ -234,6 +234,8 @@ household-manager/
         │       ├── index.tsx
         │       └── statistics.tsx
         ├── components/
+        │   ├── ConfirmBox.tsx
+        │   ├── MemberMenu.tsx
         │   ├── ScreenHeader.tsx
         │   ├── TaskCard.tsx
         │   └── TaskList.tsx
