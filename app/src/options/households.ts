@@ -1,6 +1,7 @@
-import { mutationOptions, queryOptions } from "@tanstack/react-query";
+import { mutationOptions, queryOptions, skipToken } from "@tanstack/react-query";
 
 import {
+  fetchHousehold,
   fetchMyHouseholds,
   getActiveHouseholdId,
   setActiveHouseholdId,
@@ -20,6 +21,13 @@ export const activeHouseholdIdQueryOptions = queryOptions({
   },
   staleTime: Infinity,
 });
+
+// skipToken waits until the active household is known
+export const householdQueryOptions = (householdId: number | null | undefined) =>
+  queryOptions({
+    queryKey: ["households", householdId],
+    queryFn: householdId ? () => fetchHousehold(householdId) : skipToken,
+  });
 
 export const switchHouseholdMutationOptions = mutationOptions({
   mutationKey: ["households", "switch"],
