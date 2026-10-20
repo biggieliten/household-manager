@@ -95,10 +95,6 @@ export default function TaskById() {
   });
   const task = data?.find((task) => task.id === Number(id));
 
-  const archiveTask = () => {
-    console.log(`Task ${task?.name} archived`);
-  };
-
   const screenBackground =
     scheme === "light" ? colors.surface : colors.background;
   const cardStyle = [styles.card, { backgroundColor: colors.background }];
@@ -286,7 +282,7 @@ export default function TaskById() {
       <Pressable
         accessibilityRole="button"
         // TODO: archive task
-        onPress={() => archiveTask()}
+        onPress={() => {}}
         style={styles.textButton}>
         <Text style={[styles.archiveText, { color: colors.text }]}>
           Arkivera syssla
