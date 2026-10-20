@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -9,11 +9,15 @@ import {
   View,
 } from "react-native";
 
+import TaskAssignments from "@/components/TaskAssignments";
 import useActiveHouseholdTasks from "@/hooks/use-active-household-tasks";
+import { fetchHousehold } from "@/lib/api/households";
+import { assignTask, fetchTaskAssignments, removeTaskAssignment } from "@/lib/api/task-assignments";
 import { completeTask } from "@/lib/api/tasks";
 import { tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
+import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
 
 const avatarEmoji: Record<Avatar, string> = {
   FOX: "🦊",
@@ -80,6 +84,37 @@ export default function TaskById() {
   const { householdId, tasks, error, isPending, refetch } =
     useActiveHouseholdTasks();
   const task = tasks?.find((task) => task.id === Number(id));
+
+  const householdQuery = useQuery({
+    queryKey: ["household", householdId],
+    queryFn: householdId ? () => fetchHousehold(householdId) : skipToken,
+  });
+  const assignmentsKey = ["households", householdId, "task-assignments"];
+  const assignmentsQuery = useQuery({
+    queryKey: assignmentsKey,
+    queryFn: householdId ? () => fetchTaskAssignments(householdId) : skipToken,
+  });
+  const assignmentMutation = useMutation({
+    mutationFn: ({ assignment, remove }: { assignment: MemberToTask; remove: boolean }) => {
+      if (!householdId) throw new Error("Inget aktivt hushåll");
+      return remove
+        ? removeTaskAssignment(householdId, assignment)
+        : assignTask(householdId, assignment);
+    },
+    onSuccess: async (saved, { remove }) => {
+      queryClient.setQueryData<MemberToTask[]>(assignmentsKey, (previous = []) => {
+        const remaining = previous.filter(
+          (item) => item.taskId !== saved.taskId || item.memberId !== saved.memberId,
+        );
+        return remove ? remaining : [...remaining, saved];
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: assignmentsKey }),
+        queryClient.invalidateQueries({ queryKey: tasksQueryOptions(householdId).queryKey }),
+      ]);
+    },
+  });
+  const assignmentError = householdQuery.error ?? assignmentsQuery.error;
 
   const completeTaskMutation = useMutation({
     mutationFn: (taskId: number) => {
@@ -161,6 +196,37 @@ export default function TaskById() {
     <ScrollView
       style={{ backgroundColor: screenBackground }}
       contentContainerStyle={styles.content}>
+      {(householdQuery.isPending || assignmentsQuery.isPending) && (
+        <ActivityIndicator color={colors.textMuted} />
+      )}
+      {assignmentError && (
+        <Text accessibilityRole="alert" style={{ color: accent.dangerText }}>
+          {assignmentError.message}
+        </Text>
+      )}
+      {householdQuery.data && assignmentsQuery.data && (
+        <TaskAssignments
+          taskId={task.id}
+          assignments={assignmentsQuery.data}
+          members={householdQuery.data.members.map(
+            (member: { id: number; nickname: string; isPaused: boolean }) => ({
+              ...member,
+              leftAt: null,
+            }),
+          )}
+          isOwner={householdQuery.data.members.some(
+            (member: { isMe: boolean; isAdmin: boolean }) => member.isMe && member.isAdmin,
+          )}
+          isPending={assignmentMutation.isPending || assignmentsQuery.isFetching || householdQuery.isFetching}
+          error={assignmentMutation.error?.message}
+          onAssign={(assignment) => {
+            if (!assignmentMutation.isPending) assignmentMutation.mutate({ assignment, remove: false });
+          }}
+          onRemove={(assignment) => {
+            if (!assignmentMutation.isPending) assignmentMutation.mutate({ assignment, remove: true });
+          }}
+        />
+      )}
       <View style={[cardStyle, cardStyleDark]}>
         <Text style={[styles.title, { color: colors.text }]}>{task.name}</Text>
 
