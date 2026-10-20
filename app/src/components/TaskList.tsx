@@ -3,7 +3,6 @@ import { FlatList, StyleSheet, Text } from "react-native";
 import TaskCard from "@/components/TaskCard";
 import { useTheme } from "@/theme";
 import type { TaskListItem } from "@shared/schemas/task-schema";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Props {
   tasks: TaskListItem[];
@@ -14,22 +13,20 @@ export default function TaskList({ tasks, today }: Props): React.JSX.Element {
   const { colors } = useTheme();
 
   return (
-    <SafeAreaView edges={["top"]}>
-      <FlatList
-        data={tasks}
-        keyExtractor={(task) => String(task.id)}
-        renderItem={({ item }) => <TaskCard task={item} today={today} />}
-        contentContainerStyle={styles.listContent}
-        ListHeaderComponent={
-          <Text style={[styles.heading, { color: colors.text }]}>Sysslor</Text>
-        }
-        ListEmptyComponent={
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-            Inga sysslor än
-          </Text>
-        }
-      />
-    </SafeAreaView>
+    <FlatList
+      data={tasks}
+      keyExtractor={(task) => String(task.id)}
+      renderItem={({ item }) => <TaskCard task={item} today={today} />}
+      contentContainerStyle={styles.listContent}
+      ListHeaderComponent={
+        <Text style={[styles.heading, { color: colors.text }]}>Sysslor</Text>
+      }
+      ListEmptyComponent={
+        <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+          Inga sysslor än
+        </Text>
+      }
+    />
   );
 }
 
