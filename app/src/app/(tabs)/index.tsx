@@ -20,6 +20,7 @@ export default function Index() {
 
   return (
     <View
+      // edges={["top"]}
       style={[
         styles.container,
         {
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
   addButton: {
     position: "absolute",
     right: 16,
-    bottom: 24,
+    bottom: 80,
     width: 56,
     height: 56,
     borderRadius: 28,
