@@ -8,6 +8,7 @@ import completions from "./routes/completions.ts";
 import households from "./routes/households.ts";
 import statistics from "./routes/statistics.ts";
 import tasks from "./routes/tasks.ts";
+import taskAssignments from "./routes/task-assignments.ts";
 
 const app = new Hono();
 
@@ -37,6 +38,7 @@ const v1 = new Hono()
   .route("/households", households)
   .route("/households", tasks)
   .route("/households", completions)
+  .route("/households", taskAssignments)
   .route("/households", statistics);
 
 const routes = app.route("/api/v1", v1);
