@@ -15,10 +15,12 @@ import {
   fetchHousehold,
   pauseMember,
   resumeMember,
+  promoteMember,
 } from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
+import ConfirmBox from "@/components/ConfirmBox";
 
 // TODO: share with TaskCard
 const avatarEmoji: Record<Avatar, string> = {
@@ -54,6 +56,7 @@ function HouseholdContent() {
   });
   const queryClient = useQueryClient();
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
 
   const invalidateHousehold = () =>
     queryClient.invalidateQueries({ queryKey: ["household", householdId] });
@@ -65,6 +68,11 @@ function HouseholdContent() {
 
   const resumeMutation = useMutation({
     mutationFn: (memberId: number) => resumeMember(householdId, memberId),
+    onSuccess: invalidateHousehold,
+  });
+
+  const promoteMutation = useMutation({
+    mutationFn: (memberId: number) => promoteMember(householdId, memberId),
     onSuccess: invalidateHousehold,
   });
 
@@ -86,7 +94,8 @@ function HouseholdContent() {
 
   const { name, accessCode, members } = data;
   const isAdmin = members.some((member) => member.isMe && member.isAdmin);
-  const mutationError = pauseMutation.error ?? resumeMutation.error;
+  const mutationError =
+    pauseMutation.error ?? resumeMutation.error ?? promoteMutation.error;
 
   return (
     <ScrollView
@@ -144,56 +153,78 @@ function HouseholdContent() {
           <View
             key={member.id}
             style={[
-              styles.row,
-              styles.memberRow,
-              { backgroundColor: colors.background },
+              styles.memberItem,
               openMenuId === member.id && styles.rowOnTop,
             ]}>
             <View
               style={[
                 styles.row,
-                styles.flex,
-                member.isPaused && styles.paused,
+                styles.memberRow,
+                { backgroundColor: colors.background },
               ]}>
-              <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
-              <Text style={[styles.memberName, { color: colors.text }]}>
-                {member.nickname}
-                {member.isMe && (
-                  <Text style={{ color: colors.textMuted }}> (Du)</Text>
-                )}
-              </Text>
-              <View style={[styles.badge, { backgroundColor: colors.border }]}>
-                <Text style={[styles.badgeText, { color: colors.textMuted }]}>
-                  {member.isPaused
-                    ? "Pausad"
-                    : member.isAdmin
-                      ? "Ägare"
-                      : "Medlem"}
+              <View
+                style={[
+                  styles.row,
+                  styles.flex,
+                  member.isPaused && styles.paused,
+                ]}>
+                <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
+                <Text style={[styles.memberName, { color: colors.text }]}>
+                  {member.nickname}
+                  {member.isMe && (
+                    <Text style={{ color: colors.textMuted }}> (Du)</Text>
+                  )}
                 </Text>
+                <View
+                  style={[styles.badge, { backgroundColor: colors.border }]}>
+                  <Text style={[styles.badgeText, { color: colors.textMuted }]}>
+                    {member.isPaused
+                      ? "Pausad"
+                      : member.isAdmin
+                        ? "Ägare"
+                        : "Medlem"}
+                  </Text>
+                </View>
               </View>
+
+              {isAdmin && !member.isAdmin && (
+                <MemberMenu
+                  open={openMenuId === member.id}
+                  onToggle={() =>
+                    setOpenMenuId(openMenuId === member.id ? null : member.id)
+                  }
+                  items={
+                    member.isPaused
+                      ? [
+                          {
+                            label: "Återaktivera medlem",
+                            onPress: () => resumeMutation.mutate(member.id),
+                          },
+                        ]
+                      : [
+                          {
+                            label: "Pausa medlem",
+                            onPress: () => pauseMutation.mutate(member.id),
+                          },
+                          {
+                            label: "Gör till ägare",
+                            onPress: () => setConfirmPromoteId(member.id),
+                          },
+                        ]
+                  }
+                />
+              )}
             </View>
 
-            {isAdmin && !member.isAdmin && (
-              <MemberMenu
-                open={openMenuId === member.id}
-                onToggle={() =>
-                  setOpenMenuId(openMenuId === member.id ? null : member.id)
-                }
-                items={
-                  member.isPaused
-                    ? [
-                        {
-                          label: "Återaktivera medlem",
-                          onPress: () => resumeMutation.mutate(member.id),
-                        },
-                      ]
-                    : [
-                        {
-                          label: "Pausa medlem",
-                          onPress: () => pauseMutation.mutate(member.id),
-                        },
-                      ]
-                }
+            {confirmPromoteId === member.id && (
+              <ConfirmBox
+                message={`Göra ${member.nickname} till ägare?`}
+                confirmLabel="Ja, gör till ägare"
+                onCancel={() => setConfirmPromoteId(null)}
+                onConfirm={() => {
+                  setConfirmPromoteId(null);
+                  promoteMutation.mutate(member.id);
+                }}
               />
             )}
           </View>
@@ -276,5 +307,8 @@ const styles = StyleSheet.create({
   },
   paused: {
     opacity: 0.4,
+  },
+  memberItem: {
+    gap: 8,
   },
 });

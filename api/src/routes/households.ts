@@ -106,6 +106,35 @@ const app = new Hono()
 
       return c.json(pause, 200);
     },
+  )
+  .post(
+    "/:householdId/members/:memberId/promote",
+    sessionControl(true),
+    validate("param", memberIdParamSchema),
+    async (c) => {
+      const { householdId, memberId } = c.req.valid("param");
+
+      const member = await db.member.findFirst({
+        where: { id: memberId, householdId, leftAt: null },
+        include: { pauses: { where: { endDate: null, deletedAt: null } } },
+      });
+      if (!member) {
+        return c.json({ error: "Member not found" }, 404);
+      }
+      if (member.isAdmin) {
+        return c.json({ error: "Member is already an admin" }, 409);
+      }
+      if (member.pauses.length > 0) {
+        return c.json({ error: "Paused members cannot be promoted" }, 409);
+      }
+
+      const promoted = await db.member.update({
+        where: { id: memberId },
+        data: { isAdmin: true },
+      });
+
+      return c.json(promoted, 200);
+    },
   );
 
 export default app;

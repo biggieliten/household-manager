@@ -31,3 +31,15 @@ export async function resumeMember(householdId: number, memberId: number) {
 
   return res.json();
 }
+
+export async function promoteMember(householdId: number, memberId: number) {
+  const res = await getClient().api.v1.households[":householdId"].members[
+    ":memberId"
+  ].promote.$post({
+    param: { householdId: String(householdId), memberId: String(memberId) },
+  });
+  if (!res.ok)
+    throw new Error(`Kunde inte göra medlemmen till ägare (${res.status})`);
+
+  return res.json();
+}
