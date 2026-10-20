@@ -1,8 +1,13 @@
 import { mutationOptions, queryOptions } from "@tanstack/react-query";
-
+import type {
+  CreateMyHouseholdInput,
+  JoinMyHouseholdInput,
+} from "@shared/schemas/household-schema";
 import {
+  createHousehold,
   fetchMyHouseholds,
   getActiveHouseholdId,
+  joinHousehold,
   setActiveHouseholdId,
 } from "@/lib/api/households";
 
@@ -29,4 +34,29 @@ export const switchHouseholdMutationOptions = mutationOptions({
       activeHouseholdIdQueryOptions.queryKey,
       householdId,
     ),
+});
+// The new household becomes the active one. The households list is not
+// invalidated here, so the create screen can show the code first
+export const createHouseholdMutationOptions = mutationOptions({
+  mutationKey: ["households", "create"],
+  mutationFn: async (input: CreateMyHouseholdInput) => {
+    const household = await createHousehold(input);
+    await setActiveHouseholdId(household.id);
+    return household;
+  },
+});
+
+// The joined household becomes the active one. Refetching the list flips the
+// guard in _layout, which opens the tabs
+export const joinHouseholdMutationOptions = mutationOptions({
+  mutationKey: ["households", "join"],
+  mutationFn: async (input: JoinMyHouseholdInput) => {
+    const household = await joinHousehold(input);
+    await setActiveHouseholdId(household.id);
+    return household;
+  },
+  onSuccess: (_data, _input, _onMutateResult, { client: queryClient }) =>
+    queryClient.invalidateQueries({
+      queryKey: householdsQueryOptions.queryKey,
+    }),
 });

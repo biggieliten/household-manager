@@ -1,3 +1,7 @@
+import {
+  type CompletedTask,
+  responseCompletedTaskSchema,
+} from "@shared/schemas/completed-task-schema";
 import type {
   CreateTaskBody,
   Task,
@@ -55,6 +59,24 @@ export async function createTask(
   if (!res.ok) throw new Error(`Kunde inte skapa syssla (${res.status})`);
 
   return responseTaskSchema.parse(await res.json());
+}
+
+export async function completeTask(
+  householdId: number,
+  taskId: number,
+): Promise<CompletedTask> {
+  const res = await getClient().api.v1.households[":householdId"].tasks[
+    ":taskId"
+  ].completions.$post({
+    param: {
+      householdId: String(householdId),
+      taskId: String(taskId),
+    },
+  });
+  if (!res.ok)
+    throw new Error(`Kunde inte markera sysslan som klar (${res.status})`);
+
+  return responseCompletedTaskSchema.parse(await res.json());
 }
 
 export async function updateTask(

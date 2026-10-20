@@ -146,11 +146,20 @@ Top-level directory purposes:
 
 ```text
 household-manager/
+├── .gitignore
+├── .prettierignore
+├── .prettierrc.json
 ├── AGENTS.md
+├── Claude.md
 ├── README.md
+├── package-lock.json
+├── package.json
 ├── .github/
 │   └── workflows/
 │       └── discord-pr.yml
+├── .vscode/
+│   ├── extensions.json
+│   └── settings.json
 ├── api/
 │   ├── .gitignore
 │   ├── README.md
@@ -166,13 +175,18 @@ household-manager/
 │       ├── db/
 │       │   └── seed.ts
 │       ├── lib/
+│       │   ├── auth.ts
 │       │   ├── prisma.ts
 │       │   └── validate.ts
+│       ├── middleware/
+│       │   └── sessioncontrol.ts
 │       └── routes/
+│           ├── completions.ts
 │           ├── households.ts
 │           ├── statistics.ts
 │           └── tasks.ts
 ├── shared/
+│   ├── .gitignore
 │   ├── package-lock.json
 │   ├── package.json
 │   └── schemas/
@@ -192,6 +206,7 @@ household-manager/
     ├── README.md
     ├── app.json
     ├── eslint.config.js
+    ├── metro.config.js
     ├── package-lock.json
     ├── package.json
     ├── tsconfig.json
@@ -225,9 +240,12 @@ household-manager/
     │           └── home@3x.png
     └── src/
         ├── app/
+        │   ├── [id].tsx
         │   ├── _layout.tsx
+        │   ├── create-household.tsx
         │   ├── create-task.tsx
         │   ├── profile.tsx
+        │   ├── sign-in.tsx
         │   └── (tabs)/
         │       ├── _layout.tsx
         │       ├── household.tsx
@@ -235,16 +253,20 @@ household-manager/
         │       └── statistics.tsx
         ├── components/
         │   ├── ConfirmBox.tsx
+        │   ├── GithubSignInButton.tsx
         │   ├── MemberMenu.tsx
         │   ├── ScreenHeader.tsx
         │   ├── TaskCard.tsx
-        │   └── TaskList.tsx
+        │   ├── TaskList.tsx
+        │   └── auth/
+        │       └── authColors.ts
         ├── lib/
         │   ├── api/
         │   │   ├── client.ts
         │   │   ├── households.ts
         │   │   ├── statistics.ts
         │   │   └── tasks.ts
+        │   ├── auth-client.ts
         │   ├── statistics-period.ts
         │   └── storage.ts
         ├── hooks/

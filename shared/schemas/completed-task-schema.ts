@@ -1,4 +1,9 @@
 import z from "zod";
+import { householdIdParamSchema } from "./household-schema.ts";
+
+export const completionParamSchema = householdIdParamSchema.extend({
+  taskId: z.coerce.number<string>().int().positive(),
+});
 
 export const createCompletedTaskSchema = z.object({
   taskId: z.int().nonnegative(),
@@ -7,8 +12,8 @@ export const createCompletedTaskSchema = z.object({
 
 export const responseCompletedTaskSchema = createCompletedTaskSchema.extend({
   id: z.int(),
-  completedAt: z.date(),
-  createdAt: z.date(),
+  completedAt: z.coerce.date(),
+  createdAt: z.coerce.date(),
 });
 
 export type CompletedTask = z.infer<typeof responseCompletedTaskSchema>;
