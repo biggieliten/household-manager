@@ -1,9 +1,14 @@
 import z from "zod";
-import { responseMemberSchema } from "./member-schema.ts";
+import { createMemberSchema, responseMemberSchema } from "./member-schema.ts";
 
 export const createHouseholdSchema = z.object({
   name: z.string().min(2),
 });
+
+// Creating a household also creates the creator's membership
+export const createMyHouseholdSchema = createHouseholdSchema.extend(
+  createMemberSchema.pick({ nickname: true, avatar: true }).shape,
+);
 
 const accessCodeSchema = z
   .string()
@@ -47,5 +52,6 @@ export const memberIdParamSchema = householdIdParamSchema.extend({
 export type Household = z.infer<typeof responseHouseholdSchema>;
 export type MyHousehold = z.infer<typeof responseMyHouseholdSchema>;
 export type CreateHouseholdInput = z.input<typeof createHouseholdSchema>;
+export type CreateMyHouseholdInput = z.input<typeof createMyHouseholdSchema>;
 export type UpdateHouseholdInput = z.input<typeof updateHouseholdSchema>;
 export type JoinHouseholdInput = z.input<typeof joinHouseholdSchema>;

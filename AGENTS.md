@@ -242,6 +242,7 @@ household-manager/
         ├── app/
         │   ├── [id].tsx
         │   ├── _layout.tsx
+        │   ├── create-household.tsx
         │   ├── create-task.tsx
         │   ├── profile.tsx
         │   ├── sign-in.tsx
