@@ -15,14 +15,14 @@ import {
 } from "react-native";
 
 import TaskAssignments from "@/components/TaskAssignments";
-import useActiveHouseholdTasks from "@/hooks/use-active-household-tasks";
-import { fetchHousehold } from "@/lib/api/households";
+import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import {
   assignTask,
   fetchTaskAssignments,
   removeTaskAssignment,
 } from "@/lib/api/task-assignments";
 import { archiveTask, completeTask } from "@/lib/api/tasks";
+import { householdQueryOptions } from "@/options/households";
 import { tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
@@ -90,16 +90,20 @@ export default function TaskById() {
   const queryClient = useQueryClient();
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
-
-  const { householdId, tasks, error, isPending, refetch } =
-    useActiveHouseholdTasks();
+  const householdId = useActiveHouseholdId();
+  const {
+    data: tasks,
+    error,
+    isPending,
+    refetch,
+  } = useQuery(tasksQueryOptions(householdId));
   const task = tasks?.find((task) => task.id === Number(id));
 
   const archiveMutation = useMutation({
     mutationFn: (taskId: number) => archiveTask(Number(householdId), taskId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["tasks", householdId],
+        queryKey: tasksQueryOptions(householdId).queryKey,
       });
       router.push("/");
     },
@@ -113,10 +117,7 @@ export default function TaskById() {
       archiveMutation.mutate(task.id);
     }
   };
-  const householdQuery = useQuery({
-    queryKey: ["household", householdId],
-    queryFn: householdId ? () => fetchHousehold(householdId) : skipToken,
-  });
+  const householdQuery = useQuery(householdQueryOptions(householdId));
   const assignmentsKey = ["households", householdId, "task-assignments"];
   const assignmentsQuery = useQuery({
     queryKey: assignmentsKey,
@@ -167,7 +168,7 @@ export default function TaskById() {
           queryKey: tasksQueryOptions(householdId).queryKey,
         }),
         queryClient.invalidateQueries({
-          queryKey: ["statistics", householdId],
+          queryKey: ["households", householdId, "statistics"],
         }),
       ]);
     },

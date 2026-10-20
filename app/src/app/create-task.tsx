@@ -11,8 +11,8 @@ import {
   View,
 } from "react-native";
 
+import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { createTask, updateTask } from "@/lib/api/tasks";
-import { activeHouseholdIdQueryOptions } from "@/options/households";
 import { taskQueryOptions, tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 import type { CreateTaskBody } from "@shared/schemas/task-schema";
@@ -47,7 +47,7 @@ export default function CreateTask() {
   const queryClient = useQueryClient();
   const [task, setTask] = useState<CreateTaskBody>(initialTask);
 
-  const { data: householdId } = useQuery(activeHouseholdIdQueryOptions);
+  const householdId = useActiveHouseholdId();
   const { data: taskById } = useQuery(
     taskQueryOptions(householdId, id ? Number(id) : undefined),
   );

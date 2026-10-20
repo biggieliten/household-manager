@@ -12,14 +12,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import ScreenHeader from "@/components/ScreenHeader";
-import { HOUSEHOLD_ID } from "@/lib/api/client";
-import { fetchHouseholdStatistics } from "@/lib/api/statistics";
+import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import {
   currentWeek,
   formatPeriodRange,
   isoWeekNumber,
   type StatisticsPeriod,
 } from "@/lib/statistics-period";
+import { statisticsQueryOptions } from "@/options/statistics";
 import { useTheme } from "@/theme";
 import type { Avatar, MemberStatistics } from "@/types/statistics";
 
@@ -63,12 +63,10 @@ export default function Statistics() {
 
 function StatisticsContent({ period }: { period: StatisticsPeriod }) {
   const { colors } = useTheme();
-  const from = period.from.toISOString();
-  const to = period.to.toISOString();
-  const { data, error, isPending, refetch, isRefetching } = useQuery({
-    queryKey: ["statistics", HOUSEHOLD_ID, from, to],
-    queryFn: () => fetchHouseholdStatistics(HOUSEHOLD_ID, period),
-  });
+  const householdId = useActiveHouseholdId();
+  const { data, error, isPending, refetch, isRefetching } = useQuery(
+    statisticsQueryOptions(householdId, period),
+  );
 
   if (isPending) {
     return (
