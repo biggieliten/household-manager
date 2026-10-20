@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { Link } from "expo-router";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
@@ -37,8 +43,7 @@ export default function Index() {
           <Pressable
             accessibilityRole="button"
             onPress={() => refetch()}
-            style={[styles.retryButton, { backgroundColor: colors.primary }]}
-          >
+            style={[styles.retryButton, { backgroundColor: colors.primary }]}>
             <Text style={styles.retryButtonText}>Försök igen</Text>
           </Pressable>
         </View>
@@ -46,10 +51,10 @@ export default function Index() {
         <TaskList tasks={data} today={today} />
       )}
 
-      <Link href='/create-task' asChild>
+      <Link href="/create-task" asChild>
         <Pressable
-          accessibilityRole='button'
-          accessibilityLabel='Skapa syssla'
+          accessibilityRole="button"
+          accessibilityLabel="Skapa syssla"
           style={StyleSheet.flatten([
             styles.addButton,
             { backgroundColor: colors.primary },
