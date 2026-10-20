@@ -248,9 +248,10 @@ household-manager/
         │   ├── statistics-period.ts
         │   └── storage.ts
         ├── hooks/
-        │   └── use-active-household-tasks.ts
+        │   └── use-active-household-id.ts
         ├── options/
         │   ├── households.ts
+        │   ├── statistics.ts
         │   └── tasks.ts
         ├── theme/
         │   ├── ThemePicker.tsx
