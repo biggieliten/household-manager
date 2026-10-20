@@ -8,6 +8,7 @@ type Props = {
   taskId: number;
   isOwner?: boolean;
   isPending?: boolean;
+  error?: string;
   onAssign?: (assignment: MemberToTask) => void;
   onRemove?: (assignment: MemberToTask) => void;
   assignments: readonly MemberToTask[];
@@ -22,6 +23,7 @@ export default function TaskAssignments({
   members,
   isOwner = false,
   isPending = false,
+  error,
   onAssign,
   onRemove,
 }: Props) {
@@ -38,6 +40,16 @@ export default function TaskAssignments({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
+      {isPending && (
+        <Text accessibilityLiveRegion="polite" style={{ color: colors.textMuted }}>
+          Sparar…
+        </Text>
+      )}
+      {error && (
+        <Text accessibilityRole="alert" style={{ color: colors.text }}>
+          {error}
+        </Text>
+      )}
       <Text accessibilityRole="header" style={[styles.heading, { color: colors.text }]}>
         Tilldelade medlemmar
       </Text>
@@ -58,7 +70,9 @@ export default function TaskAssignments({
                   disabled={isPending}
                   accessibilityState={{ disabled: isPending, busy: isPending }}
                   accessibilityLabel={`Ta bort tilldelning för ${member?.nickname ?? `Medlem #${memberId}`}`}
-                  onPress={() => onRemove({ taskId, memberId })}
+                  onPress={() => {
+                    if (!isPending) onRemove({ taskId, memberId });
+                  }}
                   style={({ pressed }) => [
                     styles.action,
                     { opacity: isPending ? 0.5 : pressed ? 0.6 : 1 },
@@ -88,7 +102,9 @@ export default function TaskAssignments({
                 disabled={isPending}
                 accessibilityState={{ disabled: isPending, busy: isPending }}
                 accessibilityLabel={`Tilldela sysslan till ${member.nickname}`}
-                onPress={() => onAssign({ taskId, memberId: member.id })}
+                onPress={() => {
+                  if (!isPending) onAssign({ taskId, memberId: member.id });
+                }}
                 style={({ pressed }) => [
                   styles.action,
                   { opacity: isPending ? 0.5 : pressed ? 0.6 : 1 },
@@ -130,6 +146,5 @@ const styles = StyleSheet.create({
   },
 });
 
-// TODO(#51): Visa laddning och fel inline samt hindra upprepade ändringar medan sparande pågår.
 // TODO(#51): Uppdatera visade tilldelningar efter att servern har bekräftat ändringen.
 // TODO(#51): Följ befintligt tema och verifiera tillgänglighet på mobil.

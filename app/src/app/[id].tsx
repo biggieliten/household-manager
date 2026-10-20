@@ -114,7 +114,7 @@ export default function TaskById() {
       ]);
     },
   });
-  const assignmentError = householdQuery.error ?? assignmentsQuery.error ?? assignmentMutation.error;
+  const assignmentError = householdQuery.error ?? assignmentsQuery.error;
 
   const completeTaskMutation = useMutation({
     mutationFn: (taskId: number) => {
@@ -218,6 +218,7 @@ export default function TaskById() {
             (member: { isMe: boolean; isAdmin: boolean }) => member.isMe && member.isAdmin,
           )}
           isPending={assignmentMutation.isPending || assignmentsQuery.isFetching || householdQuery.isFetching}
+          error={assignmentMutation.error?.message}
           onAssign={(assignment) => {
             if (!assignmentMutation.isPending) assignmentMutation.mutate({ assignment, remove: false });
           }}
@@ -225,9 +226,6 @@ export default function TaskById() {
             if (!assignmentMutation.isPending) assignmentMutation.mutate({ assignment, remove: true });
           }}
         />
-      )}
-      {assignmentMutation.isPending && (
-        <Text accessibilityLiveRegion="polite" style={{ color: colors.textMuted }}>Sparar…</Text>
       )}
       <View style={[cardStyle, cardStyleDark]}>
         <Text style={[styles.title, { color: colors.text }]}>{task.name}</Text>
