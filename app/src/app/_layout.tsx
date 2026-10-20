@@ -19,7 +19,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <StatusBar style='auto' />
+        <StatusBar style="auto" />
         <RootStack />
       </ThemeProvider>
     </QueryClientProvider>
@@ -58,16 +58,23 @@ function RootStack() {
     <Stack>
       <Stack.Protected guard={isSignedIn}>
         <Stack.Screen
-          name='(tabs)'
+          name="(tabs)"
           options={{ headerShown: false, title: "Tillbaka" }}
         />
         <Stack.Screen
-          name='create-task'
-          options={{ presentation: "modal", title: "Lägg till syssla" }}
+          name="create-task"
+          options={({ route }) => {
+            const params = route.params as { id?: string | number } | undefined;
+
+            return {
+              presentation: "modal",
+              title: params?.id ? "Redigera syssla" : "Lägg till syssla",
+            };
+          }}
         />
-        <Stack.Screen name='profile' options={{ title: "Profil" }} />
+        <Stack.Screen name="profile" options={{ title: "Profil" }} />
         <Stack.Screen
-          name='[id]'
+          name="[id]"
           options={({ route }) => {
             const params = route.params as { name?: string } | undefined;
 
@@ -78,7 +85,7 @@ function RootStack() {
         />
       </Stack.Protected>
       <Stack.Protected guard={!isSignedIn}>
-        <Stack.Screen name='sign-in' options={{ headerShown: false }} />
+        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   );
