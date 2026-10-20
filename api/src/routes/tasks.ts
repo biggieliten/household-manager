@@ -84,6 +84,27 @@ const app = new Hono()
     },
   )
   .patch(
+    "/:householdId/tasks/:taskId/archive",
+    validate("param", taskIdParamSchema),
+    async (c) => {
+      const { householdId, taskId } = c.req.valid("param");
+
+      const existing = await db.task.findFirst({
+        where: { id: taskId, householdId, deletedAt: null },
+      });
+      if (!existing) {
+        return c.json({ error: "Task not found" }, 404);
+      }
+
+      const task = await db.task.update({
+        where: { id: taskId },
+        data: { isArchived: true },
+      });
+
+      return c.json(task, 200);
+    },
+  )
+  .patch(
     "/:householdId/tasks/:taskId",
     validate("param", taskIdParamSchema),
     validate("json", updateTaskSchema),

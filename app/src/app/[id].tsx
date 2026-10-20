@@ -1,4 +1,9 @@
-import { skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  skipToken,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -12,8 +17,12 @@ import {
 import TaskAssignments from "@/components/TaskAssignments";
 import useActiveHouseholdTasks from "@/hooks/use-active-household-tasks";
 import { fetchHousehold } from "@/lib/api/households";
-import { assignTask, fetchTaskAssignments, removeTaskAssignment } from "@/lib/api/task-assignments";
-import { completeTask } from "@/lib/api/tasks";
+import {
+  assignTask,
+  fetchTaskAssignments,
+  removeTaskAssignment,
+} from "@/lib/api/task-assignments";
+import { archiveTask, completeTask } from "@/lib/api/tasks";
 import { tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
@@ -81,10 +90,29 @@ export default function TaskById() {
   const queryClient = useQueryClient();
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
+
   const { householdId, tasks, error, isPending, refetch } =
     useActiveHouseholdTasks();
   const task = tasks?.find((task) => task.id === Number(id));
 
+  const archiveMutation = useMutation({
+    mutationFn: (taskId: number) => archiveTask(Number(householdId), taskId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["tasks", householdId],
+      });
+      router.push("/");
+    },
+    onError: (error) => {
+      console.error(error);
+    },
+  });
+
+  const handleArchive = () => {
+    if (task) {
+      archiveMutation.mutate(task.id);
+    }
+  };
   const householdQuery = useQuery({
     queryKey: ["household", householdId],
     queryFn: householdId ? () => fetchHousehold(householdId) : skipToken,
@@ -95,22 +123,34 @@ export default function TaskById() {
     queryFn: householdId ? () => fetchTaskAssignments(householdId) : skipToken,
   });
   const assignmentMutation = useMutation({
-    mutationFn: ({ assignment, remove }: { assignment: MemberToTask; remove: boolean }) => {
+    mutationFn: ({
+      assignment,
+      remove,
+    }: {
+      assignment: MemberToTask;
+      remove: boolean;
+    }) => {
       if (!householdId) throw new Error("Inget aktivt hushåll");
       return remove
         ? removeTaskAssignment(householdId, assignment)
         : assignTask(householdId, assignment);
     },
     onSuccess: async (saved, { remove }) => {
-      queryClient.setQueryData<MemberToTask[]>(assignmentsKey, (previous = []) => {
-        const remaining = previous.filter(
-          (item) => item.taskId !== saved.taskId || item.memberId !== saved.memberId,
-        );
-        return remove ? remaining : [...remaining, saved];
-      });
+      queryClient.setQueryData<MemberToTask[]>(
+        assignmentsKey,
+        (previous = []) => {
+          const remaining = previous.filter(
+            (item) =>
+              item.taskId !== saved.taskId || item.memberId !== saved.memberId,
+          );
+          return remove ? remaining : [...remaining, saved];
+        },
+      );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: assignmentsKey }),
-        queryClient.invalidateQueries({ queryKey: tasksQueryOptions(householdId).queryKey }),
+        queryClient.invalidateQueries({
+          queryKey: tasksQueryOptions(householdId).queryKey,
+        }),
       ]);
     },
   });
@@ -215,15 +255,22 @@ export default function TaskById() {
             }),
           )}
           isOwner={householdQuery.data.members.some(
-            (member: { isMe: boolean; isAdmin: boolean }) => member.isMe && member.isAdmin,
+            (member: { isMe: boolean; isAdmin: boolean }) =>
+              member.isMe && member.isAdmin,
           )}
-          isPending={assignmentMutation.isPending || assignmentsQuery.isFetching || householdQuery.isFetching}
+          isPending={
+            assignmentMutation.isPending ||
+            assignmentsQuery.isFetching ||
+            householdQuery.isFetching
+          }
           error={assignmentMutation.error?.message}
           onAssign={(assignment) => {
-            if (!assignmentMutation.isPending) assignmentMutation.mutate({ assignment, remove: false });
+            if (!assignmentMutation.isPending)
+              assignmentMutation.mutate({ assignment, remove: false });
           }}
           onRemove={(assignment) => {
-            if (!assignmentMutation.isPending) assignmentMutation.mutate({ assignment, remove: true });
+            if (!assignmentMutation.isPending)
+              assignmentMutation.mutate({ assignment, remove: true });
           }}
         />
       )}
@@ -350,7 +397,9 @@ export default function TaskById() {
         </Text>
       )}
       {completeTaskMutation.isSuccess && (
-        <Text style={{ color: colors.primary }}>Sysslan är markerad som klar</Text>
+        <Text style={{ color: colors.primary }}>
+          Sysslan är markerad som klar
+        </Text>
       )}
       <View style={styles.actionRow}>
         <Pressable
@@ -374,8 +423,8 @@ export default function TaskById() {
 
       <Pressable
         accessibilityRole="button"
-        // TODO: archive task
-        onPress={() => {}}
+        onPress={handleArchive}
+        disabled={archiveMutation.isPending}
         style={styles.textButton}>
         <Text style={[styles.archiveText, { color: colors.text }]}>
           Arkivera syssla
