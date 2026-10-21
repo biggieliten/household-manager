@@ -58,9 +58,9 @@ describe("combineTaskAssignments", () => {
     assert.deepEqual(
       combineTaskAssignments([{ memberId: 2, taskId: 10 }], [group], members, day(0)),
       [
-        { memberId: 1, taskId: 10, isManual: false, group: { id: 1, name: "Köket" } },
-        { memberId: 2, taskId: 10, isManual: true, group: null },
-        { memberId: 1, taskId: 11, isManual: false, group: { id: 1, name: "Köket" } },
+        { memberId: 1, taskId: 10, isManual: false, groups: [{ id: 1, name: "Köket" }] },
+        { memberId: 2, taskId: 10, isManual: true, groups: [] },
+        { memberId: 1, taskId: 11, isManual: false, groups: [{ id: 1, name: "Köket" }] },
       ],
     );
   });
@@ -71,11 +71,11 @@ describe("combineTaskAssignments", () => {
     );
     assert.equal(result.length, 2);
     assert.deepEqual(result[0], {
-      memberId: 1, taskId: 10, isManual: true, group: { id: 1, name: "Köket" },
+      memberId: 1, taskId: 10, isManual: true, groups: [{ id: 1, name: "Köket" }],
     });
     const withoutManual = combineTaskAssignments([], [group], members, day(0));
     assert.equal(withoutManual[0].isManual, false);
-    assert.deepEqual(withoutManual[0].group, { id: 1, name: "Köket" });
+    assert.deepEqual(withoutManual[0].groups, [{ id: 1, name: "Köket" }]);
   });
 
   it("keeps manual assignments for paused members and moves only the group", () => {
@@ -86,10 +86,10 @@ describe("combineTaskAssignments", () => {
       [{ memberId: 1, taskId: 10 }], [group], pausedMembers, day(0),
     );
     assert.deepEqual(result[0], {
-      memberId: 1, taskId: 10, isManual: true, group: null,
+      memberId: 1, taskId: 10, isManual: true, groups: [],
     });
     assert.equal(result[1].memberId, 2);
-    assert.equal(result[1].group?.id, 1);
+    assert.equal(result[1].groups[0].id, 1);
   });
 
   it("rotates the group without changing a manual assignment", () => {
@@ -97,9 +97,9 @@ describe("combineTaskAssignments", () => {
       [{ memberId: 1, taskId: 10 }], [group], members, day(2),
     );
     assert.deepEqual(result, [
-      { memberId: 1, taskId: 10, isManual: true, group: null },
-      { memberId: 2, taskId: 10, isManual: false, group: { id: 1, name: "Köket" } },
-      { memberId: 2, taskId: 11, isManual: false, group: { id: 1, name: "Köket" } },
+      { memberId: 1, taskId: 10, isManual: true, groups: [] },
+      { memberId: 2, taskId: 10, isManual: false, groups: [{ id: 1, name: "Köket" }] },
+      { memberId: 2, taskId: 11, isManual: false, groups: [{ id: 1, name: "Köket" }] },
     ]);
   });
 });

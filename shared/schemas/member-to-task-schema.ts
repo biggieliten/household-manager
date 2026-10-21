@@ -10,7 +10,7 @@ export type CreateMemberToTaskInput = z.input<typeof memberToTaskSchema>;
 
 export const responseTaskAssignmentSchema = memberToTaskSchema.extend({
   isManual: z.boolean(),
-  group: z.object({ id: z.int(), name: z.string() }).nullable(),
+  groups: z.array(z.object({ id: z.int(), name: z.string() })),
 });
 
 export type TaskAssignment = z.infer<typeof responseTaskAssignmentSchema>;

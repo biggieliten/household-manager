@@ -47,7 +47,7 @@ export function combineTaskAssignments(
     assignments.set(key(assignment.memberId, assignment.taskId), {
       ...assignment,
       isManual: true,
-      group: null,
+      groups: [],
     });
   }
 
@@ -57,11 +57,12 @@ export function combineTaskAssignments(
 
     for (const task of group.tasks) {
       const assignmentKey = key(memberId, task.id);
+      const previous = assignments.get(assignmentKey);
       assignments.set(assignmentKey, {
         memberId,
         taskId: task.id,
-        isManual: assignments.get(assignmentKey)?.isManual ?? false,
-        group: { id: group.id, name: group.name },
+        isManual: previous?.isManual ?? false,
+        groups: [...(previous?.groups ?? []), { id: group.id, name: group.name }],
       });
     }
   }

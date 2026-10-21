@@ -60,15 +60,15 @@ export default function TaskAssignments({
       {taskAssignments.length === 0 ? (
         <Text style={{ color: colors.textMuted }}>Inga tilldelningar ännu.</Text>
       ) : (
-        taskAssignments.map(({ memberId, isManual, group }) => {
+        taskAssignments.map(({ memberId, isManual, groups }) => {
           const member = membersById.get(memberId);
           return (
             <View key={memberId} style={styles.memberRow}>
               <Text style={[styles.memberName, { color: colors.text }]}>
                 {member?.nickname ?? `Medlem #${memberId}`}
                 {member?.isPaused ? " · Pausad" : ""}
-                {group ? ` · Grupp: ${group.name}` : ""}
-                {group && isManual ? " · Även manuellt tilldelad" : ""}
+                {isManual ? " · Manuellt" : ""}
+                {groups.map((group) => ` · ${group.name}`).join("")}
               </Text>
               {isOwner && onRemove && isManual && (
                 <Pressable
