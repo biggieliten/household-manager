@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import ScreenHeader from "@/components/ScreenHeader";
+import Avatar from "@/components/Avatar";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import {
   currentWeek,
@@ -236,12 +237,8 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
               return (
                 <View key={member.id} style={styles.memberStat}>
                   <View style={styles.memberName}>
-                    <View
-                      style={[
-                        styles.dot,
-                        { backgroundColor: avatars[member.avatar].color },
-                      ]}
-                    />
+                    <Avatar avatar={member.avatar} size={24} />
+
                     <Text style={{ color: colors.text }}>
                       {member.nickname}
                     </Text>
@@ -394,11 +391,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
   },
   percent: {
     fontSize: 24,
