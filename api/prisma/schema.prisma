@@ -4,8 +4,9 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-    provider = "prisma-client"
-    output   = "../src/generated/prisma"
+    provider        = "prisma-client"
+    output          = "../src/generated/prisma"
+    previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -99,7 +100,7 @@ model Member {
     updatedAt      DateTime        @updatedAt
 
     @@unique([userId, householdId])
-    @@unique([householdId, avatar])
+    @@unique([householdId, avatar], where: raw("\"leftAt\" IS NULL"))
 }
 
 model Task {
