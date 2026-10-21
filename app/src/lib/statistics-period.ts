@@ -28,6 +28,13 @@ export function lastWeek(now = new Date()): StatisticsPeriod {
   return { from, to };
 }
 
+// 1st of last month 00:00 to 1st of this month 00:00 in local time
+export function lastMonth(now = new Date()): StatisticsPeriod {
+  const to = new Date(now.getFullYear(), now.getMonth(), 1);
+  const from = new Date(to.getFullYear(), to.getMonth() - 1, 1);
+  return { from, to };
+}
+
 // ISO 8601 week number (weeks start on Monday)
 export function isoWeekNumber(date: Date): number {
   const day = new Date(
