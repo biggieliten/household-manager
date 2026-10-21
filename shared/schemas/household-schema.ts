@@ -43,10 +43,18 @@ export const joinHouseholdSchema = z.object({
   accessCode: accessCodeSchema,
 });
 
-// Joining also sets the joiner's membership
+// Joining records the requested membership details for owner approval
 export const joinMyHouseholdSchema = joinHouseholdSchema.extend(
   createMemberSchema.pick({ nickname: true, avatar: true }).shape,
 );
+
+export const responseJoinRequestSchema = z.object({
+  id: z.int(),
+  householdId: z.int(),
+  status: z.literal("PENDING"),
+});
+
+export type JoinRequest = z.infer<typeof responseJoinRequestSchema>;
 
 // What a user sees after entering a code, before joining
 export const householdPreviewSchema = responseHouseholdSchema
