@@ -18,11 +18,13 @@ import {
   resumeMember,
   promoteMember,
   leaveHousehold,
-  updateMyNickname,
 } from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
-import { householdQueryOptions } from "@/options/households";
+import {
+  householdQueryOptions,
+  updateMyNicknameMutationOptions,
+} from "@/options/households";
 import { useTheme } from "@/theme";
 import { avatars } from "@/lib/avatars";
 
@@ -97,14 +99,7 @@ function HouseholdContent() {
     },
   });
 
-  const renameMutation = useMutation({
-    mutationFn: ({ householdId, nickname }: NicknameEdit) =>
-      updateMyNickname(householdId, nickname),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["households"] });
-      setEditingNickname(null);
-    },
-  });
+  const renameMutation = useMutation(updateMyNicknameMutationOptions);
 
   if (isPending) {
     return (
@@ -331,10 +326,10 @@ function HouseholdContent() {
           isPending={renameMutation.isPending}
           error={renameMutation.error?.message}
           onSave={(nickname) =>
-            renameMutation.mutate({
-              householdId: editingNickname.householdId,
-              nickname,
-            })
+            renameMutation.mutate(
+              { householdId: editingNickname.householdId, nickname },
+              { onSuccess: () => setEditingNickname(null) },
+            )
           }
           onCancel={() => setEditingNickname(null)}
         />
