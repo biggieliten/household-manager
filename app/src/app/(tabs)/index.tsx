@@ -11,7 +11,8 @@ import {
 import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
-import { tasksQueryOptions } from "@/options/tasks";
+import { householdsQueryOptions } from "@/options/households";
+import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 
 export default function Index() {
@@ -24,6 +25,11 @@ export default function Index() {
     error,
     refetch,
   } = useQuery(tasksQueryOptions(householdId));
+  const households = useQuery(householdsQueryOptions);
+  const assignments = useQuery(taskAssignmentsQueryOptions(householdId));
+  const memberId = households.data?.find(
+    (household) => household.id === householdId,
+  )?.member.id;
 
   return (
     <View
@@ -51,7 +57,14 @@ export default function Index() {
           </Pressable>
         </View>
       ) : (
-        <TaskList tasks={tasks} today={today} />
+        tasks && (
+          <TaskList
+            tasks={tasks}
+            today={today}
+            memberId={memberId}
+            assignments={assignments.data ?? []}
+          />
+        )
       )}
 
       <Link href="/create-task" asChild>
