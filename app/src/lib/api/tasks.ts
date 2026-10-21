@@ -29,15 +29,9 @@ export async function getTaskById(
   householdId: number,
   taskId: number,
 ): Promise<Task> {
-  const tasks = getClient().api.v1.households[":householdId"]
-    .tasks as unknown as {
-    ":taskId": {
-      $get: (args: {
-        param: { householdId: string; taskId: string };
-      }) => Promise<Response>;
-    };
-  };
-  const res = await tasks[":taskId"].$get({
+  const res = await getClient().api.v1.households[":householdId"].tasks[
+    ":taskId"
+  ].$get({
     param: {
       householdId: String(householdId),
       taskId: String(taskId),
@@ -84,16 +78,9 @@ export async function updateTask(
   taskId: number,
   body: UpdateTaskInput,
 ): Promise<Task> {
-  const tasks = getClient().api.v1.households[":householdId"]
-    .tasks as unknown as {
-    ":taskId": {
-      $patch: (args: {
-        param: { householdId: string; taskId: string };
-        json: UpdateTaskInput;
-      }) => Promise<Response>;
-    };
-  };
-  const res = await tasks[":taskId"].$patch({
+  const res = await getClient().api.v1.households[":householdId"].tasks[
+    ":taskId"
+  ].$patch({
     param: {
       householdId: String(householdId),
       taskId: String(taskId),
@@ -109,17 +96,9 @@ export async function archiveTask(
   householdId: number,
   taskId: number,
 ): Promise<Task> {
-  const tasks = getClient().api.v1.households[":householdId"]
-    .tasks as unknown as {
-    ":taskId": {
-      archive: {
-        $patch: (args: {
-          param: { householdId: string; taskId: string };
-        }) => Promise<Response>;
-      };
-    };
-  };
-  const res = await tasks[":taskId"].archive.$patch({
+  const res = await getClient().api.v1.households[":householdId"].tasks[
+    ":taskId"
+  ].archive.$patch({
     param: {
       householdId: String(householdId),
       taskId: String(taskId),

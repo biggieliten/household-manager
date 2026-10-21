@@ -1,12 +1,11 @@
+import Avatar from "@/components/Avatar";
+import useActiveHouseholdId from "@/hooks/use-active-household-id";
+import { householdQueryOptions } from "@/options/households";
+import { useTheme } from "@/theme";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import useActiveHouseholdId from "@/hooks/use-active-household-id";
-import Avatar from "@/components/Avatar";
-import { householdQueryOptions } from "@/options/households";
-import { useTheme } from "@/theme";
 
 export default function ScreenHeader(): React.JSX.Element {
   const { colors } = useTheme();

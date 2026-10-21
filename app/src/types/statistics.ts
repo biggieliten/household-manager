@@ -1,12 +1,4 @@
-export type Avatar =
-  | "FOX"
-  | "PIG"
-  | "FROG"
-  | "CHICKEN"
-  | "OCTOPUS"
-  | "DOLPHIN"
-  | "OWL"
-  | "UNICORN";
+import type { Avatar } from "@shared/schemas/member-schema";
 
 export interface MemberStatistics {
   id: number;

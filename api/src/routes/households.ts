@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import {
-  householdIdParamSchema,
-  memberIdParamSchema,
   createMyHouseholdSchema,
+  householdIdParamSchema,
   joinHouseholdSchema,
   joinMyHouseholdSchema,
+  memberIdParamSchema,
 } from "../../../shared/schemas/household-schema.ts";
 import {
   updateAvatarSchema,
@@ -31,6 +31,14 @@ function findHouseholdByCode(accessCode: string) {
         select: { userId: true, avatar: true },
       },
     },
+  });
+}
+
+// An active member of the household, with their ongoing pause if any
+function findActiveMember(householdId: number, memberId: number) {
+  return db.member.findFirst({
+    where: { id: memberId, householdId, leftAt: null },
+    include: { pauses: { where: { endDate: null, deletedAt: null } } },
   });
 }
 
@@ -303,10 +311,8 @@ const app = new Hono()
     async (c) => {
       const { householdId, memberId } = c.req.valid("param");
 
-      const member = await db.member.findFirst({
-        where: { id: memberId, householdId, leftAt: null },
-        include: { pauses: { where: { endDate: null, deletedAt: null } } },
-      });
+      const member = await findActiveMember(householdId, memberId);
+
       if (!member) {
         return c.json({ error: "Member not found" }, 404);
       }
@@ -356,10 +362,8 @@ const app = new Hono()
     async (c) => {
       const { householdId, memberId } = c.req.valid("param");
 
-      const member = await db.member.findFirst({
-        where: { id: memberId, householdId, leftAt: null },
-        include: { pauses: { where: { endDate: null, deletedAt: null } } },
-      });
+      const member = await findActiveMember(householdId, memberId);
+
       if (!member) {
         return c.json({ error: "Member not found" }, 404);
       }

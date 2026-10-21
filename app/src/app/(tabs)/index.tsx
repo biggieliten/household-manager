@@ -16,7 +16,7 @@ import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks"
 import { useTheme } from "@/theme";
 
 export default function Index() {
-  const { colors, scheme } = useTheme();
+  const { colors } = useTheme();
   const today = new Date();
   const householdId = useActiveHouseholdId();
   const {
@@ -34,13 +34,7 @@ export default function Index() {
   return (
     <View
       // edges={["top"]}
-      style={[
-        styles.container,
-        {
-          backgroundColor:
-            scheme === "light" ? colors.surface : colors.background,
-        },
-      ]}>
+      style={[styles.container, { backgroundColor: colors.screen }]}>
       <ScreenHeader />
       {isPending ? (
         <View style={styles.centered}>

@@ -4,13 +4,14 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import AvatarPicker from "@/components/AvatarPicker";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { updateMyAvatar } from "@/lib/api/households";
-import { authClient } from "@/lib/auth-client";
+import { signOutMutationOptions } from "@/options/auth";
 import { householdQueryOptions } from "@/options/households";
 import { ThemePicker, useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
 
 export default function Profile() {
   const { colors } = useTheme();
+  const signOutMutation = useMutation(signOutMutationOptions);
   const queryClient = useQueryClient();
   const householdId = useActiveHouseholdId();
   const { data: household } = useQuery(householdQueryOptions(householdId));
@@ -61,17 +62,21 @@ export default function Profile() {
 
       <Pressable
         accessibilityRole="button"
-        onPress={async () => {
-          await authClient.signOut();
-          // The next user must not see this user's cached households and tasks
-          queryClient.clear();
-        }}
+        accessibilityState={{ disabled: signOutMutation.isPending }}
+        disabled={signOutMutation.isPending}
+        onPress={() => signOutMutation.mutate()}
         style={[
           styles.signOut,
           { backgroundColor: colors.surface, borderColor: colors.border },
         ]}>
         <Text style={[styles.signOutText, { color: "#D32F2F" }]}>Logga ut</Text>
       </Pressable>
+
+      {signOutMutation.error && (
+        <Text style={[styles.error, { color: colors.text }]}>
+          {signOutMutation.error.message}
+        </Text>
+      )}
     </View>
   );
 }
@@ -100,5 +105,9 @@ const styles = StyleSheet.create({
   signOutText: {
     fontSize: 17,
     fontWeight: "600",
+  },
+  error: {
+    fontSize: 14,
+    textAlign: "center",
   },
 });

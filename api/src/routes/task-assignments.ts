@@ -19,13 +19,6 @@ const app = new Hono()
     validate("param", householdIdParamSchema),
     async (c) => {
       const { householdId } = c.req.valid("param");
-      const household = await db.household.findFirst({
-        where: { id: householdId, deletedAt: null },
-        select: { id: true },
-      });
-      if (!household) {
-        return c.json({ error: "Household not found" }, 404);
-      }
 
       const assignments = await db.memberToTask.findMany({
         where: {
@@ -46,13 +39,6 @@ const app = new Hono()
     async (c) => {
       const { householdId } = c.req.valid("param");
       const { memberId, taskId } = c.req.valid("json");
-      const household = await db.household.findFirst({
-        where: { id: householdId, deletedAt: null },
-        select: { id: true },
-      });
-      if (!household) {
-        return c.json({ error: "Household not found" }, 404);
-      }
 
       const task = await db.task.findFirst({
         where: { id: taskId, householdId, deletedAt: null, isArchived: false },
