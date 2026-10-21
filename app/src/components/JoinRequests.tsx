@@ -1,4 +1,3 @@
-// TODO: När en användare går med via kod, skapa en väntande förfrågan istället för ett aktivt medlemskap.
 // TODO: Visa "Väntar på godkännande" för väntande användare.
 // TODO: Blockera åtkomst till hushållets data tills en ägare har godkänt användaren.
 // TODO: Använd samma datamodell som #20 (View join requests) och #21 (Handle join requests).

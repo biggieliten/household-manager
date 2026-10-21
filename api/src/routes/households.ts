@@ -132,49 +132,27 @@ const app = new Hono()
         return c.json({ error: "Avatar is taken" }, 409);
       }
 
-      // Someone who left gets their old membership back, keeping their history
-      const formerMember = await db.member.findFirst({
+      const request = await db.joinRequest.upsert({
         where: {
+          userId_householdId: {
+            userId: user.id,
+            householdId: household.id,
+          },
+        },
+        create: {
           userId: user.id,
           householdId: household.id,
-          leftAt: { not: null },
+          nickname,
+          avatar,
         },
-        orderBy: { leftAt: "desc" },
-        select: { id: true },
+        update: { nickname, avatar },
+        select: { id: true, householdId: true },
       });
-
-      // A household nobody is left in needs a new owner
-      const isAdmin = household.members.length === 0;
-      const select = {
-        id: true,
-        nickname: true,
-        avatar: true,
-        isAdmin: true,
-      } as const;
-
-      const member = formerMember
-        ? await db.member.update({
-            where: { id: formerMember.id },
-            data: { nickname, avatar, isAdmin, leftAt: null },
-            select,
-          })
-        : await db.member.create({
-            data: {
-              userId: user.id,
-              householdId: household.id,
-              nickname,
-              avatar,
-              isAdmin,
-            },
-            select,
-          });
 
       return c.json(
         {
-          id: household.id,
-          name: household.name,
-          accessCode: household.accessCode,
-          member,
+          ...request,
+          status: "PENDING" as const,
         },
         200,
       );

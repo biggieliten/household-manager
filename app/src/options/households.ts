@@ -1,8 +1,5 @@
 import { mutationOptions, queryOptions, skipToken } from "@tanstack/react-query";
-import type {
-  CreateMyHouseholdInput,
-  JoinMyHouseholdInput,
-} from "@shared/schemas/household-schema";
+import type { CreateMyHouseholdInput } from "@shared/schemas/household-schema";
 import {
   createHousehold,
   fetchHousehold,
@@ -54,15 +51,10 @@ export const createHouseholdMutationOptions = mutationOptions({
   },
 });
 
-// The joined household becomes the active one. Refetching the list flips the
-// guard in _layout, which opens the tabs
+// A pending request does not make the household active.
 export const joinHouseholdMutationOptions = mutationOptions({
   mutationKey: ["households", "join"],
-  mutationFn: async (input: JoinMyHouseholdInput) => {
-    const household = await joinHousehold(input);
-    await setActiveHouseholdId(household.id);
-    return household;
-  },
+  mutationFn: joinHousehold,
   onSuccess: (_data, _input, _onMutateResult, { client: queryClient }) =>
     queryClient.invalidateQueries({
       queryKey: householdsQueryOptions.queryKey,
