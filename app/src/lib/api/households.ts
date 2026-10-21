@@ -11,6 +11,11 @@ import {
   responseMyHouseholdSchema,
 } from "@shared/schemas/household-schema";
 import { getClient } from "./client";
+import {
+  responseMemberSchema,
+  type Member,
+  type UpdateMyNicknameInput,
+} from "@shared/schemas/member-schema";
 
 const ACTIVE_HOUSEHOLD_KEY = "active-household-id";
 
@@ -79,6 +84,23 @@ export async function fetchHousehold(householdId: number) {
   if (!res.ok) throw new Error(`Kunde inte hämta hushållet (${res.status})`);
 
   return res.json();
+}
+
+export async function updateMyNickname(
+  householdId: number,
+  input: UpdateMyNicknameInput,
+): Promise<Pick<Member, "id" | "nickname">> {
+  const res = await getClient().api.v1.households[
+    ":householdId"
+  ].members.me.nickname.$patch({
+    param: { householdId: String(householdId) },
+    json: input,
+  });
+  if (!res.ok) throw new Error(`Kunde inte ändra visningsnamnet (${res.status})`);
+
+  return responseMemberSchema
+    .pick({ id: true, nickname: true })
+    .parse(await res.json());
 }
 
 export async function pauseMember(householdId: number, memberId: number) {

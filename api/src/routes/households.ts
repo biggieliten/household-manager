@@ -7,6 +7,7 @@ import {
   joinMyHouseholdSchema,
 } from "../../../shared/schemas/household-schema.ts";
 import { db } from "../lib/prisma.ts";
+import { updateMyNicknameSchema } from "../../../shared/schemas/member-schema.ts";
 import { validate } from "../lib/validate.ts";
 import {
   requireSession,
@@ -223,6 +224,24 @@ const app = new Hono()
         },
         200,
       );
+    },
+  )
+  .patch(
+    "/:householdId/members/me/nickname",
+    sessionControl(),
+    validate("param", householdIdParamSchema),
+    validate("json", updateMyNicknameSchema),
+    async (c) => {
+      const { nickname } = c.req.valid("json");
+      const { member: me } = c.var;
+
+      const member = await db.member.update({
+        where: { id: me.id },
+        data: { nickname },
+        select: { id: true, nickname: true },
+      });
+
+      return c.json(member, 200);
     },
   )
   .post(

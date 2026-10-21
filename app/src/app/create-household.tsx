@@ -44,6 +44,7 @@ const avatarEmoji: Record<Avatar, string> = {
 
 export default function CreateHousehold() {
   const { colors } = useTheme();
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
   const [mode, setMode] = useState<Mode>("create");
   const queryClient = useQueryClient();
   const [signOutError, setSignOutError] = useState<string | null>(null);
@@ -59,6 +60,16 @@ export default function CreateHousehold() {
       setSignOutError("Kunde inte logga ut");
     }
   };
+
+  if (isSessionPending) {
+    return (
+      <View style={[styles.screen, { backgroundColor: colors.background }]}>
+        <ActivityIndicator color={colors.textMuted} />
+      </View>
+    );
+  }
+
+  const initialNickname = session?.user.name ?? "";
 
   return (
     <KeyboardAvoidingView
@@ -84,7 +95,11 @@ export default function CreateHousehold() {
           />
         </View>
 
-        {mode === "create" ? <CreateForm /> : <JoinForm />}
+        {mode === "create" ? (
+          <CreateForm initialNickname={initialNickname} />
+        ) : (
+          <JoinForm initialNickname={initialNickname} />
+        )}
 
         {signOutError && (
           <Text style={[styles.error, { color: colors.text }]}>
@@ -108,11 +123,11 @@ export default function CreateHousehold() {
   );
 }
 
-function CreateForm() {
+function CreateForm({ initialNickname }: { initialNickname: string }) {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useState(initialNickname);
   const [avatar, setAvatar] = useState<Avatar | null>(null);
 
   const createMutation = useMutation(createHouseholdMutationOptions);
@@ -218,10 +233,10 @@ function CreateForm() {
 }
 
 // First the code is checked, then the user picks a nickname and a free avatar
-function JoinForm() {
+function JoinForm({ initialNickname }: { initialNickname: string }) {
   const { colors } = useTheme();
   const [accessCode, setAccessCode] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useState(initialNickname);
   const [avatar, setAvatar] = useState<Avatar | null>(null);
 
   const previewMutation = useMutation({ mutationFn: fetchHouseholdPreview });
