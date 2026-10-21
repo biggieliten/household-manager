@@ -217,7 +217,11 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
   const previewMutation = useMutation({ mutationFn: fetchHouseholdPreview });
   const joinMutation = useMutation(joinHouseholdMutationOptions);
   const preview = previewMutation.data;
-  const isWaiting = joinMutation.data?.status === "PENDING";
+  const request =
+    joinMutation.data && "status" in joinMutation.data
+      ? joinMutation.data
+      : null;
+  const isWaiting = request?.status === "PENDING";
   // Updating the shared list lets the existing route guard open the household.
   const membershipQuery = useQuery({
     ...householdsQueryOptions,
@@ -273,7 +277,7 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
           <>
             {isWaiting ? (
               <>
-                <JoinRequests request={joinMutation.data ?? null} />
+                <JoinRequests request={request} />
                 {membershipQuery.error && (
                   <Text style={[styles.error, { color: colors.text }]}>
                     {membershipQuery.error.message}

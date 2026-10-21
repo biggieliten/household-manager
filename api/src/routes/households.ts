@@ -144,6 +144,63 @@ const app = new Hono()
         return c.json({ error: "Avatar is taken" }, 409);
       }
 
+      // A household nobody is left in needs a new owner.
+      if (household.members.length === 0) {
+        // Someone who left gets their old membership back, keeping their history.
+        const formerMember = await db.member.findFirst({
+          where: {
+            userId: user.id,
+            householdId: household.id,
+            leftAt: { not: null },
+          },
+          orderBy: { leftAt: "desc" },
+          select: { id: true },
+        });
+        const select = {
+          id: true,
+          nickname: true,
+          avatar: true,
+          isAdmin: true,
+        } as const;
+
+        try {
+          const member = formerMember
+            ? await db.member.update({
+                where: { id: formerMember.id },
+                data: { nickname, avatar, isAdmin: true, leftAt: null },
+                select,
+              })
+            : await db.member.create({
+                data: {
+                  userId: user.id,
+                  householdId: household.id,
+                  nickname,
+                  avatar,
+                  isAdmin: true,
+                },
+                select,
+              });
+
+          return c.json(
+            {
+              id: household.id,
+              name: household.name,
+              accessCode: household.accessCode,
+              member,
+            },
+            200,
+          );
+        } catch (error) {
+          if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === "P2002"
+          ) {
+            return c.json({ error: "Avatar is taken" }, 409);
+          }
+          throw error;
+        }
+      }
+
       const request = await db.joinRequest.upsert({
         where: {
           userId_householdId: {

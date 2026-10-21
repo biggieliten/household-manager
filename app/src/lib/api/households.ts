@@ -49,7 +49,7 @@ export async function fetchHouseholdPreview(
 
 export async function joinHousehold(
   input: JoinMyHouseholdInput,
-): Promise<JoinRequest> {
+): Promise<MyHousehold | JoinRequest> {
   const res = await getClient().api.v1.households.join.$post({ json: input });
   if (res.status === 404)
     throw new Error("Det finns inget hushåll med den koden");
@@ -58,7 +58,9 @@ export async function joinHousehold(
     throw new Error("Avataren är redan tagen, välj en annan");
   if (!res.ok) throw new Error(`Kunde inte gå med i hushållet (${res.status})`);
 
-  return responseJoinRequestSchema.parse(await res.json());
+  const data: unknown = await res.json();
+  const request = responseJoinRequestSchema.safeParse(data);
+  return request.success ? request.data : responseMyHouseholdSchema.parse(data);
 }
 
 // The stored choice only counts while the user is still a member there
