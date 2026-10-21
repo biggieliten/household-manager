@@ -91,6 +91,15 @@ function RootStack() {
         />
         <Stack.Screen name="profile" options={{ title: "Profil" }} />
         <Stack.Screen
+          name="create-task-group"
+          options={({ route }) => {
+            const params = route.params as { id?: string } | undefined;
+            return {
+              title: params?.id ? "Redigera sysslegrupp" : "Skapa sysslegrupp",
+            };
+          }}
+        />
+        <Stack.Screen
           name="[id]"
           options={({ route }) => {
             const params = route.params as { name?: string } | undefined;

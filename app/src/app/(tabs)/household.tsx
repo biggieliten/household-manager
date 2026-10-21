@@ -27,6 +27,7 @@ import {
 } from "@/options/households";
 import { useTheme } from "@/theme";
 import Avatar from "@/components/Avatar";
+import { taskGroupsQueryOptions } from "@/options/task-groups";
 
 import ConfirmBox from "@/components/ConfirmBox";
 
@@ -54,7 +55,9 @@ function HouseholdContent() {
     householdQueryOptions(householdId),
   );
   const queryClient = useQueryClient();
+  const groupsQuery = useQuery(taskGroupsQueryOptions(householdId));
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [openGroupMenuId, setOpenGroupMenuId] = useState<number | null>(null);
   const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [showLastOwnerNotice, setShowLastOwnerNotice] = useState(false);
@@ -133,12 +136,21 @@ function HouseholdContent() {
     <ScrollView
       contentContainerStyle={styles.grow}
       refreshControl={
-        <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        <RefreshControl
+          refreshing={isRefetching || groupsQuery.isRefetching}
+          onRefresh={() => {
+            void refetch();
+            void groupsQuery.refetch();
+          }}
+        />
       }>
       {/* Tapping anywhere outside an open menu closes it */}
       <Pressable
         accessible={false}
-        onPress={() => setOpenMenuId(null)}
+        onPress={() => {
+          setOpenMenuId(null);
+          setOpenGroupMenuId(null);
+        }}
         style={[styles.content, styles.grow]}>
         <View
           style={[
@@ -236,9 +248,10 @@ function HouseholdContent() {
                 {(member.isMe || (isAdmin && !member.isAdmin)) && (
                   <MemberMenu
                     open={openMenuId === member.id}
-                    onToggle={() =>
-                      setOpenMenuId(openMenuId === member.id ? null : member.id)
-                    }
+                    onToggle={() => {
+                      setOpenGroupMenuId(null);
+                      setOpenMenuId(openMenuId === member.id ? null : member.id);
+                    }}
                     items={
                       member.isMe
                         ? [
@@ -317,6 +330,110 @@ function HouseholdContent() {
             </View>
           ))}
         </View>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Sysslegrupper
+          </Text>
+          {groupsQuery.isPending && <ActivityIndicator color={colors.textMuted} />}
+          {groupsQuery.error && (
+            <View style={{ gap: 8 }}>
+              <Text accessibilityRole="alert" style={{ color: colors.text }}>
+                {groupsQuery.error.message}
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => groupsQuery.refetch()}>
+                <Text style={{ color: colors.primary }}>Försök igen</Text>
+              </Pressable>
+            </View>
+          )}
+          {groupsQuery.data?.length === 0 && (
+            <Text style={{ color: colors.textMuted }}>Inga sysslegrupper ännu.</Text>
+          )}
+          {groupsQuery.data?.map((group) => {
+            const participants = members.filter(
+              (member) => group.memberIds.includes(member.id),
+            );
+            const currentMember = members.find(
+              (member) => member.id === group.currentMemberId,
+            );
+            return (
+              <View
+                key={group.id}
+                style={[
+                  styles.memberItem,
+                  openGroupMenuId === group.id && styles.rowOnTop,
+                ]}>
+                <View style={styles.row}>
+                  <View style={styles.flex}>
+                    <Text style={{ color: colors.text }}>{group.name}</Text>
+                    <Text style={{ color: colors.textMuted }}>
+                      {group.taskIds.length} sysslor · Var {group.intervalDays}:e dag
+                      {" · Start "}{group.startDate}
+                    </Text>
+                  </View>
+                  {isAdmin && (
+                    <MemberMenu
+                      open={openGroupMenuId === group.id}
+                      onToggle={() => {
+                        setOpenMenuId(null);
+                        setOpenGroupMenuId(
+                          openGroupMenuId === group.id ? null : group.id,
+                        );
+                      }}
+                      items={[
+                        {
+                          label: "Redigera",
+                          onPress: () => router.push({
+                            pathname: "/create-task-group",
+                            params: { id: String(group.id) },
+                          }),
+                        },
+                      ]}
+                    />
+                  )}
+                </View>
+                <View style={styles.participants}>
+                  {participants.map((member) => (
+                    <View
+                      key={member.id}
+                      accessible
+                      accessibilityLabel={`${member.nickname}${member.isPaused ? ", pausad" : ""}${member.id === group.currentMemberId ? ", ansvarig nu" : ""}`}
+                      style={[
+                        styles.participant,
+                        {
+                          borderColor: member.id === group.currentMemberId
+                            ? colors.primary
+                            : "transparent",
+                        },
+                        member.isPaused && styles.paused,
+                      ]}>
+                      <Avatar avatar={member.avatar} size={30} />
+                      {member.isPaused && (
+                        <Text style={{ color: colors.textMuted, fontSize: 11 }}>
+                          Pausad
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                </View>
+                <Text style={{ color: colors.textMuted }}>
+                  {currentMember
+                    ? `Ansvarig nu: ${currentMember.nickname}`
+                    : "Ingen ansvarig just nu"}
+                </Text>
+              </View>
+            );
+          })}
+          {isAdmin && (
+            <Pressable
+              accessibilityRole="button"
+              style={{ paddingVertical: 12 }}
+              onPress={() => router.push("/create-task-group")}>
+              <Text style={{ color: colors.primary }}>Skapa sysslegrupp</Text>
+            </Pressable>
+          )}
+        </View>
       </Pressable>
       {editingNickname && editingNickname.householdId === householdId && (
         <NicknameModal
@@ -365,6 +482,14 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
+  },
+  participants: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  participant: {
+    alignItems: "center",
+    gap: 2,
+    padding: 3,
+    borderRadius: 12,
+    borderWidth: 2,
   },
   iconCircle: {
     width: 44,
