@@ -19,6 +19,7 @@ import {
   currentWeek,
   formatPeriodRange,
   isoWeekNumber,
+  lastMonth,
   lastWeek,
   type StatisticsPeriod,
 } from "@/lib/statistics-period";
@@ -44,16 +45,24 @@ function toChartData(members: MemberStatistics[], points: number[]) {
   }));
 }
 
+const weekSubtitle = (period: StatisticsPeriod) =>
+  `v. ${isoWeekNumber(period.from)} • ${formatPeriodRange(period)}`;
+
 // Oldest first; the left arrow goes back in time
 const periodOptions = [
-  { title: "Förra veckan", getPeriod: lastWeek },
-  { title: "Denna vecka", getPeriod: currentWeek },
+  {
+    title: "Förra månaden",
+    getPeriod: lastMonth,
+    getSubtitle: formatPeriodRange,
+  },
+  { title: "Förra veckan", getPeriod: lastWeek, getSubtitle: weekSubtitle },
+  { title: "Denna vecka", getPeriod: currentWeek, getSubtitle: weekSubtitle },
 ];
 
 export default function Statistics() {
   const { colors } = useTheme();
   const [periodIndex, setPeriodIndex] = useState(periodOptions.length - 1);
-  const { title, getPeriod } = periodOptions[periodIndex];
+  const { title, getPeriod, getSubtitle } = periodOptions[periodIndex];
   const period = getPeriod();
   const hasPrevious = periodIndex > 0;
   const hasNext = periodIndex < periodOptions.length - 1;
@@ -82,7 +91,7 @@ export default function Statistics() {
             {title}
           </Text>
           <Text style={[styles.periodSubtitle, { color: colors.textMuted }]}>
-            v. {isoWeekNumber(period.from)} • {formatPeriodRange(period)}
+            {getSubtitle(period)}
           </Text>
         </View>
         <Pressable
