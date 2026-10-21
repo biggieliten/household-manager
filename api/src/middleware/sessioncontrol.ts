@@ -22,7 +22,12 @@ export const sessionControl = (requireAdmin = false) =>
     }
 
     const member = await db.member.findFirst({
-      where: { userId: session.user.id, householdId, leftAt: null },
+      where: {
+        userId: session.user.id,
+        householdId,
+        leftAt: null,
+        household: { deletedAt: null },
+      },
       select: { id: true, isAdmin: true },
     });
 
