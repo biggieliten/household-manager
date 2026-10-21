@@ -1,12 +1,12 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { authClient } from "@/lib/auth-client";
+import { signOutMutationOptions } from "@/options/auth";
 import { ThemePicker, useTheme } from "@/theme";
 
 export default function Profile() {
   const { colors } = useTheme();
-  const queryClient = useQueryClient();
+  const signOutMutation = useMutation(signOutMutationOptions);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -19,17 +19,21 @@ export default function Profile() {
 
       <Pressable
         accessibilityRole="button"
-        onPress={async () => {
-          await authClient.signOut();
-          // The next user must not see this user's cached households and tasks
-          queryClient.clear();
-        }}
+        accessibilityState={{ disabled: signOutMutation.isPending }}
+        disabled={signOutMutation.isPending}
+        onPress={() => signOutMutation.mutate()}
         style={[
           styles.signOut,
           { backgroundColor: colors.surface, borderColor: colors.border },
         ]}>
         <Text style={[styles.signOutText, { color: "#D32F2F" }]}>Logga ut</Text>
       </Pressable>
+
+      {signOutMutation.error && (
+        <Text style={[styles.error, { color: colors.text }]}>
+          {signOutMutation.error.message}
+        </Text>
+      )}
     </View>
   );
 }
@@ -58,5 +62,9 @@ const styles = StyleSheet.create({
   signOutText: {
     fontSize: 17,
     fontWeight: "600",
+  },
+  error: {
+    fontSize: 14,
+    textAlign: "center",
   },
 });

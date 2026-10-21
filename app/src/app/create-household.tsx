@@ -15,7 +15,7 @@ import {
 } from "react-native";
 
 import { fetchHouseholdPreview } from "@/lib/api/households";
-import { authClient } from "@/lib/auth-client";
+import { signOutMutationOptions } from "@/options/auth";
 import {
   createHouseholdMutationOptions,
   householdsQueryOptions,
@@ -45,20 +45,7 @@ const avatarEmoji: Record<Avatar, string> = {
 export default function CreateHousehold() {
   const { colors } = useTheme();
   const [mode, setMode] = useState<Mode>("create");
-  const queryClient = useQueryClient();
-  const [signOutError, setSignOutError] = useState<string | null>(null);
-
-  const handleSignOut = async () => {
-    setSignOutError(null);
-    try {
-      await authClient.signOut();
-      // The next user must not see this user's cached data
-      queryClient.clear();
-    } catch (e) {
-      console.warn("Sign out failed", e);
-      setSignOutError("Kunde inte logga ut");
-    }
-  };
+  const signOutMutation = useMutation(signOutMutationOptions);
 
   return (
     <KeyboardAvoidingView
@@ -86,14 +73,16 @@ export default function CreateHousehold() {
 
         {mode === "create" ? <CreateForm /> : <JoinForm />}
 
-        {signOutError && (
+        {signOutMutation.error && (
           <Text style={[styles.error, { color: colors.text }]}>
-            {signOutError}
+            {signOutMutation.error.message}
           </Text>
         )}
         <Pressable
           accessibilityRole="button"
-          onPress={handleSignOut}
+          accessibilityState={{ disabled: signOutMutation.isPending }}
+          disabled={signOutMutation.isPending}
+          onPress={() => signOutMutation.mutate()}
           style={({ pressed }) => [
             styles.signOut,
             { backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 },
