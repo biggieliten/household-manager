@@ -11,6 +11,7 @@ export const taskGroupBodySchema = z.object({
 export const responseTaskGroupSchema = taskGroupBodySchema.extend({
   id: z.int(),
   householdId: z.int(),
+  taskIds: z.array(z.int().positive()),
   memberIds: z.array(z.int().positive()),
   currentMemberId: z.int().nullable(),
 });
