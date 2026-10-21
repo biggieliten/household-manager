@@ -19,4 +19,3 @@ export default function JoinRequests({ request }: Props) {
   );
 }
 
-// TODO: Använd samma datamodell som #20 (View join requests) och #21 (Handle join requests).
