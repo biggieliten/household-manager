@@ -11,11 +11,7 @@ import {
   responseMyHouseholdSchema,
 } from "@shared/schemas/household-schema";
 import { getClient } from "./client";
-import {
-  responseMemberSchema,
-  type Member,
-  type UpdateMyNicknameInput,
-} from "@shared/schemas/member-schema";
+import type { Avatar } from "@shared/schemas/member-schema";
 
 const ACTIVE_HOUSEHOLD_KEY = "active-household-id";
 
@@ -88,19 +84,17 @@ export async function fetchHousehold(householdId: number) {
 
 export async function updateMyNickname(
   householdId: number,
-  input: UpdateMyNicknameInput,
-): Promise<Pick<Member, "id" | "nickname">> {
+  nickname: string,
+) {
   const res = await getClient().api.v1.households[
     ":householdId"
-  ].members.me.nickname.$patch({
+  ].me.nickname.$patch({
     param: { householdId: String(householdId) },
-    json: input,
+    json: { nickname },
   });
   if (!res.ok) throw new Error(`Kunde inte ändra visningsnamnet (${res.status})`);
 
-  return responseMemberSchema
-    .pick({ id: true, nickname: true })
-    .parse(await res.json());
+  return res.json();
 }
 
 export async function pauseMember(householdId: number, memberId: number) {
@@ -146,6 +140,19 @@ export async function leaveHousehold(householdId: number) {
       "Du måste först utse en ny ägare innan du lämnar hushållet",
     );
   if (!res.ok) throw new Error(`Kunde inte lämna hushållet (${res.status})`);
+
+  return res.json();
+}
+export async function updateMyAvatar(householdId: number, avatar: Avatar) {
+  const res = await getClient().api.v1.households[
+    ":householdId"
+  ].me.avatar.$patch({
+    param: { householdId: String(householdId) },
+    json: { avatar },
+  });
+  if (res.status === 409)
+    throw new Error("Avataren är redan tagen, välj en annan");
+  if (!res.ok) throw new Error(`Kunde inte byta avatar (${res.status})`);
 
   return res.json();
 }

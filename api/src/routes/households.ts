@@ -6,8 +6,11 @@ import {
   joinHouseholdSchema,
   joinMyHouseholdSchema,
 } from "../../../shared/schemas/household-schema.ts";
+import {
+  updateAvatarSchema,
+  updateMyNicknameSchema,
+} from "../../../shared/schemas/member-schema.ts";
 import { db } from "../lib/prisma.ts";
-import { updateMyNicknameSchema } from "../../../shared/schemas/member-schema.ts";
 import { validate } from "../lib/validate.ts";
 import {
   requireSession,
@@ -227,7 +230,7 @@ const app = new Hono()
     },
   )
   .patch(
-    "/:householdId/members/me/nickname",
+    "/:householdId/me/nickname",
     sessionControl(),
     validate("param", householdIdParamSchema),
     validate("json", updateMyNicknameSchema),
@@ -244,6 +247,35 @@ const app = new Hono()
       return c.json(member, 200);
     },
   )
+  // Changes the signed-in member's avatar, if no one else in the household has it
+  .patch(
+    "/:householdId/me/avatar",
+    sessionControl(),
+    validate("param", householdIdParamSchema),
+    validate("json", updateAvatarSchema),
+    async (c) => {
+      const { householdId } = c.req.valid("param");
+      const { avatar } = c.req.valid("json");
+      const { member: me } = c.var;
+
+      const taken = await db.member.findFirst({
+        where: { householdId, avatar, leftAt: null, id: { not: me.id } },
+        select: { id: true },
+      });
+      if (taken) {
+        return c.json({ error: "Avatar is taken" }, 409);
+      }
+
+      const member = await db.member.update({
+        where: { id: me.id },
+        data: { avatar },
+        select: { id: true, nickname: true, avatar: true, isAdmin: true },
+      });
+
+      return c.json(member, 200);
+    },
+  )
+
   .post(
     "/:householdId/members/:memberId/pause",
     sessionControl(true),

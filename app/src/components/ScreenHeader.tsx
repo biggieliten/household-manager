@@ -1,18 +1,19 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import useActiveHouseholdId from "@/hooks/use-active-household-id";
+import { avatars } from "@/lib/avatars";
+import { householdQueryOptions } from "@/options/households";
 import { useTheme } from "@/theme";
-
-// Placeholder until the signed-in member's avatar is fetched from the backend.
-const placeholderAvatar = "🦊";
-
-// Placeholder until the active household is fetched from the backend.
-const placeholderHousehold = { name: "Hushållet" };
 
 export default function ScreenHeader(): React.JSX.Element {
   const { colors, scheme } = useTheme();
   const avatarBackground = scheme === "light" ? "#ECEBFD" : "#33354A";
+  const householdId = useActiveHouseholdId();
+  const { data: household } = useQuery(householdQueryOptions(householdId));
+  const me = household?.members.find((member) => member.isMe);
 
   return (
     <SafeAreaView edges={["top"]} style={styles.container}>
@@ -20,18 +21,20 @@ export default function ScreenHeader(): React.JSX.Element {
         <Text
           style={[styles.householdName, { color: colors.text }]}
           numberOfLines={1}>
-          {placeholderHousehold.name}
+          {household?.name}
         </Text>
       </View>
-      <Link href='/profile' asChild>
+      <Link href="/profile" asChild>
         <Pressable
-          accessibilityRole='button'
-          accessibilityLabel='Profil'
+          accessibilityRole="button"
+          accessibilityLabel="Profil"
           style={StyleSheet.flatten([
             styles.avatar,
             { backgroundColor: avatarBackground },
           ])}>
-          <Text style={styles.avatarEmoji}>{placeholderAvatar}</Text>
+          <Text style={styles.avatarEmoji}>
+            {me ? avatars[me.avatar].emoji : ""}
+          </Text>
         </Pressable>
       </Link>
     </SafeAreaView>
