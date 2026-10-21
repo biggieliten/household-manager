@@ -6,7 +6,10 @@ import {
   joinHouseholdSchema,
   joinMyHouseholdSchema,
 } from "../../../shared/schemas/household-schema.ts";
-import { updateAvatarSchema } from "../../../shared/schemas/member-schema.ts";
+import {
+  updateAvatarSchema,
+  updateMyNicknameSchema,
+} from "../../../shared/schemas/member-schema.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
 import {
@@ -235,6 +238,24 @@ const app = new Hono()
         },
         200,
       );
+    },
+  )
+  .patch(
+    "/:householdId/me/nickname",
+    sessionControl(),
+    validate("param", householdIdParamSchema),
+    validate("json", updateMyNicknameSchema),
+    async (c) => {
+      const { nickname } = c.req.valid("json");
+      const { member: me } = c.var;
+
+      const member = await db.member.update({
+        where: { id: me.id },
+        data: { nickname },
+        select: { id: true, nickname: true },
+      });
+
+      return c.json(member, 200);
     },
   )
   // Changes the signed-in member's avatar, if no one else in the household has it

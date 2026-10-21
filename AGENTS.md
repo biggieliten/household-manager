@@ -255,9 +255,11 @@ household-manager/
         │       ├── index.tsx
         │       └── statistics.tsx
         ├── components/
+        │   ├── AvatarPicker.tsx
         │   ├── ConfirmBox.tsx
         │   ├── GithubSignInButton.tsx
         │   ├── MemberMenu.tsx
+        │   ├── NicknameModal.tsx
         │   ├── ScreenHeader.tsx
         │   ├── TaskAssignments.tsx
         │   ├── TaskCard.tsx
@@ -272,6 +274,7 @@ household-manager/
         │   │   ├── task-assignments.ts
         │   │   └── tasks.ts
         │   ├── auth-client.ts
+        │   ├── avatars.ts
         │   ├── statistics-period.ts
         │   └── storage.ts
         ├── hooks/

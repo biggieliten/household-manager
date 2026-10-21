@@ -82,6 +82,21 @@ export async function fetchHousehold(householdId: number) {
   return res.json();
 }
 
+export async function updateMyNickname(
+  householdId: number,
+  nickname: string,
+) {
+  const res = await getClient().api.v1.households[
+    ":householdId"
+  ].me.nickname.$patch({
+    param: { householdId: String(householdId) },
+    json: { nickname },
+  });
+  if (!res.ok) throw new Error(`Kunde inte ändra visningsnamnet (${res.status})`);
+
+  return res.json();
+}
+
 export async function pauseMember(householdId: number, memberId: number) {
   const res = await getClient().api.v1.households[":householdId"].members[
     ":memberId"

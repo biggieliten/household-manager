@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import MemberMenu from "@/components/MemberMenu";
+import NicknameModal from "@/components/NicknameModal";
 import {
   pauseMember,
   resumeMember,
@@ -20,11 +21,19 @@ import {
 } from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
-import { householdQueryOptions } from "@/options/households";
+import {
+  householdQueryOptions,
+  updateMyNicknameMutationOptions,
+} from "@/options/households";
 import { useTheme } from "@/theme";
 import { avatars } from "@/lib/avatars";
 
 import ConfirmBox from "@/components/ConfirmBox";
+
+type NicknameEdit = {
+  householdId: number;
+  nickname: string;
+};
 
 export default function Household() {
   const { colors } = useTheme();
@@ -49,6 +58,8 @@ function HouseholdContent() {
   const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [showLastOwnerNotice, setShowLastOwnerNotice] = useState(false);
+  const [editingNickname, setEditingNickname] =
+    useState<NicknameEdit | null>(null);
   const router = useRouter();
 
   const requireHouseholdId = () => {
@@ -87,6 +98,8 @@ function HouseholdContent() {
       router.replace("/profile");
     },
   });
+
+  const renameMutation = useMutation(updateMyNicknameMutationOptions);
 
   if (isPending) {
     return (
@@ -231,6 +244,16 @@ function HouseholdContent() {
                       member.isMe
                         ? [
                             {
+                              label: "Ändra visningsnamn",
+                              onPress: () => {
+                                renameMutation.reset();
+                                setEditingNickname({
+                                  householdId: requireHouseholdId(),
+                                  nickname: member.nickname,
+                                });
+                              },
+                            },
+                            {
                               label: "Lämna hushåll",
                               onPress: () =>
                                 isLastOwner
@@ -296,6 +319,21 @@ function HouseholdContent() {
           ))}
         </View>
       </Pressable>
+      {editingNickname && editingNickname.householdId === householdId && (
+        <NicknameModal
+          key={editingNickname.householdId}
+          nickname={editingNickname.nickname}
+          isPending={renameMutation.isPending}
+          error={renameMutation.error?.message}
+          onSave={(nickname) =>
+            renameMutation.mutate(
+              { householdId: editingNickname.householdId, nickname },
+              { onSuccess: () => setEditingNickname(null) },
+            )
+          }
+          onCancel={() => setEditingNickname(null)}
+        />
+      )}
     </ScrollView>
   );
 }
