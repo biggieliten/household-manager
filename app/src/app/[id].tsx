@@ -1,9 +1,4 @@
-import {
-  skipToken,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -16,14 +11,10 @@ import {
 
 import TaskAssignments from "@/components/TaskAssignments";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
-import {
-  assignTask,
-  fetchTaskAssignments,
-  removeTaskAssignment,
-} from "@/lib/api/task-assignments";
+import { assignTask, removeTaskAssignment } from "@/lib/api/task-assignments";
 import { archiveTask, completeTask } from "@/lib/api/tasks";
 import { householdQueryOptions } from "@/options/households";
-import { tasksQueryOptions } from "@/options/tasks";
+import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 import type { Avatar } from "@shared/schemas/member-schema";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
@@ -118,11 +109,8 @@ export default function TaskById() {
     }
   };
   const householdQuery = useQuery(householdQueryOptions(householdId));
-  const assignmentsKey = ["households", householdId, "task-assignments"];
-  const assignmentsQuery = useQuery({
-    queryKey: assignmentsKey,
-    queryFn: householdId ? () => fetchTaskAssignments(householdId) : skipToken,
-  });
+  const assignmentsKey = taskAssignmentsQueryOptions(householdId).queryKey;
+  const assignmentsQuery = useQuery(taskAssignmentsQueryOptions(householdId));
   const assignmentMutation = useMutation({
     mutationFn: ({
       assignment,
