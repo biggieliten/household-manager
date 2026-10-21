@@ -43,3 +43,16 @@ export async function updateTaskGroup(
   }
   return responseTaskGroupSchema.parse(await res.json());
 }
+
+export async function deleteTaskGroup(
+  householdId: number,
+  groupId: number,
+): Promise<void> {
+  const res = await getClient().api.v1.households[":householdId"]["task-groups"][":groupId"].$delete({
+    param: { householdId: String(householdId), groupId: String(groupId) },
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error);
+  }
+}

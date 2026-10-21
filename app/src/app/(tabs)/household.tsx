@@ -29,7 +29,10 @@ import {
 } from "@/options/households";
 import { useTheme } from "@/theme";
 import Avatar from "@/components/Avatar";
-import { taskGroupsQueryOptions } from "@/options/task-groups";
+import {
+  deleteTaskGroupMutationOptions,
+  taskGroupsQueryOptions,
+} from "@/options/task-groups";
 
 import ConfirmBox from "@/components/ConfirmBox";
 
@@ -62,6 +65,9 @@ function HouseholdContent() {
   const groupsQuery = useQuery(taskGroupsQueryOptions(householdId));
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [openGroupMenuId, setOpenGroupMenuId] = useState<number | null>(null);
+  const [confirmDeleteGroupId, setConfirmDeleteGroupId] = useState<number | null>(
+    null,
+  );
   const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [showLastOwnerNotice, setShowLastOwnerNotice] = useState(false);
@@ -108,6 +114,7 @@ function HouseholdContent() {
   });
 
   const renameMutation = useMutation(updateMyNicknameMutationOptions);
+  const deleteGroupMutation = useMutation(deleteTaskGroupMutationOptions);
 
   if (isPending) {
     return (
@@ -423,6 +430,14 @@ function HouseholdContent() {
                             params: { id: String(group.id) },
                           }),
                         },
+                        {
+                          label: "Ta bort",
+                          onPress: () => {
+                            if (deleteGroupMutation.isPending) return;
+                            deleteGroupMutation.reset();
+                            setConfirmDeleteGroupId(group.id);
+                          },
+                        },
                       ]}
                     />
                   )}
@@ -456,6 +471,40 @@ function HouseholdContent() {
                     ? `Ansvarig nu: ${currentMember.nickname}`
                     : "Ingen ansvarig just nu"}
                 </Text>
+                {isAdmin &&
+                  confirmDeleteGroupId === group.id &&
+                  !deleteGroupMutation.isPending && (
+                  <ConfirmBox
+                    message={`Ta bort gruppen ${group.name}? Sysslorna finns kvar.`}
+                    confirmLabel="Ja, ta bort"
+                    onCancel={() => setConfirmDeleteGroupId(null)}
+                    onConfirm={() => {
+                      if (!deleteGroupMutation.isPending) {
+                        deleteGroupMutation.mutate(
+                          {
+                            householdId: requireHouseholdId(),
+                            groupId: group.id,
+                          },
+                          { onSuccess: () => setConfirmDeleteGroupId(null) },
+                        );
+                      }
+                    }}
+                  />
+                )}
+                {deleteGroupMutation.isPending &&
+                  deleteGroupMutation.variables?.groupId === group.id && (
+                  <Text
+                    accessibilityLiveRegion="polite"
+                    style={{ color: colors.textMuted }}>
+                    Tar bort…
+                  </Text>
+                )}
+                {deleteGroupMutation.error &&
+                  deleteGroupMutation.variables?.groupId === group.id && (
+                  <Text accessibilityRole="alert" style={{ color: colors.text }}>
+                    {deleteGroupMutation.error.message}
+                  </Text>
+                )}
               </View>
             );
           })}

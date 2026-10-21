@@ -30,7 +30,7 @@ const app = new Hono()
       });
 
       const groups = await db.taskGroup.findMany({
-        where: { householdId },
+        where: { householdId, deletedAt: null },
         orderBy: { id: "asc" },
         include: {
           memberToTaskGroups: { select: { memberId: true } },

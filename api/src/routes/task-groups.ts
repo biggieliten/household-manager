@@ -65,7 +65,7 @@ const app = new Hono()
     async (c) => {
       const { householdId } = c.req.valid("param");
       const groups = await db.taskGroup.findMany({
-        where: { householdId },
+        where: { householdId, deletedAt: null },
         orderBy: { id: "asc" },
         include: groupInclude,
       });
@@ -136,7 +136,7 @@ const app = new Hono()
     async (c) => {
       const { householdId, groupId } = c.req.valid("param");
       const existing = await db.taskGroup.findFirst({
-        where: { id: groupId, householdId },
+        where: { id: groupId, householdId, deletedAt: null },
         select: { id: true },
       });
       if (!existing) return c.json({ error: "Gruppen hittades inte." }, 404);
@@ -174,7 +174,7 @@ const app = new Hono()
       }
 
       const group = await db.taskGroup.update({
-        where: { id: groupId },
+        where: { id: groupId, householdId, deletedAt: null },
         data: {
           ...body,
           startDate: new Date(`${startDate}T00:00:00.000Z`),
@@ -190,6 +190,23 @@ const app = new Hono()
         include: groupInclude,
       });
       return c.json(toResponse(group), 200);
+    },
+  )
+  .delete(
+    "/:householdId/task-groups/:groupId",
+    sessionControl(true),
+    validate("param", groupParamSchema),
+    async (c) => {
+      const { householdId, groupId } = c.req.valid("param");
+      const result = await db.taskGroup.updateMany({
+        where: { id: groupId, householdId, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+      if (result.count === 0) {
+        return c.json({ error: "Gruppen hittades inte." }, 404);
+      }
+
+      return c.json({ id: groupId }, 200);
     },
   );
 
