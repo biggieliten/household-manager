@@ -20,6 +20,7 @@ model Household {
     members      Member[]
     joinRequests JoinRequest[]
     tasks        Task[]
+    taskGroups   TaskGroup[]
     createdAt    DateTime      @default(now())
     updatedAt    DateTime      @updatedAt
     deletedAt    DateTime?
@@ -110,6 +111,7 @@ model Member {
     userId         String
     completedTasks CompletedTask[]
     memberToTasks  MemberToTask[]
+    memberToTaskGroups MemberToTaskGroup[]
     pauses         Pause[]
     leftAt         DateTime?
     createdAt      DateTime        @default(now())
@@ -128,11 +130,35 @@ model Task {
     difficultyLevel Int
     household       Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
     householdId     Int
+    group           TaskGroup?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
+    groupId         Int?
     completedTasks  CompletedTask[]
     memberToTasks   MemberToTask[]
     createdAt       DateTime        @default(now())
     updatedAt       DateTime        @updatedAt
     deletedAt       DateTime?
+}
+
+model TaskGroup {
+    id           Int       @id @default(autoincrement())
+    name         String
+    intervalDays Int
+    startDate    DateTime
+    household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+    householdId  Int
+    tasks        Task[]
+    memberToTaskGroups MemberToTaskGroup[]
+    createdAt    DateTime  @default(now())
+    updatedAt    DateTime  @updatedAt
+}
+
+model MemberToTaskGroup {
+    member      Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+    memberId    Int
+    taskGroup   TaskGroup @relation(fields: [taskGroupId], references: [id], onDelete: Cascade)
+    taskGroupId Int
+
+    @@id([memberId, taskGroupId])
 }
 
 model MemberToTask {
