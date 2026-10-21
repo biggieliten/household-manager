@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import MemberMenu from "@/components/MemberMenu";
+import NicknameModal from "@/components/NicknameModal";
 import {
   pauseMember,
   resumeMember,
@@ -20,21 +21,18 @@ import {
 } from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
-import { householdQueryOptions } from "@/options/households";
+import {
+  householdQueryOptions,
+  updateMyNicknameMutationOptions,
+} from "@/options/households";
 import { useTheme } from "@/theme";
-import type { Avatar } from "@shared/schemas/member-schema";
+import { avatars } from "@/lib/avatars";
+
 import ConfirmBox from "@/components/ConfirmBox";
 
-// TODO: share with TaskCard
-const avatarEmoji: Record<Avatar, string> = {
-  FOX: "🦊",
-  PIG: "🐷",
-  FROG: "🐸",
-  CHICKEN: "🐥",
-  OCTOPUS: "🐙",
-  DOLPHIN: "🐬",
-  OWL: "🦉",
-  UNICORN: "🦄",
+type NicknameEdit = {
+  householdId: number;
+  nickname: string;
 };
 
 export default function Household() {
@@ -60,6 +58,8 @@ function HouseholdContent() {
   const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [showLastOwnerNotice, setShowLastOwnerNotice] = useState(false);
+  const [editingNickname, setEditingNickname] =
+    useState<NicknameEdit | null>(null);
   const router = useRouter();
 
   const requireHouseholdId = () => {
@@ -98,6 +98,8 @@ function HouseholdContent() {
       router.replace("/profile");
     },
   });
+
+  const renameMutation = useMutation(updateMyNicknameMutationOptions);
 
   if (isPending) {
     return (
@@ -138,7 +140,11 @@ function HouseholdContent() {
         onPress={() => setOpenMenuId(null)}
         style={[styles.content, styles.grow]}>
         <View
-          style={[styles.card, styles.row, { backgroundColor: colors.surface }]}>
+          style={[
+            styles.card,
+            styles.row,
+            { backgroundColor: colors.surface },
+          ]}>
           <View style={[styles.iconCircle, { backgroundColor: colors.border }]}>
             <SymbolView
               name={{ ios: "house.fill", android: "home", web: "home" }}
@@ -167,7 +173,11 @@ function HouseholdContent() {
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <View style={styles.row}>
             <Text
-              style={[styles.sectionTitle, styles.flex, { color: colors.text }]}>
+              style={[
+                styles.sectionTitle,
+                styles.flex,
+                { color: colors.text },
+              ]}>
               Medlemmar i hushållet
             </Text>
             <View style={[styles.badge, { backgroundColor: colors.border }]}>
@@ -202,7 +212,9 @@ function HouseholdContent() {
                     styles.flex,
                     member.isPaused && styles.paused,
                   ]}>
-                  <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
+                  <Text style={styles.avatar}>
+                    {avatars[member.avatar].emoji}
+                  </Text>
                   <Text style={[styles.memberName, { color: colors.text }]}>
                     {member.nickname}
                     {member.isMe && (
@@ -211,7 +223,8 @@ function HouseholdContent() {
                   </Text>
                   <View
                     style={[styles.badge, { backgroundColor: colors.border }]}>
-                    <Text style={[styles.badgeText, { color: colors.textMuted }]}>
+                    <Text
+                      style={[styles.badgeText, { color: colors.textMuted }]}>
                       {member.isPaused
                         ? "Pausad"
                         : member.isAdmin
@@ -230,6 +243,16 @@ function HouseholdContent() {
                     items={
                       member.isMe
                         ? [
+                            {
+                              label: "Ändra visningsnamn",
+                              onPress: () => {
+                                renameMutation.reset();
+                                setEditingNickname({
+                                  householdId: requireHouseholdId(),
+                                  nickname: member.nickname,
+                                });
+                              },
+                            },
                             {
                               label: "Lämna hushåll",
                               onPress: () =>
@@ -296,6 +319,21 @@ function HouseholdContent() {
           ))}
         </View>
       </Pressable>
+      {editingNickname && editingNickname.householdId === householdId && (
+        <NicknameModal
+          key={editingNickname.householdId}
+          nickname={editingNickname.nickname}
+          isPending={renameMutation.isPending}
+          error={renameMutation.error?.message}
+          onSave={(nickname) =>
+            renameMutation.mutate(
+              { householdId: editingNickname.householdId, nickname },
+              { onSuccess: () => setEditingNickname(null) },
+            )
+          }
+          onCancel={() => setEditingNickname(null)}
+        />
+      )}
     </ScrollView>
   );
 }

@@ -14,7 +14,9 @@ import {
   type TextInputProps,
 } from "react-native";
 
+import AvatarPicker from "@/components/AvatarPicker";
 import { fetchHouseholdPreview } from "@/lib/api/households";
+import { authClient } from "@/lib/auth-client";
 import { signOutMutationOptions } from "@/options/auth";
 import {
   createHouseholdMutationOptions,
@@ -22,30 +24,25 @@ import {
   joinHouseholdMutationOptions,
 } from "@/options/households";
 import { useTheme } from "@/theme";
-import { avatarSchema, type Avatar } from "@shared/schemas/member-schema";
+import type { Avatar } from "@shared/schemas/member-schema";
 
 type Mode = "create" | "join";
+
+type HouseholdFormProps = {
+  initialNickname: string;
+};
 
 // Same limits as the shared schemas
 const MIN_LENGTH = 2;
 const ACCESS_CODE_LENGTH = 8;
 
-// TODO: share with TaskCard and household
-const avatarEmoji: Record<Avatar, string> = {
-  FOX: "🦊",
-  PIG: "🐷",
-  FROG: "🐸",
-  CHICKEN: "🐥",
-  OCTOPUS: "🐙",
-  DOLPHIN: "🐬",
-  OWL: "🦉",
-  UNICORN: "🦄",
-};
-
 export default function CreateHousehold() {
   const { colors } = useTheme();
+  const { data: session } = authClient.useSession();
   const [mode, setMode] = useState<Mode>("create");
   const signOutMutation = useMutation(signOutMutationOptions);
+
+  const initialNickname = session?.user.name ?? "";
 
   return (
     <KeyboardAvoidingView
@@ -71,7 +68,11 @@ export default function CreateHousehold() {
           />
         </View>
 
-        {mode === "create" ? <CreateForm /> : <JoinForm />}
+        {mode === "create" ? (
+          <CreateForm initialNickname={initialNickname} />
+        ) : (
+          <JoinForm initialNickname={initialNickname} />
+        )}
 
         {signOutMutation.error && (
           <Text style={[styles.error, { color: colors.text }]}>
@@ -97,11 +98,11 @@ export default function CreateHousehold() {
   );
 }
 
-function CreateForm() {
+function CreateForm({ initialNickname }: HouseholdFormProps) {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useState(initialNickname);
   const [avatar, setAvatar] = useState<Avatar | null>(null);
 
   const createMutation = useMutation(createHouseholdMutationOptions);
@@ -207,10 +208,10 @@ function CreateForm() {
 }
 
 // First the code is checked, then the user picks a nickname and a free avatar
-function JoinForm() {
+function JoinForm({ initialNickname }: HouseholdFormProps) {
   const { colors } = useTheme();
   const [accessCode, setAccessCode] = useState("");
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useState(initialNickname);
   const [avatar, setAvatar] = useState<Avatar | null>(null);
 
   const previewMutation = useMutation({ mutationFn: fetchHouseholdPreview });
@@ -331,55 +332,6 @@ function JoinForm() {
         )}
       </View>
     </>
-  );
-}
-
-// Avatars already used in the household are shown faded and cannot be picked
-function AvatarPicker({
-  value,
-  onChange,
-  disabled = false,
-  taken = [],
-}: {
-  value: Avatar | null;
-  onChange: (avatar: Avatar) => void;
-  disabled?: boolean;
-  taken?: Avatar[];
-}) {
-  const { colors } = useTheme();
-
-  return (
-    <View style={styles.field}>
-      <Text style={[styles.label, { color: colors.textMuted }]}>
-        Välj avatar
-      </Text>
-      <View style={styles.avatars}>
-        {avatarSchema.options.map((option) => {
-          const selected = value === option;
-          const isTaken = taken.includes(option);
-          const isDisabled = disabled || isTaken;
-          return (
-            <Pressable
-              key={option}
-              accessibilityRole="radio"
-              accessibilityLabel={option}
-              accessibilityState={{ selected, disabled: isDisabled }}
-              disabled={isDisabled}
-              onPress={() => onChange(option)}
-              style={[
-                styles.avatar,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: selected ? colors.primary : colors.border,
-                },
-                isTaken && styles.avatarTaken,
-              ]}>
-              <Text style={styles.avatarEmoji}>{avatarEmoji[option]}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
   );
 }
 
@@ -542,25 +494,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 14,
     fontSize: 16,
-  },
-  avatars: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarTaken: {
-    opacity: 0.3,
-  },
-  avatarEmoji: {
-    fontSize: 22,
   },
   codeBox: {
     flexDirection: "row",

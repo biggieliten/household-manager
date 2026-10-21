@@ -10,6 +10,7 @@ import {
   getActiveHouseholdId,
   joinHousehold,
   setActiveHouseholdId,
+  updateMyNickname,
 } from "@/lib/api/households";
 
 export const householdsQueryOptions = queryOptions({
@@ -63,6 +64,21 @@ export const joinHouseholdMutationOptions = mutationOptions({
     await setActiveHouseholdId(household.id);
     return household;
   },
+  onSuccess: (_data, _input, _onMutateResult, { client: queryClient }) =>
+    queryClient.invalidateQueries({
+      queryKey: householdsQueryOptions.queryKey,
+    }),
+});
+
+export const updateMyNicknameMutationOptions = mutationOptions({
+  mutationKey: ["households", "rename"],
+  mutationFn: ({
+    householdId,
+    nickname,
+  }: {
+    householdId: number;
+    nickname: string;
+  }) => updateMyNickname(householdId, nickname),
   onSuccess: (_data, _input, _onMutateResult, { client: queryClient }) =>
     queryClient.invalidateQueries({
       queryKey: householdsQueryOptions.queryKey,

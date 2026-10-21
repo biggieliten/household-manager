@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { householdIdParamSchema } from "../../../shared/schemas/household-schema.ts";
 import { statisticsPeriodQuerySchema } from "../../../shared/schemas/statistics-schema.ts";
+import { activeRatio, normalizePoints } from "../lib/normalize-points.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
 import { sessionControl } from "../middleware/sessioncontrol.ts";
@@ -21,14 +22,14 @@ const app = new Hono().get(
         members: {
           orderBy: { id: "asc" },
           include: {
-            // Pauses that cover the whole period
+            // Pauses that overlap the period
             pauses: {
               where: {
                 deletedAt: null,
-                startDate: { lte: from },
-                OR: [{ endDate: null }, { endDate: { gte: to } }],
+                startDate: { lt: to },
+                OR: [{ endDate: null }, { endDate: { gt: from } }],
               },
-              select: { id: true },
+              select: { startDate: true, endDate: true },
             },
           },
         },
@@ -70,15 +71,27 @@ const app = new Hono().get(
         };
       });
 
+    // Points are scaled up for members paused during part of the period
+    const now = new Date();
+    const ratioPerMember = new Map(
+      household.members.map((member) => [
+        member.id,
+        activeRatio(member.pauses, from, to, now),
+      ]),
+    );
+
     // Members who have left or were paused the whole period are only shown if they earned points
     const members = household.members
       .map((member) => ({
         id: member.id,
         nickname: member.nickname,
         avatar: member.avatar,
-        points: pointsPerMember.get(member.id) ?? 0,
+        points: normalizePoints(
+          pointsPerMember.get(member.id) ?? 0,
+          ratioPerMember.get(member.id) ?? 1,
+        ),
         leftAt: member.leftAt,
-        pausedWholePeriod: member.pauses.length > 0,
+        pausedWholePeriod: ratioPerMember.get(member.id) === 0,
       }))
       .filter(
         (member) =>
@@ -92,8 +105,11 @@ const app = new Hono().get(
         members,
         tasks: tasks.map(({ taskPoints, ...task }) => ({
           ...task,
-          pointsByMember: members.map(
-            (member) => taskPoints.get(member.id) ?? 0,
+          pointsByMember: members.map((member) =>
+            normalizePoints(
+              taskPoints.get(member.id) ?? 0,
+              ratioPerMember.get(member.id) ?? 1,
+            ),
           ),
         })),
       },

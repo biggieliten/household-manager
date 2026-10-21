@@ -6,12 +6,17 @@ import {
   joinMyHouseholdSchema,
   memberIdParamSchema,
 } from "../../../shared/schemas/household-schema.ts";
+import {
+  updateAvatarSchema,
+  updateMyNicknameSchema,
+} from "../../../shared/schemas/member-schema.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
 import {
   requireSession,
   sessionControl,
 } from "../middleware/sessioncontrol.ts";
+import { Prisma } from "../generated/prisma/client.ts";
 
 // A household by its code, with the members still in it
 function findHouseholdByCode(accessCode: string) {
@@ -159,32 +164,42 @@ const app = new Hono()
         isAdmin: true,
       } as const;
 
-      const member = formerMember
-        ? await db.member.update({
-            where: { id: formerMember.id },
-            data: { nickname, avatar, isAdmin, leftAt: null },
-            select,
-          })
-        : await db.member.create({
-            data: {
-              userId: user.id,
-              householdId: household.id,
-              nickname,
-              avatar,
-              isAdmin,
-            },
-            select,
-          });
+      try {
+        const member = formerMember
+          ? await db.member.update({
+              where: { id: formerMember.id },
+              data: { nickname, avatar, isAdmin, leftAt: null },
+              select,
+            })
+          : await db.member.create({
+              data: {
+                userId: user.id,
+                householdId: household.id,
+                nickname,
+                avatar,
+                isAdmin,
+              },
+              select,
+            });
 
-      return c.json(
-        {
-          id: household.id,
-          name: household.name,
-          accessCode: household.accessCode,
-          member,
-        },
-        200,
-      );
+        return c.json(
+          {
+            id: household.id,
+            name: household.name,
+            accessCode: household.accessCode,
+            member,
+          },
+          200,
+        );
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          return c.json({ error: "Avatar is taken" }, 409);
+        }
+        throw error;
+      }
     },
   )
   .get(
@@ -233,6 +248,62 @@ const app = new Hono()
       );
     },
   )
+  .patch(
+    "/:householdId/me/nickname",
+    sessionControl(),
+    validate("param", householdIdParamSchema),
+    validate("json", updateMyNicknameSchema),
+    async (c) => {
+      const { nickname } = c.req.valid("json");
+      const { member: me } = c.var;
+
+      const member = await db.member.update({
+        where: { id: me.id },
+        data: { nickname },
+        select: { id: true, nickname: true },
+      });
+
+      return c.json(member, 200);
+    },
+  )
+  // Changes the signed-in member's avatar, if no one else in the household has it
+  .patch(
+    "/:householdId/me/avatar",
+    sessionControl(),
+    validate("param", householdIdParamSchema),
+    validate("json", updateAvatarSchema),
+    async (c) => {
+      const { householdId } = c.req.valid("param");
+      const { avatar } = c.req.valid("json");
+      const { member: me } = c.var;
+
+      const taken = await db.member.findFirst({
+        where: { householdId, avatar, leftAt: null, id: { not: me.id } },
+        select: { id: true },
+      });
+      if (taken) {
+        return c.json({ error: "Avatar is taken" }, 409);
+      }
+
+      try {
+        const member = await db.member.update({
+          where: { id: me.id },
+          data: { avatar },
+          select: { id: true, nickname: true, avatar: true, isAdmin: true },
+        });
+        return c.json(member, 200);
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          return c.json({ error: "Avatar is taken" }, 409);
+        }
+        throw error;
+      }
+    },
+  )
+
   .post(
     "/:householdId/members/:memberId/pause",
     sessionControl(true),
