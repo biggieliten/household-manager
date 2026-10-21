@@ -1,5 +1,5 @@
 import Feather from "@expo/vector-icons/Feather";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -15,6 +15,7 @@ import {
 } from "react-native";
 
 import AvatarPicker from "@/components/AvatarPicker";
+import JoinRequests from "@/components/JoinRequests";
 import { fetchHouseholdPreview } from "@/lib/api/households";
 import { authClient } from "@/lib/auth-client";
 import {
@@ -227,6 +228,13 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
   const previewMutation = useMutation({ mutationFn: fetchHouseholdPreview });
   const joinMutation = useMutation(joinHouseholdMutationOptions);
   const preview = previewMutation.data;
+  const isWaiting = joinMutation.data?.status === "PENDING";
+  // Updating the shared list lets the existing route guard open the household.
+  const membershipQuery = useQuery({
+    ...householdsQueryOptions,
+    enabled: isWaiting,
+    refetchInterval: isWaiting ? 5000 : false,
+  });
 
   const code = accessCode.trim();
   const canSearch =
@@ -234,6 +242,7 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
   const canJoin =
     nickname.trim().length >= MIN_LENGTH &&
     avatar !== null &&
+    !isWaiting &&
     !joinMutation.isPending;
 
   const handleSearch = () => {
@@ -276,31 +285,44 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         {preview ? (
           <>
-            <Field
-              label="Ditt smeknamn"
-              placeholder="Så ser de andra dig i hushållet"
-              value={nickname}
-              onChangeText={setNickname}
-            />
-            <AvatarPicker
-              value={avatar}
-              onChange={setAvatar}
-              taken={preview.takenAvatars}
-            />
+            {isWaiting ? (
+              <>
+                <JoinRequests request={joinMutation.data ?? null} />
+                {membershipQuery.error && (
+                  <Text style={[styles.error, { color: colors.text }]}>
+                    {membershipQuery.error.message}
+                  </Text>
+                )}
+              </>
+            ) : (
+              <>
+                <Field
+                  label="Ditt smeknamn"
+                  placeholder="Så ser de andra dig i hushållet"
+                  value={nickname}
+                  onChangeText={setNickname}
+                />
+                <AvatarPicker
+                  value={avatar}
+                  onChange={setAvatar}
+                  taken={preview.takenAvatars}
+                />
 
-            {joinMutation.error && (
-              <Text style={[styles.error, { color: colors.text }]}>
-                {joinMutation.error.message}
-              </Text>
+                {joinMutation.error && (
+                  <Text style={[styles.error, { color: colors.text }]}>
+                    {joinMutation.error.message}
+                  </Text>
+                )}
+
+                <PrimaryButton
+                  icon="log-in"
+                  label="Gå med"
+                  disabled={!canJoin}
+                  loading={joinMutation.isPending}
+                  onPress={handleJoin}
+                />
+              </>
             )}
-
-            <PrimaryButton
-              icon="log-in"
-              label="Gå med"
-              disabled={!canJoin}
-              loading={joinMutation.isPending}
-              onPress={handleJoin}
-            />
             <Pressable
               accessibilityRole="button"
               hitSlop={8}
