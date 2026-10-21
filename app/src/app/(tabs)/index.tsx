@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import {
   ActivityIndicator,
@@ -9,14 +10,26 @@ import {
 
 import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
-import useActiveHouseholdTasks from "@/hooks/use-active-household-tasks";
+import useActiveHouseholdId from "@/hooks/use-active-household-id";
+import { householdsQueryOptions } from "@/options/households";
+import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 
 export default function Index() {
   const { colors, scheme } = useTheme();
   const today = new Date();
-  const { householdId, tasks, memberId, assignments, isPending, error, refetch } =
-    useActiveHouseholdTasks();
+  const householdId = useActiveHouseholdId();
+  const {
+    data: tasks,
+    isPending,
+    error,
+    refetch,
+  } = useQuery(tasksQueryOptions(householdId));
+  const households = useQuery(householdsQueryOptions);
+  const assignments = useQuery(taskAssignmentsQueryOptions(householdId));
+  const memberId = households.data?.find(
+    (household) => household.id === householdId,
+  )?.member.id;
 
   return (
     <View
@@ -43,36 +56,28 @@ export default function Index() {
             <Text style={styles.retryButtonText}>Försök igen</Text>
           </Pressable>
         </View>
-      ) : householdId === null ? (
-        <View style={styles.centered}>
-          <Text style={{ color: colors.textMuted }}>
-            Du är inte med i något hushåll än
-          </Text>
-        </View>
       ) : (
         tasks && (
           <TaskList
             tasks={tasks}
             today={today}
             memberId={memberId}
-            assignments={assignments}
+            assignments={assignments.data ?? []}
           />
         )
       )}
 
-      {householdId !== null && (
-        <Link href="/create-task" asChild>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Skapa syssla"
-            style={StyleSheet.flatten([
-              styles.addButton,
-              { backgroundColor: colors.primary },
-            ])}>
-            <Text style={styles.addButtonText}>+</Text>
-          </Pressable>
-        </Link>
-      )}
+      <Link href="/create-task" asChild>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Skapa syssla"
+          style={StyleSheet.flatten([
+            styles.addButton,
+            { backgroundColor: colors.primary },
+          ])}>
+          <Text style={styles.addButtonText}>+</Text>
+        </Pressable>
+      </Link>
     </View>
   );
 }

@@ -17,9 +17,6 @@ const client = API_URL
     })
   : null;
 
-// TODO: replace with the active household once the household provider exists
-export const HOUSEHOLD_ID = 1;
-
 export function getClient() {
   if (!client) throw new Error("EXPO_PUBLIC_API_URL saknas i app/.env");
   return client;
