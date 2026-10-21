@@ -1,5 +1,7 @@
+import Feather from "@expo/vector-icons/Feather";
 import { useQuery } from "@tanstack/react-query";
 import { DonutChart } from "expo-skia-charts";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -17,6 +19,7 @@ import {
   currentWeek,
   formatPeriodRange,
   isoWeekNumber,
+  lastWeek,
   type StatisticsPeriod,
 } from "@/lib/statistics-period";
 import { statisticsQueryOptions } from "@/options/statistics";
@@ -41,20 +44,56 @@ function toChartData(members: MemberStatistics[], points: number[]) {
   }));
 }
 
+// Oldest first; the left arrow goes back in time
+const periodOptions = [
+  { title: "Förra veckan", getPeriod: lastWeek },
+  { title: "Denna vecka", getPeriod: currentWeek },
+];
+
 export default function Statistics() {
   const { colors } = useTheme();
-  const period = currentWeek();
+  const [periodIndex, setPeriodIndex] = useState(periodOptions.length - 1);
+  const { title, getPeriod } = periodOptions[periodIndex];
+  const period = getPeriod();
+  const hasPrevious = periodIndex > 0;
+  const hasNext = periodIndex < periodOptions.length - 1;
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScreenHeader />
-      <View style={[styles.periodCard, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.periodTitle, { color: colors.text }]}>
-          Denna vecka
-        </Text>
-        <Text style={[styles.periodSubtitle, { color: colors.textMuted }]}>
-          v. {isoWeekNumber(period.from)} • {formatPeriodRange(period)}
-        </Text>
+      <View
+        style={[
+          styles.periodCard,
+          styles.periodRow,
+          { backgroundColor: colors.surface },
+        ]}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Föregående period"
+          disabled={!hasPrevious}
+          onPress={() => setPeriodIndex(periodIndex - 1)}
+          style={[styles.arrowButton, !hasPrevious && styles.hidden]}
+        >
+          <Feather name="chevron-left" size={28} color={colors.text} />
+        </Pressable>
+        <View style={styles.periodText}>
+          <Text style={[styles.periodTitle, { color: colors.text }]}>
+            {title}
+          </Text>
+          <Text style={[styles.periodSubtitle, { color: colors.textMuted }]}>
+            v. {isoWeekNumber(period.from)} • {formatPeriodRange(period)}
+          </Text>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Nästa period"
+          disabled={!hasNext}
+          onPress={() => setPeriodIndex(periodIndex + 1)}
+          style={[styles.arrowButton, !hasNext && styles.hidden]}
+        >
+          <Feather name="chevron-right" size={28} color={colors.text} />
+        </Pressable>
       </View>
       <StatisticsContent period={period} />
     </View>
@@ -218,6 +257,21 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: "center",
     gap: 2,
+  },
+  periodRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  periodText: {
+    flex: 1,
+    alignItems: "center",
+    gap: 2,
+  },
+  arrowButton: {
+    padding: 4,
+  },
+  hidden: {
+    opacity: 0,
   },
   periodTitle: {
     fontSize: 28,
