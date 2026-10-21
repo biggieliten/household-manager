@@ -13,7 +13,7 @@ const groupParamSchema = householdIdParamSchema.extend({
 });
 
 const groupInclude = {
-  tasks: { select: { id: true }, orderBy: { id: "asc" } },
+  taskToTaskGroups: { select: { taskId: true }, orderBy: { taskId: "asc" } },
   memberToTaskGroups: {
     where: { member: { leftAt: null } },
     orderBy: { memberId: "asc" },
@@ -51,7 +51,7 @@ function toResponse(group: GroupWithMembers) {
     name: group.name,
     intervalDays: group.intervalDays,
     startDate: group.startDate.toISOString().slice(0, 10),
-    taskIds: group.tasks.map((task) => task.id),
+    taskIds: group.taskToTaskGroups.map((link) => link.taskId),
     memberIds,
     currentMemberId,
   };
@@ -92,13 +92,12 @@ const app = new Hono()
           householdId,
           deletedAt: null,
           isArchived: false,
-          groupId: null,
         },
         select: { id: true },
       });
       if (tasks.length !== taskIds.length) {
         return c.json(
-          { error: "Välj tillgängliga sysslor i hushållet som inte redan har en grupp." },
+          { error: "Välj tillgängliga sysslor i hushållet." },
           400,
         );
       }
@@ -117,7 +116,9 @@ const app = new Hono()
           ...body,
           householdId,
           startDate: new Date(`${startDate}T00:00:00.000Z`),
-          tasks: { connect: tasks },
+          taskToTaskGroups: {
+            create: tasks.map((task) => ({ taskId: task.id })),
+          },
           memberToTaskGroups: {
             create: members.map((member) => ({ memberId: member.id })),
           },
@@ -153,13 +154,12 @@ const app = new Hono()
           householdId,
           deletedAt: null,
           isArchived: false,
-          OR: [{ groupId: null }, { groupId }],
         },
         select: { id: true },
       });
       if (tasks.length !== taskIds.length) {
         return c.json(
-          { error: "Välj tillgängliga sysslor i hushållet som inte tillhör en annan grupp." },
+          { error: "Välj tillgängliga sysslor i hushållet." },
           400,
         );
       }
@@ -178,7 +178,10 @@ const app = new Hono()
         data: {
           ...body,
           startDate: new Date(`${startDate}T00:00:00.000Z`),
-          tasks: { set: tasks },
+          taskToTaskGroups: {
+            deleteMany: {},
+            create: tasks.map((task) => ({ taskId: task.id })),
+          },
           memberToTaskGroups: {
             deleteMany: {},
             create: members.map((member) => ({ memberId: member.id })),

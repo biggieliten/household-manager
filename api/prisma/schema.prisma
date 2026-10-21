@@ -130,8 +130,7 @@ model Task {
     difficultyLevel Int
     household       Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
     householdId     Int
-    group           TaskGroup?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
-    groupId         Int?
+    taskToTaskGroups TaskToTaskGroup[]
     completedTasks  CompletedTask[]
     memberToTasks   MemberToTask[]
     createdAt       DateTime        @default(now())
@@ -146,10 +145,19 @@ model TaskGroup {
     startDate    DateTime
     household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
     householdId  Int
-    tasks        Task[]
+    taskToTaskGroups TaskToTaskGroup[]
     memberToTaskGroups MemberToTaskGroup[]
     createdAt    DateTime  @default(now())
     updatedAt    DateTime  @updatedAt
+}
+
+model TaskToTaskGroup {
+    task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+    taskId      Int
+    taskGroup   TaskGroup @relation(fields: [taskGroupId], references: [id], onDelete: Cascade)
+    taskGroupId Int
+
+    @@id([taskId, taskGroupId])
 }
 
 model MemberToTaskGroup {

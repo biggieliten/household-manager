@@ -31,11 +31,12 @@ const app = new Hono()
 
       const groups = await db.taskGroup.findMany({
         where: { householdId },
+        orderBy: { id: "asc" },
         include: {
           memberToTaskGroups: { select: { memberId: true } },
-          tasks: {
-            where: { deletedAt: null, isArchived: false },
-            select: { id: true },
+          taskToTaskGroups: {
+            where: { task: { deletedAt: null, isArchived: false } },
+            select: { task: { select: { id: true } } },
           },
         },
       });
@@ -53,6 +54,7 @@ const app = new Hono()
         assignments,
         groups.map((group) => ({
           ...group,
+          tasks: group.taskToTaskGroups.map((link) => link.task),
           memberIds: group.memberToTaskGroups.map((link) => link.memberId),
         })),
         members.map((member) => ({
