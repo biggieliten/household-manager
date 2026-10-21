@@ -4,6 +4,7 @@ import { householdIdParamSchema } from "../../../shared/schemas/household-schema
 import { memberToTaskSchema } from "../../../shared/schemas/member-to-task-schema.ts";
 import { Prisma } from "../generated/prisma/client.ts";
 import { db } from "../lib/prisma.ts";
+import { combineTaskAssignments } from "../lib/task-rotation.ts";
 import { validate } from "../lib/validate.ts";
 import { sessionControl } from "../middleware/sessioncontrol.ts";
 
@@ -28,7 +29,40 @@ const app = new Hono()
         orderBy: [{ taskId: "asc" }, { memberId: "asc" }],
       });
 
-      return c.json(assignments, 200);
+      const groups = await db.taskGroup.findMany({
+        where: { householdId },
+        include: {
+          memberToTaskGroups: { select: { memberId: true } },
+          tasks: {
+            where: { deletedAt: null, isArchived: false },
+            select: { id: true },
+          },
+        },
+      });
+      const members = await db.member.findMany({
+        where: { householdId, leftAt: null },
+        select: {
+          id: true,
+          pauses: {
+            where: { endDate: null, deletedAt: null },
+            select: { id: true },
+          },
+        },
+      });
+      const currentAssignments = combineTaskAssignments(
+        assignments,
+        groups.map((group) => ({
+          ...group,
+          memberIds: group.memberToTaskGroups.map((link) => link.memberId),
+        })),
+        members.map((member) => ({
+          id: member.id,
+          isPaused: member.pauses.length > 0,
+        })),
+        new Date(),
+      );
+
+      return c.json(currentAssignments, 200);
     },
   )
   .post(
