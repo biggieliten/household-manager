@@ -255,6 +255,7 @@ household-manager/
         │       ├── index.tsx
         │       └── statistics.tsx
         ├── components/
+        │   ├── Avatar.tsx
         │   ├── AvatarPicker.tsx
         │   ├── ConfirmBox.tsx
         │   ├── GithubSignInButton.tsx
