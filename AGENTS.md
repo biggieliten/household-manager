@@ -263,12 +263,14 @@ household-manager/
         │   ├── Avatar.tsx
         │   ├── AvatarPicker.tsx
         │   ├── ConfirmBox.tsx
+        │   ├── DeleteTaskGroupModal.tsx
         │   ├── GithubSignInButton.tsx
         │   ├── JoinRequests.tsx
         │   ├── MemberMenu.tsx
         │   ├── NicknameModal.tsx
         │   ├── ScreenHeader.tsx
         │   ├── TaskAssignments.tsx
+        │   ├── TaskGroupCard.tsx
         │   ├── TaskGroupDatePicker.tsx
         │   ├── TaskGroupDatePicker.web.tsx
         │   ├── TaskCard.tsx

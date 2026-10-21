@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useRouter } from "expo-router";
 import MemberMenu from "@/components/MemberMenu";
 import NicknameModal from "@/components/NicknameModal";
+import DeleteTaskGroupModal from "@/components/DeleteTaskGroupModal";
 import {
   pauseMember,
   resumeMember,
@@ -29,6 +30,7 @@ import {
 } from "@/options/households";
 import { useTheme } from "@/theme";
 import Avatar from "@/components/Avatar";
+import TaskGroupCard from "@/components/TaskGroupCard";
 import {
   deleteTaskGroupMutationOptions,
   taskGroupsQueryOptions,
@@ -39,6 +41,12 @@ import ConfirmBox from "@/components/ConfirmBox";
 type NicknameEdit = {
   householdId: number;
   nickname: string;
+};
+
+type GroupDeletion = {
+  householdId: number;
+  groupId: number;
+  groupName: string;
 };
 
 export default function Household() {
@@ -65,7 +73,7 @@ function HouseholdContent() {
   const groupsQuery = useQuery(taskGroupsQueryOptions(householdId));
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [openGroupMenuId, setOpenGroupMenuId] = useState<number | null>(null);
-  const [confirmDeleteGroupId, setConfirmDeleteGroupId] = useState<number | null>(
+  const [deletingGroup, setDeletingGroup] = useState<GroupDeletion | null>(
     null,
   );
   const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
@@ -391,123 +399,40 @@ function HouseholdContent() {
           {groupsQuery.data?.length === 0 && (
             <Text style={{ color: colors.textMuted }}>Inga sysslegrupper ännu.</Text>
           )}
-          {groupsQuery.data?.map((group) => {
-            const participants = members.filter(
-              (member) => group.memberIds.includes(member.id),
-            );
-            const currentMember = members.find(
-              (member) => member.id === group.currentMemberId,
-            );
-            return (
-              <View
-                key={group.id}
-                style={[
-                  styles.memberItem,
-                  openGroupMenuId === group.id && styles.rowOnTop,
-                ]}>
-                <View style={styles.row}>
-                  <View style={styles.flex}>
-                    <Text style={{ color: colors.text }}>{group.name}</Text>
-                    <Text style={{ color: colors.textMuted }}>
-                      {group.taskIds.length} sysslor · Var {group.intervalDays}:e dag
-                      {" · Start "}{group.startDate}
-                    </Text>
-                  </View>
-                  {isAdmin && (
-                    <MemberMenu
-                      open={openGroupMenuId === group.id}
-                      onToggle={() => {
-                        setOpenMenuId(null);
-                        setOpenGroupMenuId(
-                          openGroupMenuId === group.id ? null : group.id,
-                        );
-                      }}
-                      items={[
-                        {
-                          label: "Redigera",
-                          onPress: () => router.push({
-                            pathname: "/create-task-group",
-                            params: { id: String(group.id) },
-                          }),
-                        },
-                        {
-                          label: "Ta bort",
-                          onPress: () => {
-                            if (deleteGroupMutation.isPending) return;
-                            deleteGroupMutation.reset();
-                            setConfirmDeleteGroupId(group.id);
-                          },
-                        },
-                      ]}
-                    />
-                  )}
-                </View>
-                <View style={styles.participants}>
-                  {participants.map((member) => (
-                    <View
-                      key={member.id}
-                      accessible
-                      accessibilityLabel={`${member.nickname}${member.isPaused ? ", pausad" : ""}${member.id === group.currentMemberId ? ", ansvarig nu" : ""}`}
-                      style={[
-                        styles.participant,
-                        {
-                          borderColor: member.id === group.currentMemberId
-                            ? colors.primary
-                            : "transparent",
-                        },
-                        member.isPaused && styles.paused,
-                      ]}>
-                      <Avatar avatar={member.avatar} size={30} />
-                      {member.isPaused && (
-                        <Text style={{ color: colors.textMuted, fontSize: 11 }}>
-                          Pausad
-                        </Text>
-                      )}
-                    </View>
-                  ))}
-                </View>
-                <Text style={{ color: colors.textMuted }}>
-                  {currentMember
-                    ? `Ansvarig nu: ${currentMember.nickname}`
-                    : "Ingen ansvarig just nu"}
-                </Text>
-                {isAdmin &&
-                  confirmDeleteGroupId === group.id &&
-                  !deleteGroupMutation.isPending && (
-                  <ConfirmBox
-                    message={`Ta bort gruppen ${group.name}? Sysslorna finns kvar.`}
-                    confirmLabel="Ja, ta bort"
-                    onCancel={() => setConfirmDeleteGroupId(null)}
-                    onConfirm={() => {
-                      if (!deleteGroupMutation.isPending) {
-                        deleteGroupMutation.mutate(
-                          {
-                            householdId: requireHouseholdId(),
-                            groupId: group.id,
-                          },
-                          { onSuccess: () => setConfirmDeleteGroupId(null) },
-                        );
-                      }
-                    }}
-                  />
-                )}
-                {deleteGroupMutation.isPending &&
-                  deleteGroupMutation.variables?.groupId === group.id && (
-                  <Text
-                    accessibilityLiveRegion="polite"
-                    style={{ color: colors.textMuted }}>
-                    Tar bort…
-                  </Text>
-                )}
-                {deleteGroupMutation.error &&
-                  deleteGroupMutation.variables?.groupId === group.id && (
-                  <Text accessibilityRole="alert" style={{ color: colors.text }}>
-                    {deleteGroupMutation.error.message}
-                  </Text>
-                )}
-              </View>
-            );
-          })}
+          {groupsQuery.data?.map((group) => (
+            <View
+              key={group.id}
+              style={[
+                styles.memberItem,
+                openGroupMenuId === group.id && styles.rowOnTop,
+              ]}>
+              <TaskGroupCard
+                group={group}
+                members={members}
+                isOwner={isAdmin}
+                menuOpen={openGroupMenuId === group.id}
+                onToggleMenu={() => {
+                  setOpenMenuId(null);
+                  setOpenGroupMenuId(
+                    openGroupMenuId === group.id ? null : group.id,
+                  );
+                }}
+                onEdit={() => router.push({
+                  pathname: "/create-task-group",
+                  params: { id: String(group.id) },
+                })}
+                onDelete={() => {
+                  if (deleteGroupMutation.isPending) return;
+                  deleteGroupMutation.reset();
+                  setDeletingGroup({
+                    householdId: requireHouseholdId(),
+                    groupId: group.id,
+                    groupName: group.name,
+                  });
+                }}
+              />
+            </View>
+          ))}
           {isAdmin && (
             <Pressable
               accessibilityRole="button"
@@ -518,6 +443,25 @@ function HouseholdContent() {
           )}
         </View>
       </Pressable>
+      {isAdmin && deletingGroup && deletingGroup.householdId === householdId && (
+        <DeleteTaskGroupModal
+          groupName={deletingGroup.groupName}
+          isPending={deleteGroupMutation.isPending}
+          error={deleteGroupMutation.error?.message}
+          onConfirm={() => {
+            if (!deleteGroupMutation.isPending) {
+              deleteGroupMutation.mutate(
+                {
+                  householdId: deletingGroup.householdId,
+                  groupId: deletingGroup.groupId,
+                },
+                { onSuccess: () => setDeletingGroup(null) },
+              );
+            }
+          }}
+          onCancel={() => setDeletingGroup(null)}
+        />
+      )}
       {editingNickname && editingNickname.householdId === householdId && (
         <NicknameModal
           key={editingNickname.householdId}
@@ -565,14 +509,6 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
-  },
-  participants: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  participant: {
-    alignItems: "center",
-    gap: 2,
-    padding: 3,
-    borderRadius: 12,
-    borderWidth: 2,
   },
   iconCircle: {
     width: 44,
