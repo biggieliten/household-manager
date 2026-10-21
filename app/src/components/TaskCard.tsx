@@ -2,7 +2,7 @@ import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
 import { useTheme } from "@/theme";
-import { avatars } from "@/lib/avatars";
+import Avatar from "@/components/Avatar";
 
 import type { TaskListItem } from "@shared/schemas/task-schema";
 
@@ -80,13 +80,7 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
         {doneToday ? (
           <View style={styles.avatars}>
             {members.map((member) => (
-              <View
-                key={member.id}
-                style={[styles.avatar, { backgroundColor: statusBackground }]}>
-                <Text style={styles.avatarEmoji}>
-                  {avatars[member.avatar].emoji}
-                </Text>
-              </View>
+              <Avatar key={member.id} avatar={member.avatar} />
             ))}
           </View>
         ) : (
@@ -123,14 +117,6 @@ const styles = StyleSheet.create({
   label: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
   labelText: { fontSize: 12, fontWeight: "700" },
   avatars: { flexDirection: "row", flexWrap: "wrap", gap: 4, maxWidth: 148 },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarEmoji: { fontSize: 21 },
   daysBadge: { borderRadius: 18, paddingHorizontal: 9, paddingVertical: 6 },
   daysText: { fontSize: 13, fontWeight: "700" },
 });

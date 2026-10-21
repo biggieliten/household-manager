@@ -16,19 +16,8 @@ import { archiveTask, completeTask } from "@/lib/api/tasks";
 import { householdQueryOptions } from "@/options/households";
 import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
-import type { Avatar } from "@shared/schemas/member-schema";
+import Avatar from "@/components/Avatar";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
-
-const avatarEmoji: Record<Avatar, string> = {
-  FOX: "🦊",
-  PIG: "🐷",
-  FROG: "🐸",
-  CHICKEN: "🐥",
-  OCTOPUS: "🐙",
-  DOLPHIN: "🐬",
-  OWL: "🦉",
-  UNICORN: "🦄",
-};
 
 const accents = {
   light: {
@@ -323,12 +312,7 @@ export default function TaskById() {
         {history &&
           history.map((entry, index) => (
             <View key={entry.member.id} style={styles.historyRow}>
-              <View style={[styles.avatar, { backgroundColor: accent.chip }]}>
-                <Text style={styles.avatarEmoji}>
-                  {avatarEmoji[entry.member.avatar]}
-                </Text>
-              </View>
-
+              <Avatar avatar={entry.member.avatar} size={40} />
               <View style={styles.tileContent}>
                 <Text style={[styles.historyName, { color: colors.text }]}>
                   {entry.member.nickname}
@@ -485,14 +469,6 @@ const styles = StyleSheet.create({
   tileBody: { fontSize: 15 },
   historyTotal: { fontSize: 13, fontWeight: "600" },
   historyRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarEmoji: { fontSize: 22 },
   historyName: { fontSize: 14, fontWeight: "600" },
   historyCount: { fontSize: 14, fontWeight: "600" },
   actionRow: { flexDirection: "row", gap: 12 },

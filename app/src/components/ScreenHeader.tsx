@@ -1,12 +1,11 @@
+import Avatar from "@/components/Avatar";
+import useActiveHouseholdId from "@/hooks/use-active-household-id";
+import { householdQueryOptions } from "@/options/households";
+import { useTheme } from "@/theme";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import useActiveHouseholdId from "@/hooks/use-active-household-id";
-import { avatars } from "@/lib/avatars";
-import { householdQueryOptions } from "@/options/households";
-import { useTheme } from "@/theme";
 
 export default function ScreenHeader(): React.JSX.Element {
   const { colors } = useTheme();
@@ -24,16 +23,8 @@ export default function ScreenHeader(): React.JSX.Element {
         </Text>
       </View>
       <Link href="/profile" asChild>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Profil"
-          style={StyleSheet.flatten([
-            styles.avatar,
-            { backgroundColor: colors.chip },
-          ])}>
-          <Text style={styles.avatarEmoji}>
-            {me ? avatars[me.avatar].emoji : ""}
-          </Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Profil">
+          {me && <Avatar avatar={me.avatar} size={40} />}
         </Pressable>
       </Link>
     </SafeAreaView>
@@ -55,15 +46,5 @@ const styles = StyleSheet.create({
   householdName: {
     fontSize: 20,
     fontWeight: "700",
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarEmoji: {
-    fontSize: 22,
   },
 });
