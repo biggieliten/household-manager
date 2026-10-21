@@ -26,7 +26,7 @@ import {
   updateMyNicknameMutationOptions,
 } from "@/options/households";
 import { useTheme } from "@/theme";
-import { avatars } from "@/lib/avatars";
+import Avatar from "@/components/Avatar";
 
 import ConfirmBox from "@/components/ConfirmBox";
 
@@ -58,8 +58,9 @@ function HouseholdContent() {
   const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [showLastOwnerNotice, setShowLastOwnerNotice] = useState(false);
-  const [editingNickname, setEditingNickname] =
-    useState<NicknameEdit | null>(null);
+  const [editingNickname, setEditingNickname] = useState<NicknameEdit | null>(
+    null,
+  );
   const router = useRouter();
 
   const requireHouseholdId = () => {
@@ -212,9 +213,7 @@ function HouseholdContent() {
                     styles.flex,
                     member.isPaused && styles.paused,
                   ]}>
-                  <Text style={styles.avatar}>
-                    {avatars[member.avatar].emoji}
-                  </Text>
+                  <Avatar avatar={member.avatar} size={36} />
                   <Text style={[styles.memberName, { color: colors.text }]}>
                     {member.nickname}
                     {member.isMe && (
@@ -400,9 +399,6 @@ const styles = StyleSheet.create({
   memberRow: {
     borderRadius: 12,
     padding: 12,
-  },
-  avatar: {
-    fontSize: 24,
   },
   memberName: {
     fontSize: 15,
