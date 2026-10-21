@@ -255,6 +255,7 @@ household-manager/
         ├── components/
         │   ├── ConfirmBox.tsx
         │   ├── GithubSignInButton.tsx
+        │   ├── JoinRequests.tsx
         │   ├── MemberMenu.tsx
         │   ├── ScreenHeader.tsx
         │   ├── TaskAssignments.tsx
