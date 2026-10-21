@@ -29,6 +29,8 @@ export const updateMemberSchema = createMemberSchema
   .omit({ householdId: true })
   .partial();
 
+export const updateAvatarSchema = createMemberSchema.pick({ avatar: true });
+
 export type Avatar = z.infer<typeof avatarSchema>;
 export type Member = z.infer<typeof responseMemberSchema>;
 export type CreateMemberInput = z.input<typeof createMemberSchema>;

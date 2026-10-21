@@ -22,20 +22,9 @@ import ScreenHeader from "@/components/ScreenHeader";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { householdQueryOptions } from "@/options/households";
 import { useTheme } from "@/theme";
-import type { Avatar } from "@shared/schemas/member-schema";
-import ConfirmBox from "@/components/ConfirmBox";
+import { avatars } from "@/lib/avatars";
 
-// TODO: share with TaskCard
-const avatarEmoji: Record<Avatar, string> = {
-  FOX: "🦊",
-  PIG: "🐷",
-  FROG: "🐸",
-  CHICKEN: "🐥",
-  OCTOPUS: "🐙",
-  DOLPHIN: "🐬",
-  OWL: "🦉",
-  UNICORN: "🦄",
-};
+import ConfirmBox from "@/components/ConfirmBox";
 
 export default function Household() {
   const { colors } = useTheme();
@@ -138,7 +127,11 @@ function HouseholdContent() {
         onPress={() => setOpenMenuId(null)}
         style={[styles.content, styles.grow]}>
         <View
-          style={[styles.card, styles.row, { backgroundColor: colors.surface }]}>
+          style={[
+            styles.card,
+            styles.row,
+            { backgroundColor: colors.surface },
+          ]}>
           <View style={[styles.iconCircle, { backgroundColor: colors.border }]}>
             <SymbolView
               name={{ ios: "house.fill", android: "home", web: "home" }}
@@ -167,7 +160,11 @@ function HouseholdContent() {
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <View style={styles.row}>
             <Text
-              style={[styles.sectionTitle, styles.flex, { color: colors.text }]}>
+              style={[
+                styles.sectionTitle,
+                styles.flex,
+                { color: colors.text },
+              ]}>
               Medlemmar i hushållet
             </Text>
             <View style={[styles.badge, { backgroundColor: colors.border }]}>
@@ -202,7 +199,9 @@ function HouseholdContent() {
                     styles.flex,
                     member.isPaused && styles.paused,
                   ]}>
-                  <Text style={styles.avatar}>{avatarEmoji[member.avatar]}</Text>
+                  <Text style={styles.avatar}>
+                    {avatars[member.avatar].emoji}
+                  </Text>
                   <Text style={[styles.memberName, { color: colors.text }]}>
                     {member.nickname}
                     {member.isMe && (
@@ -211,7 +210,8 @@ function HouseholdContent() {
                   </Text>
                   <View
                     style={[styles.badge, { backgroundColor: colors.border }]}>
-                    <Text style={[styles.badgeText, { color: colors.textMuted }]}>
+                    <Text
+                      style={[styles.badgeText, { color: colors.textMuted }]}>
                       {member.isPaused
                         ? "Pausad"
                         : member.isAdmin

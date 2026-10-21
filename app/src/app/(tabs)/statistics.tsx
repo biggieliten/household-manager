@@ -25,18 +25,8 @@ import {
 } from "@/lib/statistics-period";
 import { statisticsQueryOptions } from "@/options/statistics";
 import { useTheme } from "@/theme";
-import type { Avatar, MemberStatistics } from "@/types/statistics";
-
-const avatarColors: Record<Avatar, string> = {
-  FOX: "#F0866A",
-  PIG: "#F2A7C3",
-  FROG: "#7BC47F",
-  CHICKEN: "#EDC45E",
-  OCTOPUS: "#C9546F",
-  DOLPHIN: "#5FA8D3",
-  OWL: "#A47551",
-  UNICORN: "#A68BE0",
-};
+import type { MemberStatistics } from "@/types/statistics";
+import { avatars } from "@/lib/avatars";
 
 function toChartData(members: MemberStatistics[], points: number[]) {
   return members.map((member, index) => ({
@@ -75,15 +65,13 @@ export default function Statistics() {
           styles.periodCard,
           styles.periodRow,
           { backgroundColor: colors.surface },
-        ]}
-      >
+        ]}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Föregående period"
           disabled={!hasPrevious}
           onPress={() => setPeriodIndex(periodIndex - 1)}
-          style={[styles.arrowButton, !hasPrevious && styles.hidden]}
-        >
+          style={[styles.arrowButton, !hasPrevious && styles.hidden]}>
           <Feather name="chevron-left" size={28} color={colors.text} />
         </Pressable>
         <View style={styles.periodText}>
@@ -99,8 +87,7 @@ export default function Statistics() {
           accessibilityLabel="Nästa period"
           disabled={!hasNext}
           onPress={() => setPeriodIndex(periodIndex + 1)}
-          style={[styles.arrowButton, !hasNext && styles.hidden]}
-        >
+          style={[styles.arrowButton, !hasNext && styles.hidden]}>
           <Feather name="chevron-right" size={28} color={colors.text} />
         </Pressable>
       </View>
@@ -131,8 +118,7 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
         <Pressable
           accessibilityRole="button"
           onPress={() => refetch()}
-          style={[styles.retryButton, { backgroundColor: colors.primary }]}
-        >
+          style={[styles.retryButton, { backgroundColor: colors.primary }]}>
           <Text style={styles.retryButtonText}>Försök igen</Text>
         </Pressable>
       </View>
@@ -140,7 +126,7 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
   }
 
   const { members, tasks, totalPoints } = data;
-  const memberColors = members.map((member) => avatarColors[member.avatar]);
+  const memberColors = members.map((member) => avatars[member.avatar].color);
   const totalChartData = toChartData(
     members,
     members.map((member) => member.points),
@@ -149,15 +135,13 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
   return (
     <SafeAreaView
       edges={["left", "right"]}
-      style={[styles.safeArea, { backgroundColor: colors.background }]}
-    >
+      style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView
         style={{ backgroundColor: colors.background }}
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
-        }
-      >
+        }>
         {totalPoints === 0 ? (
           <Text style={[styles.empty, { color: colors.textMuted }]}>
             Inga utförda sysslor den här perioden
@@ -169,7 +153,8 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
                 <Text style={[styles.cardTitle, { color: colors.text }]}>
                   Totalt
                 </Text>
-                <View style={[styles.badge, { backgroundColor: colors.border }]}>
+                <View
+                  style={[styles.badge, { backgroundColor: colors.border }]}>
                   <Text style={[styles.badgeText, { color: colors.text }]}>
                     {totalPoints} p
                   </Text>
@@ -188,14 +173,16 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
 
               <View style={styles.memberRow}>
                 {members.map((member) => {
-                  const percent = Math.round((member.points / totalPoints) * 100);
+                  const percent = Math.round(
+                    (member.points / totalPoints) * 100,
+                  );
                   return (
                     <View key={member.id} style={styles.memberStat}>
                       <View style={styles.memberName}>
                         <View
                           style={[
                             styles.dot,
-                            { backgroundColor: avatarColors[member.avatar] },
+                            { backgroundColor: avatars[member.avatar].color },
                           ]}
                         />
                         <Text style={{ color: colors.text }}>
@@ -227,8 +214,10 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
               {tasks.map((task) => (
                 <View
                   key={task.id}
-                  style={[styles.choreCard, { backgroundColor: colors.surface }]}
-                >
+                  style={[
+                    styles.choreCard,
+                    { backgroundColor: colors.surface },
+                  ]}>
                   <View style={styles.choreChart}>
                     <DonutChart
                       config={{
@@ -240,11 +229,12 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
                   </View>
                   <Text
                     style={[styles.choreName, { color: colors.text }]}
-                    numberOfLines={1}
-                  >
+                    numberOfLines={1}>
                     {task.name}
                   </Text>
-                  <Text style={{ color: colors.textMuted }}>{task.count} ggr</Text>
+                  <Text style={{ color: colors.textMuted }}>
+                    {task.count} ggr
+                  </Text>
                 </View>
               ))}
             </View>
