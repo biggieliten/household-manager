@@ -23,24 +23,13 @@ import {
 } from "@/options/households";
 import { useTheme } from "@/theme";
 import { avatarSchema, type Avatar } from "@shared/schemas/member-schema";
+import { avatars } from "@/lib/avatars";
 
 type Mode = "create" | "join";
 
 // Same limits as the shared schemas
 const MIN_LENGTH = 2;
 const ACCESS_CODE_LENGTH = 8;
-
-// TODO: share with TaskCard and household
-const avatarEmoji: Record<Avatar, string> = {
-  FOX: "🦊",
-  PIG: "🐷",
-  FROG: "🐸",
-  CHICKEN: "🐥",
-  OCTOPUS: "🐙",
-  DOLPHIN: "🐬",
-  OWL: "🦉",
-  UNICORN: "🦄",
-};
 
 export default function CreateHousehold() {
   const { colors } = useTheme();
@@ -385,7 +374,7 @@ function AvatarPicker({
                 },
                 isTaken && styles.avatarTaken,
               ]}>
-              <Text style={styles.avatarEmoji}>{avatarEmoji[option]}</Text>
+              <Text style={styles.avatarEmoji}>{avatars[option].emoji}</Text>
             </Pressable>
           );
         })}
