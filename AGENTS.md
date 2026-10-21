@@ -255,9 +255,11 @@ household-manager/
         │       ├── index.tsx
         │       └── statistics.tsx
         ├── components/
+        │   ├── Avatar.tsx
         │   ├── AvatarPicker.tsx
         │   ├── ConfirmBox.tsx
         │   ├── GithubSignInButton.tsx
+        │   ├── JoinRequests.tsx
         │   ├── MemberMenu.tsx
         │   ├── NicknameModal.tsx
         │   ├── ScreenHeader.tsx
@@ -280,6 +282,7 @@ household-manager/
         ├── hooks/
         │   └── use-active-household-id.ts
         ├── options/
+        │   ├── auth.ts
         │   ├── households.ts
         │   ├── statistics.ts
         │   └── tasks.ts

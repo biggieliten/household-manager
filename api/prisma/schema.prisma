@@ -14,14 +14,15 @@ datasource db {
 }
 
 model Household {
-    id         Int       @id @default(autoincrement())
-    name       String
-    accessCode String    @unique @default(nanoid(8))
-    members    Member[]
-    tasks      Task[]
-    createdAt  DateTime  @default(now())
-    updatedAt  DateTime  @updatedAt
-    deletedAt  DateTime?
+    id           Int           @id @default(autoincrement())
+    name         String
+    accessCode   String        @unique @default(nanoid(8))
+    members      Member[]
+    joinRequests JoinRequest[]
+    tasks        Task[]
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime      @updatedAt
+    deletedAt    DateTime?
 }
 
 // Better Auth models (user, session, account, verification).
@@ -37,6 +38,21 @@ model User {
     sessions      Session[]
     accounts      Account[]
     members       Member[]
+    joinRequests  JoinRequest[]
+}
+
+model JoinRequest {
+    id          Int       @id @default(autoincrement())
+    nickname    String
+    avatar      Avatar
+    household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+    householdId Int
+    user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId      String
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    @@unique([userId, householdId])
 }
 
 model Session {

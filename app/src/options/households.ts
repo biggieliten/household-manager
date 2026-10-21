@@ -55,14 +55,15 @@ export const createHouseholdMutationOptions = mutationOptions({
   },
 });
 
-// The joined household becomes the active one. Refetching the list flips the
-// guard in _layout, which opens the tabs
+// Only a direct membership makes the household active; pending requests wait.
 export const joinHouseholdMutationOptions = mutationOptions({
   mutationKey: ["households", "join"],
   mutationFn: async (input: JoinMyHouseholdInput) => {
-    const household = await joinHousehold(input);
-    await setActiveHouseholdId(household.id);
-    return household;
+    const result = await joinHousehold(input);
+    if ("member" in result) {
+      await setActiveHouseholdId(result.id);
+    }
+    return result;
   },
   onSuccess: (_data, _input, _onMutateResult, { client: queryClient }) =>
     queryClient.invalidateQueries({
