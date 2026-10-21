@@ -21,6 +21,13 @@ export function currentWeek(now = new Date()): StatisticsPeriod {
   return { from, to };
 }
 
+// Monday 00:00 to Monday 00:00 the week before the current one
+export function lastWeek(now = new Date()): StatisticsPeriod {
+  const { from: to } = currentWeek(now);
+  const from = new Date(to.getFullYear(), to.getMonth(), to.getDate() - 7);
+  return { from, to };
+}
+
 // ISO 8601 week number (weeks start on Monday)
 export function isoWeekNumber(date: Date): number {
   const day = new Date(
