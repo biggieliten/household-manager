@@ -175,16 +175,11 @@ export default function TaskById() {
       ).length,
     }));
 
-  const screenBackground =
-    scheme === "light" ? colors.surface : colors.background;
-  const cardStyle = [styles.card, { backgroundColor: colors.background }];
-  const cardStyleDark = scheme === "dark" && {
-    backgroundColor: colors.surface,
-  };
+  const cardStyle = [styles.card, { backgroundColor: colors.card }];
 
   if (isPending) {
     return (
-      <View style={[styles.notFound, { backgroundColor: screenBackground }]}>
+      <View style={[styles.notFound, { backgroundColor: colors.screen }]}>
         <ActivityIndicator color={colors.textMuted} />
       </View>
     );
@@ -192,7 +187,7 @@ export default function TaskById() {
 
   if (error) {
     return (
-      <View style={[styles.notFound, { backgroundColor: screenBackground }]}>
+      <View style={[styles.notFound, { backgroundColor: colors.screen }]}>
         <Text style={[styles.notFoundText, { color: colors.textMuted }]}>
           {error.message}
         </Text>
@@ -205,7 +200,7 @@ export default function TaskById() {
 
   if (!task) {
     return (
-      <View style={[styles.notFound, { backgroundColor: screenBackground }]}>
+      <View style={[styles.notFound, { backgroundColor: colors.screen }]}>
         <Text style={[styles.notFoundText, { color: colors.textMuted }]}>
           Sysslan hittades inte
         </Text>
@@ -223,7 +218,7 @@ export default function TaskById() {
 
   return (
     <ScrollView
-      style={{ backgroundColor: screenBackground }}
+      style={{ backgroundColor: colors.screen }}
       contentContainerStyle={styles.content}>
       {(householdQuery.isPending || assignmentsQuery.isPending) && (
         <ActivityIndicator color={colors.textMuted} />
@@ -263,7 +258,7 @@ export default function TaskById() {
           }}
         />
       )}
-      <View style={[cardStyle, cardStyleDark]}>
+      <View style={cardStyle}>
         <Text style={[styles.title, { color: colors.text }]}>{task.name}</Text>
 
         <View style={styles.statsRow}>
@@ -277,7 +272,7 @@ export default function TaskById() {
         </View>
       </View>
 
-      <View style={[cardStyle, cardStyleDark]}>
+      <View style={cardStyle}>
         <View style={styles.rowBetween}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Instruktioner
@@ -313,7 +308,7 @@ export default function TaskById() {
         </View>
       </View>
 
-      <View style={[cardStyle, cardStyleDark]}>
+      <View style={cardStyle}>
         <View style={styles.rowBetween}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Historik

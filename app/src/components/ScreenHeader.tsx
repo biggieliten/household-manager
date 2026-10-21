@@ -9,8 +9,7 @@ import { householdQueryOptions } from "@/options/households";
 import { useTheme } from "@/theme";
 
 export default function ScreenHeader(): React.JSX.Element {
-  const { colors, scheme } = useTheme();
-  const avatarBackground = scheme === "light" ? "#ECEBFD" : "#33354A";
+  const { colors } = useTheme();
   const householdId = useActiveHouseholdId();
   const { data: household } = useQuery(householdQueryOptions(householdId));
   const me = household?.members.find((member) => member.isMe);
@@ -30,7 +29,7 @@ export default function ScreenHeader(): React.JSX.Element {
           accessibilityLabel="Profil"
           style={StyleSheet.flatten([
             styles.avatar,
-            { backgroundColor: avatarBackground },
+            { backgroundColor: colors.chip },
           ])}>
           <Text style={styles.avatarEmoji}>
             {me ? avatars[me.avatar].emoji : ""}
