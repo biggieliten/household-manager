@@ -1,5 +1,5 @@
 import Feather from "@expo/vector-icons/Feather";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { DonutChart } from "expo-skia-charts";
 import { useState } from "react";
 import {
@@ -61,11 +61,74 @@ const periodOptions = [
 
 export default function Statistics() {
   const { colors } = useTheme();
-  const [periodIndex, setPeriodIndex] = useState(periodOptions.length - 1);
-  const { title, getPeriod, getSubtitle } = periodOptions[periodIndex];
-  const period = getPeriod();
+  const householdId = useActiveHouseholdId();
+  // null = the newest period with data
+  const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
+  const options = periodOptions.map((option) => ({
+    ...option,
+    period: option.getPeriod(),
+  }));
+  const results = useQueries({
+    queries: options.map(({ period }) =>
+      statisticsQueryOptions(householdId, period),
+    ),
+  });
+
+  if (results.some((result) => result.isPending)) {
+    return (
+      <View style={[styles.screen, { backgroundColor: colors.background }]}>
+        <ScreenHeader />
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.textMuted} />
+        </View>
+      </View>
+    );
+  }
+
+  const failed = results.filter((result) => result.error);
+  if (failed.length > 0) {
+    return (
+      <View style={[styles.screen, { backgroundColor: colors.background }]}>
+        <ScreenHeader />
+        <View style={styles.centered}>
+          <Text style={{ color: colors.text }}>{failed[0].error?.message}</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => failed.forEach((result) => result.refetch())}
+            style={[styles.retryButton, { backgroundColor: colors.primary }]}
+          >
+            <Text style={styles.retryButtonText}>Försök igen</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // Periods without completed tasks are not shown at all
+  const visibleOptions = options.filter(
+    (_, index) => (results[index].data?.totalPoints ?? 0) > 0,
+  );
+
+  if (visibleOptions.length === 0) {
+    return (
+      <View style={[styles.screen, { backgroundColor: colors.background }]}>
+        <ScreenHeader />
+        <Text style={[styles.empty, { color: colors.textMuted }]}>
+          Inga utförda sysslor än
+        </Text>
+      </View>
+    );
+  }
+
+  // Falls back to the newest period if the selected one no longer has data
+  const selectedIndex = visibleOptions.findIndex(
+    (option) => option.title === selectedTitle,
+  );
+  const periodIndex =
+    selectedIndex === -1 ? visibleOptions.length - 1 : selectedIndex;
+  const { title, period, getSubtitle } = visibleOptions[periodIndex];
   const hasPrevious = periodIndex > 0;
-  const hasNext = periodIndex < periodOptions.length - 1;
+  const hasNext = periodIndex < visibleOptions.length - 1;
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -81,7 +144,9 @@ export default function Statistics() {
           accessibilityRole="button"
           accessibilityLabel="Föregående period"
           disabled={!hasPrevious}
-          onPress={() => setPeriodIndex(periodIndex - 1)}
+          onPress={() =>
+            setSelectedTitle(visibleOptions[periodIndex - 1].title)
+          }
           style={[styles.arrowButton, !hasPrevious && styles.hidden]}
         >
           <Feather name="chevron-left" size={28} color={colors.text} />
@@ -98,7 +163,9 @@ export default function Statistics() {
           accessibilityRole="button"
           accessibilityLabel="Nästa period"
           disabled={!hasNext}
-          onPress={() => setPeriodIndex(periodIndex + 1)}
+          onPress={() =>
+            setSelectedTitle(visibleOptions[periodIndex + 1].title)
+          }
           style={[styles.arrowButton, !hasNext && styles.hidden]}
         >
           <Feather name="chevron-right" size={28} color={colors.text} />
@@ -158,98 +225,90 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
         }
       >
-        {totalPoints === 0 ? (
-          <Text style={[styles.empty, { color: colors.textMuted }]}>
-            Inga utförda sysslor den här perioden
-          </Text>
-        ) : (
-          <>
-            <View style={[styles.card, { backgroundColor: colors.surface }]}>
-              <View style={styles.cardHeader}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>
-                  Totalt
-                </Text>
-                <View style={[styles.badge, { backgroundColor: colors.border }]}>
-                  <Text style={[styles.badgeText, { color: colors.text }]}>
-                    {totalPoints} p
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <View style={styles.cardHeader}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              Totalt
+            </Text>
+            <View style={[styles.badge, { backgroundColor: colors.border }]}>
+              <Text style={[styles.badgeText, { color: colors.text }]}>
+                {totalPoints} p
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.totalChart}>
+            <DonutChart
+              config={{
+                data: totalChartData,
+                colors: memberColors,
+                strokeWidth: 25,
+              }}
+            />
+          </View>
+
+          <View style={styles.memberRow}>
+            {members.map((member) => {
+              const percent = Math.round((member.points / totalPoints) * 100);
+              return (
+                <View key={member.id} style={styles.memberStat}>
+                  <View style={styles.memberName}>
+                    <View
+                      style={[
+                        styles.dot,
+                        { backgroundColor: avatarColors[member.avatar] },
+                      ]}
+                    />
+                    <Text style={{ color: colors.text }}>
+                      {member.nickname}
+                    </Text>
+                  </View>
+                  <Text style={[styles.percent, { color: colors.text }]}>
+                    {percent}%
+                  </Text>
+                  <Text style={{ color: colors.textMuted }}>
+                    {member.points} poäng
                   </Text>
                 </View>
-              </View>
+              );
+            })}
+          </View>
+        </View>
 
-              <View style={styles.totalChart}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Fördelning per syssla
+          </Text>
+          <Text style={{ color: colors.textMuted }}>
+            {tasks.length} sysslor
+          </Text>
+        </View>
+
+        <View style={styles.grid}>
+          {tasks.map((task) => (
+            <View
+              key={task.id}
+              style={[styles.choreCard, { backgroundColor: colors.surface }]}
+            >
+              <View style={styles.choreChart}>
                 <DonutChart
                   config={{
-                    data: totalChartData,
+                    data: toChartData(members, task.pointsByMember),
                     colors: memberColors,
-                    strokeWidth: 25,
+                    strokeWidth: 14,
                   }}
                 />
               </View>
-
-              <View style={styles.memberRow}>
-                {members.map((member) => {
-                  const percent = Math.round((member.points / totalPoints) * 100);
-                  return (
-                    <View key={member.id} style={styles.memberStat}>
-                      <View style={styles.memberName}>
-                        <View
-                          style={[
-                            styles.dot,
-                            { backgroundColor: avatarColors[member.avatar] },
-                          ]}
-                        />
-                        <Text style={{ color: colors.text }}>
-                          {member.nickname}
-                        </Text>
-                      </View>
-                      <Text style={[styles.percent, { color: colors.text }]}>
-                        {percent}%
-                      </Text>
-                      <Text style={{ color: colors.textMuted }}>
-                        {member.points} poäng
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                Fördelning per syssla
+              <Text
+                style={[styles.choreName, { color: colors.text }]}
+                numberOfLines={1}
+              >
+                {task.name}
               </Text>
-              <Text style={{ color: colors.textMuted }}>
-                {tasks.length} sysslor
-              </Text>
+              <Text style={{ color: colors.textMuted }}>{task.count} ggr</Text>
             </View>
-
-            <View style={styles.grid}>
-              {tasks.map((task) => (
-                <View
-                  key={task.id}
-                  style={[styles.choreCard, { backgroundColor: colors.surface }]}
-                >
-                  <View style={styles.choreChart}>
-                    <DonutChart
-                      config={{
-                        data: toChartData(members, task.pointsByMember),
-                        colors: memberColors,
-                        strokeWidth: 14,
-                      }}
-                    />
-                  </View>
-                  <Text
-                    style={[styles.choreName, { color: colors.text }]}
-                    numberOfLines={1}
-                  >
-                    {task.name}
-                  </Text>
-                  <Text style={{ color: colors.textMuted }}>{task.count} ggr</Text>
-                </View>
-              ))}
-            </View>
-          </>
-        )}
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
