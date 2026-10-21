@@ -212,9 +212,6 @@ export default function CreateTaskGroup() {
         </Text>
       )}
       {tasks.data?.map((task) => {
-        const otherGroup = groups.data?.find(
-          (group) => group.id !== groupId && group.taskIds.includes(task.id),
-        );
         const selected = taskIds.includes(task.id);
         return (
           <Pressable
@@ -223,9 +220,9 @@ export default function CreateTaskGroup() {
             accessibilityLabel={task.name}
             accessibilityState={{
               checked: selected,
-              disabled: !!otherGroup || saveMutation.isPending,
+              disabled: saveMutation.isPending,
             }}
-            disabled={!!otherGroup || saveMutation.isPending}
+            disabled={saveMutation.isPending}
             onPress={() => setTaskIds((previous) =>
               selected
                 ? previous.filter((taskId) => taskId !== task.id)
@@ -233,14 +230,11 @@ export default function CreateTaskGroup() {
             )}
             style={[
               styles.task,
-              { backgroundColor: colors.surface, opacity: otherGroup ? 0.5 : 1 },
+              { backgroundColor: colors.surface },
             ]}>
             <Text style={{ color: colors.text }}>
               {selected ? "☑" : "☐"} {task.name}
             </Text>
-            {otherGroup && (
-              <Text style={{ color: colors.textMuted }}>Tillhör {otherGroup.name}</Text>
-            )}
           </Pressable>
         );
       })}
