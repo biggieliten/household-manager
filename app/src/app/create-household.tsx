@@ -27,13 +27,17 @@ import type { Avatar } from "@shared/schemas/member-schema";
 
 type Mode = "create" | "join";
 
+type HouseholdFormProps = {
+  initialNickname: string;
+};
+
 // Same limits as the shared schemas
 const MIN_LENGTH = 2;
 const ACCESS_CODE_LENGTH = 8;
 
 export default function CreateHousehold() {
   const { colors } = useTheme();
-  const { data: session, isPending: isSessionPending } = authClient.useSession();
+  const { data: session } = authClient.useSession();
   const [mode, setMode] = useState<Mode>("create");
   const queryClient = useQueryClient();
   const [signOutError, setSignOutError] = useState<string | null>(null);
@@ -49,14 +53,6 @@ export default function CreateHousehold() {
       setSignOutError("Kunde inte logga ut");
     }
   };
-
-  if (isSessionPending) {
-    return (
-      <View style={[styles.screen, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.textMuted} />
-      </View>
-    );
-  }
 
   const initialNickname = session?.user.name ?? "";
 
@@ -112,7 +108,7 @@ export default function CreateHousehold() {
   );
 }
 
-function CreateForm({ initialNickname }: { initialNickname: string }) {
+function CreateForm({ initialNickname }: HouseholdFormProps) {
   const { colors } = useTheme();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
@@ -222,7 +218,7 @@ function CreateForm({ initialNickname }: { initialNickname: string }) {
 }
 
 // First the code is checked, then the user picks a nickname and a free avatar
-function JoinForm({ initialNickname }: { initialNickname: string }) {
+function JoinForm({ initialNickname }: HouseholdFormProps) {
   const { colors } = useTheme();
   const [accessCode, setAccessCode] = useState("");
   const [nickname, setNickname] = useState(initialNickname);

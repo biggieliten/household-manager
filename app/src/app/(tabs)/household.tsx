@@ -2,20 +2,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SymbolView } from "expo-symbols";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import MemberMenu from "@/components/MemberMenu";
+import NicknameModal from "@/components/NicknameModal";
 import {
   pauseMember,
   resumeMember,
@@ -25,15 +22,16 @@ import {
 } from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
-import {
-  householdQueryOptions,
-  householdsQueryOptions,
-} from "@/options/households";
+import { householdQueryOptions } from "@/options/households";
 import { useTheme } from "@/theme";
-import { updateMyNicknameSchema } from "@shared/schemas/member-schema";
 import { avatars } from "@/lib/avatars";
 
 import ConfirmBox from "@/components/ConfirmBox";
+
+type NicknameEdit = {
+  householdId: number;
+  nickname: string;
+};
 
 export default function Household() {
   const { colors } = useTheme();
@@ -58,10 +56,8 @@ function HouseholdContent() {
   const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [showLastOwnerNotice, setShowLastOwnerNotice] = useState(false);
-  const [editingNickname, setEditingNickname] = useState<{
-    householdId: number;
-    nickname: string;
-  } | null>(null);
+  const [editingNickname, setEditingNickname] =
+    useState<NicknameEdit | null>(null);
   const router = useRouter();
 
   const requireHouseholdId = () => {
@@ -98,6 +94,15 @@ function HouseholdContent() {
       await queryClient.invalidateQueries({ queryKey: ["households"] });
       // TODO: decide with the group where to go after leaving (e.g. "Mina hushåll")
       router.replace("/profile");
+    },
+  });
+
+  const renameMutation = useMutation({
+    mutationFn: ({ householdId, nickname }: NicknameEdit) =>
+      updateMyNickname(householdId, nickname),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["households"] });
+      setEditingNickname(null);
     },
   });
 
@@ -245,11 +250,13 @@ function HouseholdContent() {
                         ? [
                             {
                               label: "Ändra visningsnamn",
-                              onPress: () =>
+                              onPress: () => {
+                                renameMutation.reset();
                                 setEditingNickname({
                                   householdId: requireHouseholdId(),
                                   nickname: member.nickname,
-                                }),
+                                });
+                              },
                             },
                             {
                               label: "Lämna hushåll",
@@ -320,177 +327,23 @@ function HouseholdContent() {
       {editingNickname && editingNickname.householdId === householdId && (
         <NicknameModal
           key={editingNickname.householdId}
-          {...editingNickname}
-          onClose={() => setEditingNickname(null)}
+          nickname={editingNickname.nickname}
+          isPending={renameMutation.isPending}
+          error={renameMutation.error?.message}
+          onSave={(nickname) =>
+            renameMutation.mutate({
+              householdId: editingNickname.householdId,
+              nickname,
+            })
+          }
+          onCancel={() => setEditingNickname(null)}
         />
       )}
     </ScrollView>
   );
 }
 
-function NicknameModal({
-  householdId,
-  nickname,
-  onClose,
-}: {
-  householdId: number;
-  nickname: string;
-  onClose: () => void;
-}) {
-  const { colors } = useTheme();
-  const queryClient = useQueryClient();
-  const [draft, setDraft] = useState(nickname);
-  const renameMutation = useMutation({
-    mutationFn: (input: { nickname: string }) =>
-      updateMyNickname(householdId, input.nickname),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: householdsQueryOptions.queryKey,
-          exact: true,
-        }),
-        // Includes the household's tasks, assignments and statistics.
-        queryClient.invalidateQueries({
-          queryKey: householdQueryOptions(householdId).queryKey,
-        }),
-      ]);
-      onClose();
-    },
-  });
-  const input = { nickname: draft.trim() };
-  const canSave =
-    updateMyNicknameSchema.safeParse(input).success && !renameMutation.isPending;
-
-  const handleClose = () => {
-    if (!renameMutation.isPending) onClose();
-  };
-
-  return (
-    <Modal
-      visible
-      transparent
-      animationType="fade"
-      onRequestClose={handleClose}>
-      <KeyboardAvoidingView
-        style={styles.modalOverlay}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView
-          contentContainerStyle={styles.modalContent}
-          keyboardShouldPersistTaps="handled">
-          <View
-            accessibilityViewIsModal
-            onAccessibilityEscape={handleClose}
-            style={[
-              styles.modalCard,
-              { backgroundColor: colors.surface },
-            ]}>
-            <Text style={[styles.householdName, { color: colors.text }]}>
-              Ändra visningsnamn
-            </Text>
-            <Text style={{ color: colors.textMuted }}>
-              Namnet visas i det här hushållet. Ange minst två tecken.
-            </Text>
-            <TextInput
-              accessibilityLabel="Visningsnamn"
-              value={draft}
-              onChangeText={setDraft}
-              editable={!renameMutation.isPending}
-              autoFocus
-              returnKeyType="done"
-              onSubmitEditing={() => {
-                if (canSave) renameMutation.mutate(input);
-              }}
-              style={[
-                styles.nicknameInput,
-                {
-                  color: colors.text,
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                },
-              ]}
-            />
-            {renameMutation.error && (
-              <Text accessibilityRole="alert" style={{ color: colors.text }}>
-                {renameMutation.error.message}
-              </Text>
-            )}
-            <View style={styles.row}>
-              <Pressable
-                accessibilityRole="button"
-                disabled={renameMutation.isPending}
-                onPress={handleClose}
-                style={[
-                  styles.modalButton,
-                  { backgroundColor: colors.background },
-                ]}>
-                <Text style={{ color: colors.text }}>Avbryt</Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Spara visningsnamn"
-                accessibilityState={{
-                  disabled: !canSave,
-                  busy: renameMutation.isPending,
-                }}
-                disabled={!canSave}
-                onPress={() => renameMutation.mutate(input)}
-                style={[
-                  styles.modalButton,
-                  {
-                    backgroundColor: colors.primary,
-                    opacity: canSave || renameMutation.isPending ? 1 : 0.5,
-                  },
-                ]}>
-                {renameMutation.isPending ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.saveText}>Spara</Text>
-                )}
-              </Pressable>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-}
-
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 24,
-  },
-  modalCard: {
-    width: "100%",
-    maxWidth: 440,
-    alignSelf: "center",
-    borderRadius: 16,
-    padding: 20,
-    gap: 16,
-  },
-  nicknameInput: {
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    fontSize: 16,
-  },
-  modalButton: {
-    flex: 1,
-    minHeight: 48,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  saveText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-  },
   screen: {
     flex: 1,
   },
