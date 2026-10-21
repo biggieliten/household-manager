@@ -23,7 +23,9 @@ import ScreenHeader from "@/components/ScreenHeader";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import {
   householdQueryOptions,
+  householdsQueryOptions,
   updateMyNicknameMutationOptions,
+  switchHouseholdMutationOptions,
 } from "@/options/households";
 import { useTheme } from "@/theme";
 import Avatar from "@/components/Avatar";
@@ -55,6 +57,8 @@ function HouseholdContent() {
     householdQueryOptions(householdId),
   );
   const queryClient = useQueryClient();
+  const households = useQuery(householdsQueryOptions);
+  const switchMutation = useMutation(switchHouseholdMutationOptions);
   const groupsQuery = useQuery(taskGroupsQueryOptions(householdId));
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [openGroupMenuId, setOpenGroupMenuId] = useState<number | null>(null);
@@ -328,6 +332,36 @@ function HouseholdContent() {
                 </Text>
               )}
             </View>
+          ))}
+        </View>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Växla hushåll
+          </Text>
+
+          {households.data?.map((household) => (
+            <Pressable
+              key={household.id}
+              onPress={() => switchMutation.mutate(household.id)}
+              disabled={household.id === householdId}
+              style={[
+                styles.row,
+                styles.memberRow,
+                { backgroundColor: colors.background },
+              ]}>
+              <Avatar avatar={household.member.avatar} size={36} />
+              <Text
+                style={[
+                  styles.memberName,
+                  styles.flex,
+                  { color: colors.text },
+                ]}>
+                {household.name}
+              </Text>
+              {household.id === householdId && (
+                <Text style={{ color: colors.primary }}>Aktivt</Text>
+              )}
+            </Pressable>
           ))}
         </View>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
