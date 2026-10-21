@@ -5,8 +5,8 @@ import {
   createMyHouseholdSchema,
   joinHouseholdSchema,
   joinMyHouseholdSchema,
-  updateAvatarSchema,
 } from "../../../shared/schemas/household-schema.ts";
+import { updateAvatarSchema } from "../../../shared/schemas/member-schema.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
 import {
