@@ -258,6 +258,7 @@ household-manager/
         │   ├── AvatarPicker.tsx
         │   ├── ConfirmBox.tsx
         │   ├── GithubSignInButton.tsx
+        │   ├── JoinRequests.tsx
         │   ├── MemberMenu.tsx
         │   ├── NicknameModal.tsx
         │   ├── ScreenHeader.tsx
