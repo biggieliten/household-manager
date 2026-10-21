@@ -2,7 +2,10 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useTheme } from "@/theme";
 import type { Member } from "@shared/schemas/member-schema";
-import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
+import type {
+  MemberToTask,
+  TaskAssignment,
+} from "@shared/schemas/member-to-task-schema";
 
 type Props = {
   taskId: number;
@@ -11,7 +14,7 @@ type Props = {
   error?: string;
   onAssign?: (assignment: MemberToTask) => void;
   onRemove?: (assignment: MemberToTask) => void;
-  assignments: readonly MemberToTask[];
+  assignments: readonly TaskAssignment[];
   members: readonly (Pick<Member, "id" | "nickname" | "leftAt"> & {
     isPaused: boolean;
   })[];
@@ -29,9 +32,12 @@ export default function TaskAssignments({
 }: Props) {
   const { colors } = useTheme();
   const membersById = new Map(members.map((member) => [member.id, member]));
-  const assignedMemberIds = new Set(
-    assignments
-      .filter((assignment) => assignment.taskId === taskId)
+  const taskAssignments = assignments.filter(
+    (assignment) => assignment.taskId === taskId,
+  );
+  const manualMemberIds = new Set(
+    taskAssignments
+      .filter((assignment) => assignment.isManual)
       .map((assignment) => assignment.memberId),
   );
   const householdMembers = members.filter((member) => member.leftAt === null);
@@ -51,23 +57,25 @@ export default function TaskAssignments({
       <Text accessibilityRole="header" style={[styles.heading, { color: colors.text }]}>
         Tilldelade medlemmar
       </Text>
-      {assignedMemberIds.size === 0 ? (
+      {taskAssignments.length === 0 ? (
         <Text style={{ color: colors.textMuted }}>Inga tilldelningar ännu.</Text>
       ) : (
-        Array.from(assignedMemberIds, (memberId) => {
+        taskAssignments.map(({ memberId, isManual, group }) => {
           const member = membersById.get(memberId);
           return (
             <View key={memberId} style={styles.memberRow}>
               <Text style={[styles.memberName, { color: colors.text }]}>
                 {member?.nickname ?? `Medlem #${memberId}`}
                 {member?.isPaused ? " · Pausad" : ""}
+                {group ? ` · Grupp: ${group.name}` : ""}
+                {group && isManual ? " · Även manuellt tilldelad" : ""}
               </Text>
-              {isOwner && onRemove && (
+              {isOwner && onRemove && isManual && (
                 <Pressable
                   accessibilityRole="button"
                   disabled={isPending}
                   accessibilityState={{ disabled: isPending, busy: isPending }}
-                  accessibilityLabel={`Ta bort tilldelning för ${member?.nickname ?? `Medlem #${memberId}`}`}
+                  accessibilityLabel={`Ta bort manuell tilldelning för ${member?.nickname ?? `Medlem #${memberId}`}`}
                   onPress={() => {
                     if (!isPending) onRemove({ taskId, memberId });
                   }}
@@ -94,7 +102,7 @@ export default function TaskAssignments({
             <Text style={[styles.memberName, { color: colors.text }]}>
               {member.nickname}
             </Text>
-            {isOwner && onAssign && !assignedMemberIds.has(member.id) && (
+            {isOwner && onAssign && !manualMemberIds.has(member.id) && (
               <Pressable
                 accessibilityRole="button"
                 disabled={isPending}

@@ -113,17 +113,7 @@ export default function TaskById() {
         ? removeTaskAssignment(householdId, assignment)
         : assignTask(householdId, assignment);
     },
-    onSuccess: async (saved, { remove }) => {
-      queryClient.setQueryData<MemberToTask[]>(
-        assignmentsKey,
-        (previous = []) => {
-          const remaining = previous.filter(
-            (item) =>
-              item.taskId !== saved.taskId || item.memberId !== saved.memberId,
-          );
-          return remove ? remaining : [...remaining, saved];
-        },
-      );
+    onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: assignmentsKey }),
         queryClient.invalidateQueries({
