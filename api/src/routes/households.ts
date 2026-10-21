@@ -13,6 +13,7 @@ import {
   requireSession,
   sessionControl,
 } from "../middleware/sessioncontrol.ts";
+import { Prisma } from "../generated/prisma/client.ts";
 
 // A household by its code, with the members still in it
 function findHouseholdByCode(accessCode: string) {
@@ -152,32 +153,42 @@ const app = new Hono()
         isAdmin: true,
       } as const;
 
-      const member = formerMember
-        ? await db.member.update({
-            where: { id: formerMember.id },
-            data: { nickname, avatar, isAdmin, leftAt: null },
-            select,
-          })
-        : await db.member.create({
-            data: {
-              userId: user.id,
-              householdId: household.id,
-              nickname,
-              avatar,
-              isAdmin,
-            },
-            select,
-          });
+      try {
+        const member = formerMember
+          ? await db.member.update({
+              where: { id: formerMember.id },
+              data: { nickname, avatar, isAdmin, leftAt: null },
+              select,
+            })
+          : await db.member.create({
+              data: {
+                userId: user.id,
+                householdId: household.id,
+                nickname,
+                avatar,
+                isAdmin,
+              },
+              select,
+            });
 
-      return c.json(
-        {
-          id: household.id,
-          name: household.name,
-          accessCode: household.accessCode,
-          member,
-        },
-        200,
-      );
+        return c.json(
+          {
+            id: household.id,
+            name: household.name,
+            accessCode: household.accessCode,
+            member,
+          },
+          200,
+        );
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          return c.json({ error: "Avatar is taken" }, 409);
+        }
+        throw error;
+      }
     },
   )
   .get(
@@ -245,13 +256,22 @@ const app = new Hono()
         return c.json({ error: "Avatar is taken" }, 409);
       }
 
-      const member = await db.member.update({
-        where: { id: me.id },
-        data: { avatar },
-        select: { id: true, nickname: true, avatar: true, isAdmin: true },
-      });
-
-      return c.json(member, 200);
+      try {
+        const member = await db.member.update({
+          where: { id: me.id },
+          data: { avatar },
+          select: { id: true, nickname: true, avatar: true, isAdmin: true },
+        });
+        return c.json(member, 200);
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          return c.json({ error: "Avatar is taken" }, 409);
+        }
+        throw error;
+      }
     },
   )
 
