@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { completionParamSchema } from "../../../shared/schemas/completed-task-schema.ts";
-import { auth } from "../lib/auth.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
 import { sessionControl } from "../middleware/sessioncontrol.ts";
@@ -11,20 +10,7 @@ const app = new Hono().post(
   validate("param", completionParamSchema),
   async (c) => {
     const { householdId, taskId } = c.req.valid("param");
-    const session = await auth.api.getSession({
-      headers: c.req.raw.headers,
-    });
-    if (!session) {
-      return c.json({ error: "Unauthorized" }, 401);
-    }
-
-    const member = await db.member.findFirst({
-      where: { userId: session.user.id, householdId, leftAt: null },
-      select: { id: true },
-    });
-    if (!member) {
-      return c.json({ error: "Forbidden" }, 403);
-    }
+    const { member } = c.var;
 
     const task = await db.task.findFirst({
       where: { id: taskId, householdId, isArchived: false, deletedAt: null },

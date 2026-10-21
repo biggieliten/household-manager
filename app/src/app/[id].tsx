@@ -1,9 +1,4 @@
-import {
-  skipToken,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -16,14 +11,10 @@ import {
 
 import TaskAssignments from "@/components/TaskAssignments";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
-import {
-  assignTask,
-  fetchTaskAssignments,
-  removeTaskAssignment,
-} from "@/lib/api/task-assignments";
+import { assignTask, removeTaskAssignment } from "@/lib/api/task-assignments";
 import { archiveTask, completeTask } from "@/lib/api/tasks";
 import { householdQueryOptions } from "@/options/households";
-import { tasksQueryOptions } from "@/options/tasks";
+import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
 import Avatar from "@/components/Avatar";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
@@ -107,11 +98,8 @@ export default function TaskById() {
     }
   };
   const householdQuery = useQuery(householdQueryOptions(householdId));
-  const assignmentsKey = ["households", householdId, "task-assignments"];
-  const assignmentsQuery = useQuery({
-    queryKey: assignmentsKey,
-    queryFn: householdId ? () => fetchTaskAssignments(householdId) : skipToken,
-  });
+  const assignmentsKey = taskAssignmentsQueryOptions(householdId).queryKey;
+  const assignmentsQuery = useQuery(taskAssignmentsQueryOptions(householdId));
   const assignmentMutation = useMutation({
     mutationFn: ({
       assignment,
@@ -176,16 +164,11 @@ export default function TaskById() {
       ).length,
     }));
 
-  const screenBackground =
-    scheme === "light" ? colors.surface : colors.background;
-  const cardStyle = [styles.card, { backgroundColor: colors.background }];
-  const cardStyleDark = scheme === "dark" && {
-    backgroundColor: colors.surface,
-  };
+  const cardStyle = [styles.card, { backgroundColor: colors.card }];
 
   if (isPending) {
     return (
-      <View style={[styles.notFound, { backgroundColor: screenBackground }]}>
+      <View style={[styles.notFound, { backgroundColor: colors.screen }]}>
         <ActivityIndicator color={colors.textMuted} />
       </View>
     );
@@ -193,7 +176,7 @@ export default function TaskById() {
 
   if (error) {
     return (
-      <View style={[styles.notFound, { backgroundColor: screenBackground }]}>
+      <View style={[styles.notFound, { backgroundColor: colors.screen }]}>
         <Text style={[styles.notFoundText, { color: colors.textMuted }]}>
           {error.message}
         </Text>
@@ -206,7 +189,7 @@ export default function TaskById() {
 
   if (!task) {
     return (
-      <View style={[styles.notFound, { backgroundColor: screenBackground }]}>
+      <View style={[styles.notFound, { backgroundColor: colors.screen }]}>
         <Text style={[styles.notFoundText, { color: colors.textMuted }]}>
           Sysslan hittades inte
         </Text>
@@ -224,7 +207,7 @@ export default function TaskById() {
 
   return (
     <ScrollView
-      style={{ backgroundColor: screenBackground }}
+      style={{ backgroundColor: colors.screen }}
       contentContainerStyle={styles.content}>
       {(householdQuery.isPending || assignmentsQuery.isPending) && (
         <ActivityIndicator color={colors.textMuted} />
@@ -264,7 +247,7 @@ export default function TaskById() {
           }}
         />
       )}
-      <View style={[cardStyle, cardStyleDark]}>
+      <View style={cardStyle}>
         <Text style={[styles.title, { color: colors.text }]}>{task.name}</Text>
 
         <View style={styles.statsRow}>
@@ -278,7 +261,7 @@ export default function TaskById() {
         </View>
       </View>
 
-      <View style={[cardStyle, cardStyleDark]}>
+      <View style={cardStyle}>
         <View style={styles.rowBetween}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Instruktioner
@@ -314,7 +297,7 @@ export default function TaskById() {
         </View>
       </View>
 
-      <View style={[cardStyle, cardStyleDark]}>
+      <View style={cardStyle}>
         <View style={styles.rowBetween}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Historik

@@ -26,7 +26,7 @@ interface Props {
 }
 
 export default function TaskCard({ task, today }: Props): React.JSX.Element {
-  const { colors, scheme } = useTheme();
+  const { colors } = useTheme();
   const latestCompletion = task.completedTasks[0];
   const elapsed = latestCompletion
     ? daysSince(latestCompletion.completedAt, today)
@@ -46,15 +46,11 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
     : overdue
       ? "Försenad"
       : "Inte gjord idag";
-  const cardBackground =
-    scheme === "light" ? colors.background : colors.surface;
   const statusBackground = doneToday
     ? "#51FAC1"
     : overdue
       ? "#FFDDDA"
-      : scheme === "light"
-        ? "#ECEBFD"
-        : "#33354A";
+      : colors.chip;
 
   return (
     <Link href={{ pathname: "/[id]", params: { id: String(task.id) } }}>
@@ -65,7 +61,7 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
             ? "aldrig gjord"
             : `${elapsed} dagar sedan senast gjord`
         }${members.length ? `, gjord av ${members.map((member) => member.nickname).join(", ")}` : ""}`}
-        style={[styles.card, { backgroundColor: cardBackground }]}>
+        style={[styles.card, { backgroundColor: colors.card }]}>
         <View style={styles.cardContent}>
           <View style={styles.titleRow}>
             <Text
@@ -73,13 +69,7 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
               style={[styles.taskName, { color: colors.text }]}>
               {task.name}
             </Text>
-            <View
-              style={[
-                styles.label,
-                {
-                  backgroundColor: scheme === "light" ? "#ECEBFD" : "#33354A",
-                },
-              ]}>
+            <View style={[styles.label, { backgroundColor: colors.chip }]}>
               <Text style={[styles.labelText, { color: colors.text }]}>
                 {`⚡ ${task.difficultyLevel}p`}
               </Text>

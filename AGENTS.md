@@ -282,6 +282,7 @@ household-manager/
         ├── hooks/
         │   └── use-active-household-id.ts
         ├── options/
+        │   ├── auth.ts
         │   ├── households.ts
         │   ├── statistics.ts
         │   └── tasks.ts

@@ -18,12 +18,19 @@ import AvatarPicker from "@/components/AvatarPicker";
 import JoinRequests from "@/components/JoinRequests";
 import { fetchHouseholdPreview } from "@/lib/api/households";
 import { authClient } from "@/lib/auth-client";
+import { signOutMutationOptions } from "@/options/auth";
 import {
   createHouseholdMutationOptions,
   householdsQueryOptions,
   joinHouseholdMutationOptions,
 } from "@/options/households";
 import { useTheme } from "@/theme";
+import {
+  ACCESS_CODE_LENGTH,
+  createMyHouseholdSchema,
+  joinHouseholdSchema,
+  joinMyHouseholdSchema,
+} from "@shared/schemas/household-schema";
 import type { Avatar } from "@shared/schemas/member-schema";
 
 type Mode = "create" | "join";
@@ -32,28 +39,11 @@ type HouseholdFormProps = {
   initialNickname: string;
 };
 
-// Same limits as the shared schemas
-const MIN_LENGTH = 2;
-const ACCESS_CODE_LENGTH = 8;
-
 export default function CreateHousehold() {
   const { colors } = useTheme();
   const { data: session } = authClient.useSession();
   const [mode, setMode] = useState<Mode>("create");
-  const queryClient = useQueryClient();
-  const [signOutError, setSignOutError] = useState<string | null>(null);
-
-  const handleSignOut = async () => {
-    setSignOutError(null);
-    try {
-      await authClient.signOut();
-      // The next user must not see this user's cached data
-      queryClient.clear();
-    } catch (e) {
-      console.warn("Sign out failed", e);
-      setSignOutError("Kunde inte logga ut");
-    }
-  };
+  const signOutMutation = useMutation(signOutMutationOptions);
 
   const initialNickname = session?.user.name ?? "";
 
@@ -87,14 +77,16 @@ export default function CreateHousehold() {
           <JoinForm initialNickname={initialNickname} />
         )}
 
-        {signOutError && (
+        {signOutMutation.error && (
           <Text style={[styles.error, { color: colors.text }]}>
-            {signOutError}
+            {signOutMutation.error.message}
           </Text>
         )}
         <Pressable
           accessibilityRole="button"
-          onPress={handleSignOut}
+          accessibilityState={{ disabled: signOutMutation.isPending }}
+          disabled={signOutMutation.isPending}
+          onPress={() => signOutMutation.mutate()}
           style={({ pressed }) => [
             styles.signOut,
             { backgroundColor: colors.surface, opacity: pressed ? 0.7 : 1 },
@@ -119,19 +111,16 @@ function CreateForm({ initialNickname }: HouseholdFormProps) {
   const createMutation = useMutation(createHouseholdMutationOptions);
   const created = createMutation.data;
 
-  const canSubmit =
-    name.trim().length >= MIN_LENGTH &&
-    nickname.trim().length >= MIN_LENGTH &&
-    avatar !== null &&
-    !createMutation.isPending;
+  const input = createMyHouseholdSchema.safeParse({
+    name: name.trim(),
+    nickname: nickname.trim(),
+    avatar,
+  });
+  const canSubmit = input.success && !createMutation.isPending;
 
   const handleCreate = () => {
     if (!canSubmit) return;
-    createMutation.mutate({
-      name: name.trim(),
-      nickname: nickname.trim(),
-      avatar,
-    });
+    createMutation.mutate(input.data);
   };
 
   // Refetching the list flips the guard in _layout, which opens the tabs
@@ -236,27 +225,24 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
     refetchInterval: isWaiting ? 5000 : false,
   });
 
-  const code = accessCode.trim();
-  const canSearch =
-    code.length === ACCESS_CODE_LENGTH && !previewMutation.isPending;
+  const codeInput = joinHouseholdSchema.safeParse({ accessCode });
+  const joinInput = joinMyHouseholdSchema.safeParse({
+    accessCode,
+    nickname: nickname.trim(),
+    avatar,
+  });
+  const canSearch = codeInput.success && !previewMutation.isPending;
   const canJoin =
-    nickname.trim().length >= MIN_LENGTH &&
-    avatar !== null &&
-    !isWaiting &&
-    !joinMutation.isPending;
+    joinInput.success && !isWaiting && !joinMutation.isPending;
 
   const handleSearch = () => {
     if (!canSearch) return;
-    previewMutation.mutate(code);
+    previewMutation.mutate(codeInput.data.accessCode);
   };
 
   const handleJoin = () => {
     if (!canJoin) return;
-    joinMutation.mutate({
-      accessCode: code,
-      nickname: nickname.trim(),
-      avatar,
-    });
+    joinMutation.mutate(joinInput.data);
   };
 
   const handleChangeCode = () => {
