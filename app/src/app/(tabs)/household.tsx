@@ -202,44 +202,49 @@ function HouseholdContent() {
           <View
             style={[
               styles.card,
-              styles.householdCard,
+              styles.row,
               { backgroundColor: colors.surface },
             ]}>
-            <View style={styles.nameRow}>
-              <View
-                style={[styles.iconCircle, { backgroundColor: colors.border }]}>
-                <SymbolView
-                  name={{ ios: "house.fill", android: "home", web: "home" }}
-                  size={22}
-                  tintColor={colors.primary}
-                  fallback={<Text>🏠</Text>}
-                />
+            <View
+              style={[styles.iconCircle, { backgroundColor: colors.border }]}>
+              <SymbolView
+                name={{ ios: "house.fill", android: "home", web: "home" }}
+                size={22}
+                tintColor={colors.primary}
+                fallback={<Text>🏠</Text>}
+              />
+            </View>
+            <View style={styles.householdDetails}>
+              <View style={styles.nameRow}>
+                <Text style={[styles.householdName, { color: colors.text }]}>
+                  {name}
+                </Text>
+                {isAdmin && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Ändra hushållets namn"
+                    hitSlop={8}
+                    onPress={() => {
+                      setOpenMenuId(null);
+                      setOpenGroupMenuId(null);
+                      updateHouseholdMutation.reset();
+                      setEditingHouseholdName({
+                        householdId: requireHouseholdId(),
+                        name,
+                      });
+                    }}>
+                    <SymbolView
+                      name={{ ios: "pencil", android: "edit", web: "edit" }}
+                      size={20}
+                      tintColor={colors.primary}
+                      fallback={<Text>✏️</Text>}
+                    />
+                  </Pressable>
+                )}
               </View>
-              <Text style={[styles.householdName, { color: colors.text }]}>
-                {name}
+              <Text style={{ color: colors.primary }}>
+                {members.length} medlemmar
               </Text>
-              {isAdmin && (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Ändra hushållets namn"
-                  hitSlop={8}
-                  onPress={() => {
-                    setOpenMenuId(null);
-                    setOpenGroupMenuId(null);
-                    updateHouseholdMutation.reset();
-                    setEditingHouseholdName({
-                      householdId: requireHouseholdId(),
-                      name,
-                    });
-                  }}>
-                  <SymbolView
-                    name={{ ios: "pencil", android: "edit", web: "edit" }}
-                    size={20}
-                    tintColor={colors.primary}
-                    fallback={<Text>✏️</Text>}
-                  />
-                </Pressable>
-              )}
             </View>
             <Pressable
               accessibilityRole="button"
@@ -273,9 +278,6 @@ function HouseholdContent() {
                 }
               />
             </Pressable>
-            <Text style={{ color: colors.primary }}>
-              {members.length} medlemmar
-            </Text>
           </View>
 
           {isAdmin && (
@@ -756,14 +758,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  householdCard: {
-    alignItems: "flex-start",
+  householdDetails: {
+    flex: 1,
+    minWidth: 0,
   },
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
-    width: "100%",
     gap: 8,
   },
   householdName: {
@@ -830,6 +832,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   codeBadge: {
+    flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
