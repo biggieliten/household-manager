@@ -212,7 +212,7 @@ export default function TaskById() {
           taskId={task.id}
           assignments={assignmentsQuery.data}
           members={householdQuery.data.members.map(
-            (member: { id: number; nickname: string; isPaused: boolean }) => ({
+            (member) => ({
               ...member,
               leftAt: null,
             }),
