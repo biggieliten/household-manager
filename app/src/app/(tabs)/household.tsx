@@ -323,9 +323,41 @@ function HouseholdContent() {
           ))}
         </View>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Växla hushåll
-          </Text>
+          <View style={styles.row}>
+            <SymbolView
+              name={{
+                ios: "arrow.left.arrow.right",
+                android: "swap_horiz",
+                web: "swap_horiz",
+              }}
+              size={18}
+              tintColor={colors.text}
+              fallback={<Text style={{ color: colors.text }}>⇄</Text>}
+            />
+            <Text
+              style={[
+                styles.sectionTitle,
+                styles.flex,
+                { color: colors.text },
+              ]}>
+              Växla hushåll
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/create-household")}
+              hitSlop={8}
+              style={styles.addButton}>
+              <SymbolView
+                name={{ ios: "plus", android: "add", web: "add" }}
+                size={14}
+                tintColor={colors.primary}
+                fallback={<Text style={{ color: colors.primary }}>+</Text>}
+              />
+              <Text style={[styles.addButtonText, { color: colors.primary }]}>
+                Nytt hushåll
+              </Text>
+            </Pressable>
+          </View>
 
           {households.data?.map((household) => (
             <Pressable
@@ -448,5 +480,14 @@ const styles = StyleSheet.create({
   },
   memberItem: {
     gap: 8,
+  },
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  addButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
 });
