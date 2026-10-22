@@ -7,8 +7,9 @@ import {
 } from "@expo-google-fonts/plus-jakarta-sans";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 
+import LoadingView from "@/components/LoadingView";
 import { authClient } from "@/lib/auth-client";
 import { ThemeProvider, useTheme } from "@/theme";
 import {
@@ -55,14 +56,8 @@ function RootStack() {
     (!fontsLoaded && !fontError)
   ) {
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: colors.background,
-        }}>
-        <ActivityIndicator />
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <LoadingView />
       </View>
     );
   }
@@ -110,12 +105,13 @@ function RootStack() {
           }}
         />
       </Stack.Protected>
-      <Stack.Protected guard={isSignedIn && !hasHousehold}>
+      <Stack.Protected guard={isSignedIn}>
         <Stack.Screen
           name="create-household"
           options={{ title: "Skapa hushåll" }}
         />
       </Stack.Protected>
+
       <Stack.Protected guard={!isSignedIn}>
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />
       </Stack.Protected>

@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { assignTask, removeTaskAssignment } from "@/lib/api/task-assignments";
@@ -159,7 +160,7 @@ export default function TaskById() {
   if (isPending) {
     return (
       <View style={[styles.notFound, { backgroundColor: colors.screen }]}>
-        <ActivityIndicator color={colors.textMuted} />
+        <LoadingView />
       </View>
     );
   }

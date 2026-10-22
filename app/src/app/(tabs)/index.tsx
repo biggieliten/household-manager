@@ -1,13 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import LoadingView from "@/components/LoadingView";
 import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
@@ -37,9 +32,7 @@ export default function Index() {
       style={[styles.container, { backgroundColor: colors.screen }]}>
       <ScreenHeader />
       {isPending ? (
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.textMuted} />
-        </View>
+        <LoadingView />
       ) : error ? (
         <View style={styles.centered}>
           <Text style={{ color: colors.text }}>{error.message}</Text>

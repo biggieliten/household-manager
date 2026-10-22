@@ -264,6 +264,7 @@ household-manager/
         │   ├── DeleteTaskGroupModal.tsx
         │   ├── GithubSignInButton.tsx
         │   ├── JoinRequests.tsx
+        │   ├── LoadingView.tsx
         │   ├── MemberMenu.tsx
         │   ├── NicknameModal.tsx
         │   ├── ScreenHeader.tsx
@@ -275,6 +276,7 @@ household-manager/
         │   ├── TaskCard.tsx
         │   ├── TaskList.tsx
         │   ├── TaskMemberPicker.tsx
+        │   ├── Toast.tsx
         │   └── auth/
         │       └── authColors.ts
         ├── lib/

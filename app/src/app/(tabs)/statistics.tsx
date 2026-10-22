@@ -3,7 +3,6 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { DonutChart } from "expo-skia-charts";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import LoadingView from "@/components/LoadingView";
 import ScreenHeader from "@/components/ScreenHeader";
 import Avatar from "@/components/Avatar";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
@@ -69,9 +69,7 @@ export default function Statistics() {
     return (
       <View style={[styles.screen, { backgroundColor: colors.background }]}>
         <ScreenHeader />
-        <View style={styles.centered}>
-          <ActivityIndicator color={colors.textMuted} />
-        </View>
+        <LoadingView />
       </View>
     );
   }
@@ -171,11 +169,7 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
   );
 
   if (isPending) {
-    return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.textMuted} />
-      </View>
-    );
+    return <LoadingView />;
   }
 
   if (error) {

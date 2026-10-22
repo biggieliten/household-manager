@@ -1,6 +1,5 @@
 import Feather from "@expo/vector-icons/Feather";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -13,6 +12,9 @@ import {
   View,
   type TextInputProps,
 } from "react-native";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import * as Clipboard from "expo-clipboard";
 
 import AvatarPicker from "@/components/AvatarPicker";
 import JoinRequests from "@/components/JoinRequests";
@@ -23,6 +25,7 @@ import {
   createHouseholdMutationOptions,
   householdsQueryOptions,
   joinHouseholdMutationOptions,
+  switchHouseholdMutationOptions,
 } from "@/options/households";
 import { useTheme } from "@/theme";
 import {
@@ -123,11 +126,21 @@ function CreateForm({ initialNickname }: HouseholdFormProps) {
     createMutation.mutate(input.data);
   };
 
-  // Refetching the list flips the guard in _layout, which opens the tabs
-  const handleContinue = () =>
-    queryClient.invalidateQueries({
+  // Refetch the list so the tabs show the new household, then open them
+  const handleContinue = async () => {
+    await queryClient.invalidateQueries({
       queryKey: householdsQueryOptions.queryKey,
     });
+    router.replace("/");
+  };
+  const [copied, setCopied] = useState(false);
+
+  // The icon turns into a checkmark for a moment as feedback
+  const handleCopyCode = async (code: string) => {
+    await Clipboard.setStringAsync(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <>
@@ -187,6 +200,19 @@ function CreateForm({ initialNickname }: HouseholdFormProps) {
               {created ? created.accessCode : "Skapas automatiskt"}
             </Text>
           </View>
+          {created && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={copied ? "Kopierad" : "Kopiera kod"}
+              onPress={() => handleCopyCode(created.accessCode)}
+              hitSlop={8}>
+              <Feather
+                name={copied ? "check" : "copy"}
+                size={18}
+                color={colors.primary}
+              />
+            </Pressable>
+          )}
         </View>
 
         {createMutation.error && (
@@ -222,12 +248,28 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
       ? joinMutation.data
       : null;
   const isWaiting = request?.status === "PENDING";
-  // Updating the shared list lets the existing route guard open the household.
+  // Polls the list while waiting, so an approval can be noticed below
   const membershipQuery = useQuery({
     ...householdsQueryOptions,
     enabled: isWaiting,
     refetchInterval: isWaiting ? 5000 : false,
   });
+  const { mutate: switchHousehold } = useMutation(
+    switchHouseholdMutationOptions,
+  );
+  // Once the polled list contains the household, the request was approved
+  const approvedId =
+    request &&
+    membershipQuery.data?.some(
+      (household) => household.id === request.householdId,
+    )
+      ? request.householdId
+      : null;
+
+  useEffect(() => {
+    if (approvedId === null) return;
+    switchHousehold(approvedId, { onSuccess: () => router.replace("/") });
+  }, [approvedId, switchHousehold]);
 
   const codeInput = joinHouseholdSchema.safeParse({ accessCode });
   const joinInput = joinMyHouseholdSchema.safeParse({
@@ -236,17 +278,21 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
     avatar,
   });
   const canSearch = codeInput.success && !previewMutation.isPending;
-  const canJoin =
-    joinInput.success && !isWaiting && !joinMutation.isPending;
+  const canJoin = joinInput.success && !isWaiting && !joinMutation.isPending;
 
   const handleSearch = () => {
     if (!canSearch) return;
     previewMutation.mutate(codeInput.data.accessCode);
   };
 
+  // A direct membership opens the tabs; a pending request keeps waiting here
   const handleJoin = () => {
     if (!canJoin) return;
-    joinMutation.mutate(joinInput.data);
+    joinMutation.mutate(joinInput.data, {
+      onSuccess: (result) => {
+        if ("member" in result) router.replace("/");
+      },
+    });
   };
 
   const handleChangeCode = () => {
