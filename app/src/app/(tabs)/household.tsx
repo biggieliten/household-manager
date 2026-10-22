@@ -202,82 +202,80 @@ function HouseholdContent() {
           <View
             style={[
               styles.card,
-              styles.row,
+              styles.householdCard,
               { backgroundColor: colors.surface },
             ]}>
-            <View
-              style={[styles.iconCircle, { backgroundColor: colors.border }]}>
-              <SymbolView
-                name={{ ios: "house.fill", android: "home", web: "home" }}
-                size={22}
-                tintColor={colors.primary}
-                fallback={<Text>🏠</Text>}
-              />
-            </View>
-            <View style={styles.flex}>
-              <View style={styles.nameRow}>
-                <Text style={[styles.householdName, { color: colors.text }]}>
-                  {name}
-                </Text>
-                {isAdmin && (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Ändra hushållets namn"
-                    hitSlop={8}
-                    onPress={() => {
-                      setOpenMenuId(null);
-                      setOpenGroupMenuId(null);
-                      updateHouseholdMutation.reset();
-                      setEditingHouseholdName({
-                        householdId: requireHouseholdId(),
-                        name,
-                      });
-                    }}>
-                    <SymbolView
-                      name={{ ios: "pencil", android: "edit", web: "edit" }}
-                      size={20}
-                      tintColor={colors.primary}
-                      fallback={<Text>✏️</Text>}
-                    />
-                  </Pressable>
-                )}
+            <View style={styles.nameRow}>
+              <View
+                style={[styles.iconCircle, { backgroundColor: colors.border }]}>
+                <SymbolView
+                  name={{ ios: "house.fill", android: "home", web: "home" }}
+                  size={22}
+                  tintColor={colors.primary}
+                  fallback={<Text>🏠</Text>}
+                />
+              </View>
+              <Text style={[styles.householdName, { color: colors.text }]}>
+                {name}
+              </Text>
+              {isAdmin && (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={copied ? "Kopierad" : "Kopiera kod"}
-                  onPress={() => handleCopyCode(accessCode)}
+                  accessibilityLabel="Ändra hushållets namn"
                   hitSlop={8}
-                  style={[
-                    styles.badge,
-                    styles.codeBadge,
-                    { backgroundColor: colors.border },
-                  ]}>
-                  <Text style={[styles.badgeText, { color: colors.text }]}>
-                    {accessCode}
-                  </Text>
+                  onPress={() => {
+                    setOpenMenuId(null);
+                    setOpenGroupMenuId(null);
+                    updateHouseholdMutation.reset();
+                    setEditingHouseholdName({
+                      householdId: requireHouseholdId(),
+                      name,
+                    });
+                  }}>
                   <SymbolView
-                    name={
-                      copied
-                        ? { ios: "checkmark", android: "check", web: "check" }
-                        : {
-                            ios: "doc.on.doc",
-                            android: "content_copy",
-                            web: "content_copy",
-                          }
-                    }
-                    size={12}
-                    tintColor={colors.text}
-                    fallback={
-                      <Text style={{ color: colors.text }}>
-                        {copied ? "✓" : "⧉"}
-                      </Text>
-                    }
+                    name={{ ios: "pencil", android: "edit", web: "edit" }}
+                    size={20}
+                    tintColor={colors.primary}
+                    fallback={<Text>✏️</Text>}
                   />
                 </Pressable>
-              </View>
-              <Text style={{ color: colors.primary }}>
-                {members.length} medlemmar
-              </Text>
+              )}
             </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={copied ? "Kopierad" : "Kopiera kod"}
+              onPress={() => handleCopyCode(accessCode)}
+              hitSlop={8}
+              style={[
+                styles.badge,
+                styles.codeBadge,
+                { backgroundColor: colors.border },
+              ]}>
+              <Text style={[styles.badgeText, { color: colors.text }]}>
+                {accessCode}
+              </Text>
+              <SymbolView
+                name={
+                  copied
+                    ? { ios: "checkmark", android: "check", web: "check" }
+                    : {
+                        ios: "doc.on.doc",
+                        android: "content_copy",
+                        web: "content_copy",
+                      }
+                }
+                size={12}
+                tintColor={colors.text}
+                fallback={
+                  <Text style={{ color: colors.text }}>
+                    {copied ? "✓" : "⧉"}
+                  </Text>
+                }
+              />
+            </Pressable>
+            <Text style={{ color: colors.primary }}>
+              {members.length} medlemmar
+            </Text>
           </View>
 
           {isAdmin && (
@@ -758,13 +756,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  householdCard: {
+    alignItems: "flex-start",
+  },
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap",
+    justifyContent: "flex-start",
+    width: "100%",
     gap: 8,
   },
   householdName: {
+    flexShrink: 1,
+    textAlign: "left",
     fontSize: 20,
     fontWeight: "700",
   },
