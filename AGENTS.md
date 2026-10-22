@@ -178,7 +178,6 @@ household-manager/
 │       │   ├── auth.ts
 │       │   ├── normalize-points.ts
 │       │   ├── prisma.ts
-│       │   ├── task-rotation.test.ts
 │       │   ├── task-rotation.ts
 │       │   └── validate.ts
 │       ├── middleware/
