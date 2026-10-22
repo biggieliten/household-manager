@@ -2,6 +2,7 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
 
@@ -64,3 +65,38 @@ jobs:
         working-directory: app
       - run: npx tsc --noEmit
         working-directory: app
+
+  discord:
+    name: discord
+    needs: [api, app]
+    # Runs after CI whatever the result, once per new or ready PR
+    if: >-
+      always() &&
+      github.event_name == 'pull_request' &&
+      contains(fromJSON('["opened", "reopened", "ready_for_review"]'), github.event.action)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Post to Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TITLE: ${{ github.event.pull_request.title }}
+          URL: ${{ github.event.pull_request.html_url }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          API_RESULT: ${{ needs.api.result }}
+          APP_RESULT: ${{ needs.app.result }}
+        run: |
+          if [ "$AUTHOR" = "VarxTheBaron" ]; then
+            AUTHOR="Dansken"
+          fi
+          if [ "$API_RESULT" = "success" ] && [ "$APP_RESULT" = "success" ]; then
+            STATUS="✅ CI passed"
+          elif [ "$API_RESULT" = "cancelled" ] || [ "$APP_RESULT" = "cancelled" ]; then
+            STATUS="⏹️ CI cancelled"
+          else
+            STATUS="❌ CI failed"
+          fi
+          jq -n --arg t "$TITLE" --arg u "$URL" --arg a "$AUTHOR" --arg s "$STATUS" \
+            '{content: "@everyone New PR by \($a): **\($t)**\n\($s)\n\($u)",
+              allowed_mentions: {parse: ["everyone"]}}' \
+            | curl -sf -H "Content-Type: application/json" -d @- "$WEBHOOK"
