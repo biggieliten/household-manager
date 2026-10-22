@@ -29,6 +29,8 @@ import {
   householdsQueryOptions,
   pendingJoinRequestsQueryOptions,
   updateHouseholdMutationOptions,
+  acceptJoinRequestMutationOptions,
+  rejectJoinRequestMutationOptions,
   updateMyNicknameMutationOptions,
   switchHouseholdMutationOptions,
 } from "@/options/households";
@@ -153,6 +155,10 @@ function HouseholdContent() {
   const renameMutation = useMutation(updateMyNicknameMutationOptions);
   const updateHouseholdMutation = useMutation(updateHouseholdMutationOptions);
   const deleteGroupMutation = useMutation(deleteTaskGroupMutationOptions);
+  const acceptRequestMutation = useMutation(acceptJoinRequestMutationOptions);
+  const rejectRequestMutation = useMutation(rejectJoinRequestMutationOptions);
+  const isHandlingRequest =
+    acceptRequestMutation.isPending || rejectRequestMutation.isPending;
 
   if (isPending) {
     return <LoadingView />;
@@ -322,25 +328,125 @@ function HouseholdContent() {
                   Inga väntande förfrågningar
                 </Text>
               ) : (
-                requestsQuery.data.map((request) => (
-                  <View
-                    key={request.id}
-                    style={[
-                      styles.row,
-                      styles.memberRow,
-                      { backgroundColor: colors.background },
-                    ]}>
-                    <Avatar avatar={request.avatar} size={36} />
-                    <View style={styles.flex}>
-                      <Text style={[styles.memberName, { color: colors.text }]}>
-                        {request.nickname}
-                      </Text>
-                      <Text style={{ color: colors.textMuted }}>
-                        Vill gå med i hushållet
-                      </Text>
+                requestsQuery.data.map((request) => {
+                  const competingRequest = requestsQuery.data.some(
+                    (other) =>
+                      other.id !== request.id && other.avatar === request.avatar,
+                  );
+                  const avatarTaken = members.some(
+                    (member) => member.avatar === request.avatar,
+                  );
+                  const conflictMessage = competingRequest
+                    ? "Flera personer har valt samma avatar. Neka de andra förfrågningarna först."
+                    : avatarTaken
+                      ? "En medlem använder redan den här avataren. Förfrågan kan inte godkännas."
+                      : null;
+                  const acceptError =
+                    acceptRequestMutation.variables?.householdId === householdId &&
+                    acceptRequestMutation.variables?.requestId === request.id
+                      ? acceptRequestMutation.error
+                      : null;
+                  const rejectError =
+                    rejectRequestMutation.variables?.householdId === householdId &&
+                    rejectRequestMutation.variables?.requestId === request.id
+                      ? rejectRequestMutation.error
+                      : null;
+                  const actionError = acceptError ?? rejectError;
+                  const accepting =
+                    acceptRequestMutation.isPending &&
+                    acceptRequestMutation.variables.householdId === householdId &&
+                    acceptRequestMutation.variables.requestId === request.id;
+                  const rejecting =
+                    rejectRequestMutation.isPending &&
+                    rejectRequestMutation.variables.householdId === householdId &&
+                    rejectRequestMutation.variables.requestId === request.id;
+
+                  return (
+                    <View
+                      key={request.id}
+                      style={[
+                        styles.memberRow,
+                        styles.memberItem,
+                        { backgroundColor: colors.background },
+                      ]}>
+                      <View style={styles.row}>
+                        <Avatar avatar={request.avatar} size={36} />
+                        <View style={styles.flex}>
+                          <Text
+                            style={[styles.memberName, { color: colors.text }]}>
+                            {request.nickname}
+                          </Text>
+                          <Text style={{ color: colors.textMuted }}>
+                            Vill gå med i hushållet
+                          </Text>
+                        </View>
+                      </View>
+                      {conflictMessage && (
+                        <Text style={{ color: colors.textMuted }}>
+                          {conflictMessage}
+                        </Text>
+                      )}
+                      {actionError && (
+                        <Text
+                          accessibilityLiveRegion="polite"
+                          style={{ color: colors.textMuted }}>
+                          {actionError.message}
+                        </Text>
+                      )}
+                      <View style={styles.requestActions}>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Neka ${request.nickname}`}
+                          accessibilityState={{ disabled: isHandlingRequest }}
+                          disabled={isHandlingRequest}
+                          onPress={() => {
+                            if (isHandlingRequest) return;
+                            acceptRequestMutation.reset();
+                            rejectRequestMutation.reset();
+                            rejectRequestMutation.mutate({
+                              householdId: requireHouseholdId(),
+                              requestId: request.id,
+                            });
+                          }}
+                          style={[
+                            styles.requestButton,
+                            { backgroundColor: colors.surface },
+                            isHandlingRequest && styles.paused,
+                          ]}>
+                          <Text style={[styles.badgeText, { color: colors.text }]}>
+                            {rejecting ? "Nekar…" : "Neka"}
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Godkänn ${request.nickname}`}
+                          accessibilityState={{
+                            disabled: isHandlingRequest || !!conflictMessage,
+                          }}
+                          disabled={isHandlingRequest || !!conflictMessage}
+                          onPress={() => {
+                            if (isHandlingRequest || conflictMessage) return;
+                            acceptRequestMutation.reset();
+                            rejectRequestMutation.reset();
+                            acceptRequestMutation.mutate({
+                              householdId: requireHouseholdId(),
+                              requestId: request.id,
+                            });
+                          }}
+                          style={[
+                            styles.requestButton,
+                            { backgroundColor: colors.primary },
+                            (isHandlingRequest || !!conflictMessage) &&
+                              styles.paused,
+                          ]}>
+                          <Text style={[styles.badgeText, { color: "#FFFFFF" }]}>
+                            {accepting ? "Godkänner…" : "Godkänn"}
+                          </Text>
+                        </Pressable>
+                      </View>
                     </View>
-                  </View>
-                ))
+                  );
+                })
               )}
             </View>
           )}
@@ -804,6 +910,18 @@ const styles = StyleSheet.create({
   },
   memberItem: {
     gap: 8,
+  },
+  requestActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  requestButton: {
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    minHeight: 44,
+    justifyContent: "center",
   },
   addButton: {
     flexDirection: "row",
