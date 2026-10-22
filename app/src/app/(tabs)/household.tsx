@@ -26,6 +26,7 @@ import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import {
   householdQueryOptions,
   householdsQueryOptions,
+  pendingJoinRequestsQueryOptions,
   updateMyNicknameMutationOptions,
   switchHouseholdMutationOptions,
 } from "@/options/households";
@@ -73,6 +74,12 @@ function HouseholdContent() {
   const households = useQuery(householdsQueryOptions);
   const switchMutation = useMutation(switchHouseholdMutationOptions);
   const groupsQuery = useQuery(taskGroupsQueryOptions(householdId));
+  const isAdmin =
+    !error &&
+    (data?.members.some((member) => member.isMe && member.isAdmin) ?? false);
+  const requestsQuery = useQuery(
+    pendingJoinRequestsQueryOptions(householdId, isAdmin),
+  );
   const [openGroupMenuId, setOpenGroupMenuId] = useState<number | null>(null);
   const [deletingGroup, setDeletingGroup] = useState<GroupDeletion | null>(null);
 
@@ -150,7 +157,6 @@ function HouseholdContent() {
   }
 
   const { name, accessCode, members } = data;
-  const isAdmin = members.some((member) => member.isMe && member.isAdmin);
   const others = members.filter((member) => !member.isMe);
   const isLastOwner =
     isAdmin && others.length > 0 && !others.some((member) => member.isAdmin);
@@ -163,10 +169,15 @@ function HouseholdContent() {
         contentContainerStyle={styles.grow}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching || groupsQuery.isRefetching}
+            refreshing={
+              isRefetching ||
+              groupsQuery.isRefetching ||
+              (isAdmin && requestsQuery.isFetching)
+            }
             onRefresh={() => {
               void refetch();
               void groupsQuery.refetch();
+              if (isAdmin) void requestsQuery.refetch();
             }}
           />
         }>
@@ -236,6 +247,71 @@ function HouseholdContent() {
               </Text>
             </View>
           </View>
+
+          {isAdmin && (
+            <View style={[styles.card, { backgroundColor: colors.surface }]}>
+              <View style={styles.row}>
+                <Text
+                  accessibilityRole="header"
+                  style={[
+                    styles.sectionTitle,
+                    styles.flex,
+                    { color: colors.text },
+                  ]}>
+                  Väntande förfrågningar
+                </Text>
+                {requestsQuery.isSuccess && (
+                  <View
+                    style={[styles.badge, { backgroundColor: colors.border }]}>
+                    <Text
+                      accessibilityLabel={`${requestsQuery.data.length} väntande förfrågningar`}
+                      style={[styles.badgeText, { color: colors.text }]}>
+                      {requestsQuery.data.length}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {requestsQuery.isPending ? (
+                <View style={styles.row}>
+                  <ActivityIndicator color={colors.textMuted} />
+                  <Text style={{ color: colors.textMuted }}>
+                    Hämtar förfrågningar…
+                  </Text>
+                </View>
+              ) : requestsQuery.isError ? (
+                <Text
+                  accessibilityLiveRegion="polite"
+                  style={{ color: colors.textMuted }}>
+                  {requestsQuery.error.message}
+                </Text>
+              ) : requestsQuery.data.length === 0 ? (
+                <Text style={{ color: colors.textMuted }}>
+                  Inga väntande förfrågningar
+                </Text>
+              ) : (
+                requestsQuery.data.map((request) => (
+                  <View
+                    key={request.id}
+                    style={[
+                      styles.row,
+                      styles.memberRow,
+                      { backgroundColor: colors.background },
+                    ]}>
+                    <Avatar avatar={request.avatar} size={36} />
+                    <View style={styles.flex}>
+                      <Text style={[styles.memberName, { color: colors.text }]}>
+                        {request.nickname}
+                      </Text>
+                      <Text style={{ color: colors.textMuted }}>
+                        Vill gå med i hushållet
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </View>
+          )}
 
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={styles.row}>

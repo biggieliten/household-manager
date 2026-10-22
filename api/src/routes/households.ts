@@ -228,6 +228,22 @@ const app = new Hono()
     },
   )
   .get(
+    "/:householdId/join-requests",
+    sessionControl(true),
+    validate("param", householdIdParamSchema),
+    async (c) => {
+      const { householdId } = c.req.valid("param");
+
+      const requests = await db.joinRequest.findMany({
+        where: { householdId },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        select: { id: true, nickname: true, avatar: true },
+      });
+
+      return c.json(requests, 200);
+    },
+  )
+  .get(
     "/:householdId",
     sessionControl(),
     validate("param", householdIdParamSchema),
