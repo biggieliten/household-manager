@@ -266,6 +266,7 @@ household-manager/
         │   ├── TaskAssignments.tsx
         │   ├── TaskCard.tsx
         │   ├── TaskList.tsx
+        │   ├── Toast.tsx
         │   └── auth/
         │       └── authColors.ts
         ├── lib/

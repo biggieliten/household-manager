@@ -96,12 +96,13 @@ function RootStack() {
           }}
         />
       </Stack.Protected>
-      <Stack.Protected guard={isSignedIn && !hasHousehold}>
+      <Stack.Protected guard={isSignedIn}>
         <Stack.Screen
           name="create-household"
           options={{ title: "Skapa hushåll" }}
         />
       </Stack.Protected>
+
       <Stack.Protected guard={!isSignedIn}>
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />
       </Stack.Protected>
