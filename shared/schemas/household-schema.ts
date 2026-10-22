@@ -41,7 +41,9 @@ export const responseMyHouseholdSchema = responseHouseholdSchema
     }),
   });
 
-export const updateHouseholdSchema = createHouseholdSchema.partial();
+export const updateHouseholdSchema = createHouseholdSchema
+  .extend({ name: z.string().trim().min(2) })
+  .partial();
 
 export const joinHouseholdSchema = z.object({
   accessCode: accessCodeSchema,

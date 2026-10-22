@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import LoadingView from "@/components/LoadingView";
 import MemberMenu from "@/components/MemberMenu";
 import NicknameModal from "@/components/NicknameModal";
+import HouseholdNameModal from "@/components/HouseholdNameModal";
 import DeleteTaskGroupModal from "@/components/DeleteTaskGroupModal";
 import {
   pauseMember,
@@ -27,6 +28,7 @@ import {
   householdQueryOptions,
   householdsQueryOptions,
   pendingJoinRequestsQueryOptions,
+  updateHouseholdMutationOptions,
   acceptJoinRequestMutationOptions,
   rejectJoinRequestMutationOptions,
   updateMyNicknameMutationOptions,
@@ -46,6 +48,11 @@ import * as Clipboard from "expo-clipboard";
 type NicknameEdit = {
   householdId: number;
   nickname: string;
+};
+
+type HouseholdNameEdit = {
+  householdId: number;
+  name: string;
 };
 
 type GroupDeletion = {
@@ -93,6 +100,8 @@ function HouseholdContent() {
     null,
   );
   const [hasLeft, setHasLeft] = useState(false);
+  const [editingHouseholdName, setEditingHouseholdName] =
+    useState<HouseholdNameEdit | null>(null);
   const [copied, setCopied] = useState(false);
 
   const router = useRouter();
@@ -144,6 +153,7 @@ function HouseholdContent() {
   };
 
   const renameMutation = useMutation(updateMyNicknameMutationOptions);
+  const updateHouseholdMutation = useMutation(updateHouseholdMutationOptions);
   const deleteGroupMutation = useMutation(deleteTaskGroupMutationOptions);
   const acceptRequestMutation = useMutation(acceptJoinRequestMutationOptions);
   const rejectRequestMutation = useMutation(rejectJoinRequestMutationOptions);
@@ -210,48 +220,70 @@ function HouseholdContent() {
                 fallback={<Text>🏠</Text>}
               />
             </View>
-            <View style={styles.flex}>
+            <View style={styles.householdDetails}>
               <View style={styles.nameRow}>
                 <Text style={[styles.householdName, { color: colors.text }]}>
                   {name}
                 </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={copied ? "Kopierad" : "Kopiera kod"}
-                  onPress={() => handleCopyCode(accessCode)}
-                  hitSlop={8}
-                  style={[
-                    styles.badge,
-                    styles.codeBadge,
-                    { backgroundColor: colors.border },
-                  ]}>
-                  <Text style={[styles.badgeText, { color: colors.text }]}>
-                    {accessCode}
-                  </Text>
-                  <SymbolView
-                    name={
-                      copied
-                        ? { ios: "checkmark", android: "check", web: "check" }
-                        : {
-                            ios: "doc.on.doc",
-                            android: "content_copy",
-                            web: "content_copy",
-                          }
-                    }
-                    size={12}
-                    tintColor={colors.text}
-                    fallback={
-                      <Text style={{ color: colors.text }}>
-                        {copied ? "✓" : "⧉"}
-                      </Text>
-                    }
-                  />
-                </Pressable>
+                {isAdmin && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Ändra hushållets namn"
+                    hitSlop={8}
+                    onPress={() => {
+                      setOpenMenuId(null);
+                      setOpenGroupMenuId(null);
+                      updateHouseholdMutation.reset();
+                      setEditingHouseholdName({
+                        householdId: requireHouseholdId(),
+                        name,
+                      });
+                    }}>
+                    <SymbolView
+                      name={{ ios: "pencil", android: "edit", web: "edit" }}
+                      size={20}
+                      tintColor={colors.primary}
+                      fallback={<Text>✏️</Text>}
+                    />
+                  </Pressable>
+                )}
               </View>
               <Text style={{ color: colors.primary }}>
                 {members.length} medlemmar
               </Text>
             </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={copied ? "Kopierad" : "Kopiera kod"}
+              onPress={() => handleCopyCode(accessCode)}
+              hitSlop={8}
+              style={[
+                styles.badge,
+                styles.codeBadge,
+                { backgroundColor: colors.border },
+              ]}>
+              <Text style={[styles.badgeText, { color: colors.text }]}>
+                {accessCode}
+              </Text>
+              <SymbolView
+                name={
+                  copied
+                    ? { ios: "checkmark", android: "check", web: "check" }
+                    : {
+                        ios: "doc.on.doc",
+                        android: "content_copy",
+                        web: "content_copy",
+                      }
+                }
+                size={12}
+                tintColor={colors.text}
+                fallback={
+                  <Text style={{ color: colors.text }}>
+                    {copied ? "✓" : "⧉"}
+                  </Text>
+                }
+              />
+            </Pressable>
           </View>
 
           {isAdmin && (
@@ -751,6 +783,28 @@ function HouseholdContent() {
             onCancel={() => setDeletingGroup(null)}
           />
         )}
+        {isAdmin &&
+          editingHouseholdName &&
+          editingHouseholdName.householdId === householdId && (
+            <HouseholdNameModal
+              key={editingHouseholdName.householdId}
+              name={editingHouseholdName.name}
+              isPending={updateHouseholdMutation.isPending}
+              error={updateHouseholdMutation.error?.message}
+              onSave={(name) => {
+                if (!updateHouseholdMutation.isPending) {
+                  updateHouseholdMutation.mutate(
+                    {
+                      householdId: editingHouseholdName.householdId,
+                      input: { name },
+                    },
+                    { onSuccess: () => setEditingHouseholdName(null) },
+                  );
+                }
+              }}
+              onCancel={() => setEditingHouseholdName(null)}
+            />
+          )}
         {editingNickname && editingNickname.householdId === householdId && (
           <NicknameModal
             key={editingNickname.householdId}
@@ -810,13 +864,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  householdDetails: {
+    flex: 1,
+    minWidth: 0,
+  },
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap",
+    justifyContent: "flex-start",
     gap: 8,
   },
   householdName: {
+    flexShrink: 1,
+    textAlign: "left",
     fontSize: 20,
     fontWeight: "700",
   },
@@ -890,6 +950,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   codeBadge: {
+    flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
