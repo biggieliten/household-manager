@@ -268,6 +268,7 @@ household-manager/
         │   ├── NicknameModal.tsx
         │   ├── ScreenHeader.tsx
         │   ├── TaskAssignments.tsx
+        │   ├── TaskAssignmentBadges.tsx
         │   ├── TaskGroupCard.tsx
         │   ├── TaskGroupDatePicker.tsx
         │   ├── TaskGroupDatePicker.web.tsx

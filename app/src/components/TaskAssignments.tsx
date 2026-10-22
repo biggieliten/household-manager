@@ -1,7 +1,9 @@
+import Feather from "@expo/vector-icons/Feather";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import Avatar from "@/components/Avatar";
+import TaskAssignmentBadges from "@/components/TaskAssignmentBadges";
 import TaskMemberPicker from "@/components/TaskMemberPicker";
 import { useTheme } from "@/theme";
 import type { Member } from "@shared/schemas/member-schema";
@@ -35,6 +37,7 @@ export default function TaskAssignments({
 }: Props) {
   const { colors } = useTheme();
   const [memberPickerOpen, setMemberPickerOpen] = useState(false);
+  const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
   const membersById = new Map(members.map((member) => [member.id, member]));
   const taskAssignments = assignments.filter(
     (assignment) => assignment.taskId === taskId,
@@ -45,6 +48,12 @@ export default function TaskAssignments({
       .map((assignment) => assignment.memberId),
   );
   const householdMembers = members.filter((member) => member.leftAt === null);
+  const selectedAssignment = taskAssignments.find(
+    (assignment) => assignment.memberId === selectedMemberId,
+  );
+  const selectedMember = selectedAssignment
+    ? membersById.get(selectedAssignment.memberId)
+    : undefined;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
@@ -74,17 +83,26 @@ export default function TaskAssignments({
             ...groups.map((group) => group.name),
           ].filter(Boolean).join(", ");
           return (
-            <View
+            <Pressable
               key={memberId}
-              accessible
+              accessibilityRole="button"
               accessibilityLabel={label}
-              style={member?.isPaused && styles.paused}>
+              accessibilityHint="Visar var tilldelningen kommer ifrån"
+              accessibilityState={{ expanded: selectedMemberId === memberId }}
+              onPress={() => setSelectedMemberId((previous) =>
+                previous === memberId ? null : memberId,
+              )}
+              style={({ pressed }) => [
+                styles.assignedMember,
+                (member?.isPaused || pressed) && styles.paused,
+              ]}>
               {member ? (
                 <Avatar avatar={member.avatar} />
               ) : (
                 <Text style={{ color: colors.text }}>?</Text>
               )}
-            </View>
+              <TaskAssignmentBadges isManual={isManual} hasGroups={groups.length > 0} />
+            </Pressable>
           );
         })}
         {isOwner && onAssign && onRemove && (
@@ -100,6 +118,30 @@ export default function TaskAssignments({
           </Pressable>
         )}
       </View>
+      {selectedAssignment && (
+        <View style={[styles.details, { backgroundColor: colors.background }]}>
+          <Text style={{ color: colors.text }}>
+            {selectedMember?.nickname ?? `Medlem #${selectedAssignment.memberId}`}
+            {selectedMember?.isPaused ? " · Pausad" : ""}
+          </Text>
+          {selectedAssignment.isManual && (
+            <View style={styles.sourceRow}>
+              <Feather name="user" size={14} color={colors.textMuted} />
+              <Text style={[styles.sourceText, { color: colors.textMuted }]}>
+                Direkt tilldelad
+              </Text>
+            </View>
+          )}
+          {selectedAssignment.groups.map((group) => (
+            <View key={group.id} style={styles.sourceRow}>
+              <Feather name="repeat" size={14} color={colors.textMuted} />
+              <Text style={[styles.sourceText, { color: colors.textMuted }]}>
+                Roterar via {group.name}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
       {isOwner && memberPickerOpen && onAssign && onRemove && (
         <TaskMemberPicker
           members={householdMembers}
@@ -140,6 +182,25 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 24,
     padding: 5,
+  },
+  assignedMember: {
+    minHeight: 48,
+    minWidth: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  details: {
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+  },
+  sourceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  sourceText: {
+    flex: 1,
   },
   toggle: {
     fontSize: 26,
