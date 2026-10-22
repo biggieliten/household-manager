@@ -7,10 +7,6 @@ npm run dev
 open http://localhost:3000
 ```
 
-```
-npm test
-```
-
 ## Statistics normalization
 
 Members paused during part of a statistics period get their points scaled up to a full period:

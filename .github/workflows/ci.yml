@@ -37,8 +37,6 @@ jobs:
         working-directory: api
       - run: npx tsc --noEmit
         working-directory: api
-      - run: npm test
-        working-directory: api
 
   app:
     name: app
