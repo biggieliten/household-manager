@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
+import * as Clipboard from "expo-clipboard";
 
 import AvatarPicker from "@/components/AvatarPicker";
 import JoinRequests from "@/components/JoinRequests";
@@ -132,6 +133,14 @@ function CreateForm({ initialNickname }: HouseholdFormProps) {
     });
     router.replace("/");
   };
+  const [copied, setCopied] = useState(false);
+
+  // The icon turns into a checkmark for a moment as feedback
+  const handleCopyCode = async (code: string) => {
+    await Clipboard.setStringAsync(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <>
@@ -191,6 +200,19 @@ function CreateForm({ initialNickname }: HouseholdFormProps) {
               {created ? created.accessCode : "Skapas automatiskt"}
             </Text>
           </View>
+          {created && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={copied ? "Kopierad" : "Kopiera kod"}
+              onPress={() => handleCopyCode(created.accessCode)}
+              hitSlop={8}>
+              <Feather
+                name={copied ? "check" : "copy"}
+                size={18}
+                color={colors.primary}
+              />
+            </Pressable>
+          )}
         </View>
 
         {createMutation.error && (
