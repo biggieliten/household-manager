@@ -19,6 +19,36 @@ import type { Avatar } from "@shared/schemas/member-schema";
 
 const ACTIVE_HOUSEHOLD_KEY = "active-household-id";
 
+export async function acceptJoinRequest(
+  householdId: number,
+  requestId: number,
+): Promise<void> {
+  const res = await getClient().api.v1.households[":householdId"][
+    "join-requests"
+  ][":requestId"].accept.$post({
+    param: { householdId: String(householdId), requestId: String(requestId) },
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error);
+  }
+}
+
+export async function rejectJoinRequest(
+  householdId: number,
+  requestId: number,
+): Promise<void> {
+  const res = await getClient().api.v1.households[":householdId"][
+    "join-requests"
+  ][":requestId"].reject.$post({
+    param: { householdId: String(householdId), requestId: String(requestId) },
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error);
+  }
+}
+
 export async function fetchPendingJoinRequests(
   householdId: number,
 ): Promise<PendingJoinRequest[]> {

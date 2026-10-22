@@ -4,6 +4,8 @@ import type {
   JoinMyHouseholdInput,
 } from "@shared/schemas/household-schema";
 import {
+  acceptJoinRequest,
+  rejectJoinRequest,
   createHousehold,
   fetchHousehold,
   fetchMyHouseholds,
@@ -47,6 +49,32 @@ export const pendingJoinRequestsQueryOptions = (
         ? () => fetchPendingJoinRequests(householdId)
         : skipToken,
   });
+
+export const acceptJoinRequestMutationOptions = mutationOptions({
+  mutationKey: ["households", "join-requests", "accept"],
+  mutationFn: ({
+    householdId,
+    requestId,
+  }: {
+    householdId: number;
+    requestId: number;
+  }) => acceptJoinRequest(householdId, requestId),
+  onSuccess: (_data, { householdId }, _onMutateResult, { client }) =>
+    client.invalidateQueries({ queryKey: ["households", householdId] }),
+});
+
+export const rejectJoinRequestMutationOptions = mutationOptions({
+  mutationKey: ["households", "join-requests", "reject"],
+  mutationFn: ({
+    householdId,
+    requestId,
+  }: {
+    householdId: number;
+    requestId: number;
+  }) => rejectJoinRequest(householdId, requestId),
+  onSuccess: (_data, { householdId }, _onMutateResult, { client }) =>
+    client.invalidateQueries({ queryKey: ["households", householdId] }),
+});
 
 export const switchHouseholdMutationOptions = mutationOptions({
   mutationKey: ["households", "switch"],
