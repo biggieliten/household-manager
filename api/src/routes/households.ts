@@ -5,6 +5,7 @@ import {
   joinHouseholdSchema,
   joinMyHouseholdSchema,
   memberIdParamSchema,
+  updateHouseholdSchema,
 } from "../../../shared/schemas/household-schema.ts";
 import {
   updateAvatarSchema,
@@ -287,6 +288,24 @@ const app = new Hono()
         },
         200,
       );
+    },
+  )
+  .patch(
+    "/:householdId",
+    sessionControl(true),
+    validate("param", householdIdParamSchema),
+    validate("json", updateHouseholdSchema),
+    async (c) => {
+      const { householdId } = c.req.valid("param");
+      const body = c.req.valid("json");
+
+      const household = await db.household.update({
+        where: { id: householdId, deletedAt: null },
+        data: body,
+        select: { id: true, name: true },
+      });
+
+      return c.json(household, 200);
     },
   )
   .patch(

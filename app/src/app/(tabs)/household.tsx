@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import LoadingView from "@/components/LoadingView";
 import MemberMenu from "@/components/MemberMenu";
 import NicknameModal from "@/components/NicknameModal";
+import HouseholdNameModal from "@/components/HouseholdNameModal";
 import DeleteTaskGroupModal from "@/components/DeleteTaskGroupModal";
 import {
   pauseMember,
@@ -27,6 +28,7 @@ import {
   householdQueryOptions,
   householdsQueryOptions,
   pendingJoinRequestsQueryOptions,
+  updateHouseholdMutationOptions,
   updateMyNicknameMutationOptions,
   switchHouseholdMutationOptions,
 } from "@/options/households";
@@ -44,6 +46,11 @@ import * as Clipboard from "expo-clipboard";
 type NicknameEdit = {
   householdId: number;
   nickname: string;
+};
+
+type HouseholdNameEdit = {
+  householdId: number;
+  name: string;
 };
 
 type GroupDeletion = {
@@ -91,6 +98,8 @@ function HouseholdContent() {
     null,
   );
   const [hasLeft, setHasLeft] = useState(false);
+  const [editingHouseholdName, setEditingHouseholdName] =
+    useState<HouseholdNameEdit | null>(null);
   const [copied, setCopied] = useState(false);
 
   const router = useRouter();
@@ -142,6 +151,7 @@ function HouseholdContent() {
   };
 
   const renameMutation = useMutation(updateMyNicknameMutationOptions);
+  const updateHouseholdMutation = useMutation(updateHouseholdMutationOptions);
   const deleteGroupMutation = useMutation(deleteTaskGroupMutationOptions);
 
   if (isPending) {
@@ -209,6 +219,28 @@ function HouseholdContent() {
                 <Text style={[styles.householdName, { color: colors.text }]}>
                   {name}
                 </Text>
+                {isAdmin && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Ändra hushållets namn"
+                    hitSlop={8}
+                    onPress={() => {
+                      setOpenMenuId(null);
+                      setOpenGroupMenuId(null);
+                      updateHouseholdMutation.reset();
+                      setEditingHouseholdName({
+                        householdId: requireHouseholdId(),
+                        name,
+                      });
+                    }}>
+                    <SymbolView
+                      name={{ ios: "pencil", android: "edit", web: "edit" }}
+                      size={20}
+                      tintColor={colors.primary}
+                      fallback={<Text>✏️</Text>}
+                    />
+                  </Pressable>
+                )}
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={copied ? "Kopierad" : "Kopiera kod"}
@@ -645,6 +677,28 @@ function HouseholdContent() {
             onCancel={() => setDeletingGroup(null)}
           />
         )}
+        {isAdmin &&
+          editingHouseholdName &&
+          editingHouseholdName.householdId === householdId && (
+            <HouseholdNameModal
+              key={editingHouseholdName.householdId}
+              name={editingHouseholdName.name}
+              isPending={updateHouseholdMutation.isPending}
+              error={updateHouseholdMutation.error?.message}
+              onSave={(name) => {
+                if (!updateHouseholdMutation.isPending) {
+                  updateHouseholdMutation.mutate(
+                    {
+                      householdId: editingHouseholdName.householdId,
+                      input: { name },
+                    },
+                    { onSuccess: () => setEditingHouseholdName(null) },
+                  );
+                }
+              }}
+              onCancel={() => setEditingHouseholdName(null)}
+            />
+          )}
         {editingNickname && editingNickname.householdId === householdId && (
           <NicknameModal
             key={editingNickname.householdId}

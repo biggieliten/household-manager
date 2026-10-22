@@ -263,6 +263,7 @@ household-manager/
         │   ├── ConfirmBox.tsx
         │   ├── DeleteTaskGroupModal.tsx
         │   ├── GithubSignInButton.tsx
+        │   ├── HouseholdNameModal.tsx
         │   ├── JoinRequests.tsx
         │   ├── LoadingView.tsx
         │   ├── MemberMenu.tsx
