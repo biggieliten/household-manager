@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet } from "react-native";
 
-const logo = require("@/assets/images/husallet_logo.png");
+const logo = require("@/assets/images/husallet_logo.webp");
 
 // App logo shown in every header: ScreenHeader on the tabs and the Stack headers
 export default function HeaderLogo(): React.JSX.Element {

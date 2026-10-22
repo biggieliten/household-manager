@@ -109,6 +109,7 @@ function RootStack() {
 
             return {
               title: params?.name ?? "Syssla",
+              headerRight: undefined,
             };
           }}
         />
