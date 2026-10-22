@@ -6,16 +6,32 @@ import type {
   JoinMyHouseholdInput,
   JoinRequest,
   MyHousehold,
+  PendingJoinRequest,
 } from "@shared/schemas/household-schema";
 import {
   householdPreviewSchema,
   responseJoinRequestSchema,
   responseMyHouseholdSchema,
+  responsePendingJoinRequestSchema,
 } from "@shared/schemas/household-schema";
 import { getClient } from "./client";
 import type { Avatar } from "@shared/schemas/member-schema";
 
 const ACTIVE_HOUSEHOLD_KEY = "active-household-id";
+
+export async function fetchPendingJoinRequests(
+  householdId: number,
+): Promise<PendingJoinRequest[]> {
+  const res = await getClient().api.v1.households[":householdId"][
+    "join-requests"
+  ].$get({
+    param: { householdId: String(householdId) },
+  });
+  if (!res.ok)
+    throw new Error(`Kunde inte hämta förfrågningar (${res.status})`);
+
+  return responsePendingJoinRequestSchema.array().parse(await res.json());
+}
 
 export async function fetchMyHouseholds(): Promise<MyHousehold[]> {
   const res = await getClient().api.v1.households.$get();

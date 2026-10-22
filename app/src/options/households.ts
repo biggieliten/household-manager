@@ -7,6 +7,7 @@ import {
   createHousehold,
   fetchHousehold,
   fetchMyHouseholds,
+  fetchPendingJoinRequests,
   getActiveHouseholdId,
   joinHousehold,
   setActiveHouseholdId,
@@ -33,6 +34,18 @@ export const householdQueryOptions = (householdId: number | null | undefined) =>
   queryOptions({
     queryKey: ["households", householdId],
     queryFn: householdId ? () => fetchHousehold(householdId) : skipToken,
+  });
+
+export const pendingJoinRequestsQueryOptions = (
+  householdId: number | null | undefined,
+  isOwner: boolean,
+) =>
+  queryOptions({
+    queryKey: ["households", householdId, "join-requests"],
+    queryFn:
+      householdId && isOwner
+        ? () => fetchPendingJoinRequests(householdId)
+        : skipToken,
   });
 
 export const switchHouseholdMutationOptions = mutationOptions({

@@ -60,6 +60,16 @@ export const responseJoinRequestSchema = z.object({
 
 export type JoinRequest = z.infer<typeof responseJoinRequestSchema>;
 
+export const responsePendingJoinRequestSchema = z.object({
+  id: z.int(),
+  nickname: createMemberSchema.shape.nickname,
+  avatar: avatarSchema,
+});
+
+export type PendingJoinRequest = z.infer<
+  typeof responsePendingJoinRequestSchema
+>;
+
 // What a user sees after entering a code, before joining
 export const householdPreviewSchema = responseHouseholdSchema
   .pick({ id: true, name: true })
