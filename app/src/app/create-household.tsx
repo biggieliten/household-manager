@@ -13,6 +13,7 @@ import {
   View,
   type TextInputProps,
 } from "react-native";
+import { router } from "expo-router";
 
 import AvatarPicker from "@/components/AvatarPicker";
 import JoinRequests from "@/components/JoinRequests";
@@ -123,11 +124,13 @@ function CreateForm({ initialNickname }: HouseholdFormProps) {
     createMutation.mutate(input.data);
   };
 
-  // Refetching the list flips the guard in _layout, which opens the tabs
-  const handleContinue = () =>
-    queryClient.invalidateQueries({
+  // Refetch the list so the tabs show the new household, then open them
+  const handleContinue = async () => {
+    await queryClient.invalidateQueries({
       queryKey: householdsQueryOptions.queryKey,
     });
+    router.replace("/");
+  };
 
   return (
     <>
@@ -236,8 +239,7 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
     avatar,
   });
   const canSearch = codeInput.success && !previewMutation.isPending;
-  const canJoin =
-    joinInput.success && !isWaiting && !joinMutation.isPending;
+  const canJoin = joinInput.success && !isWaiting && !joinMutation.isPending;
 
   const handleSearch = () => {
     if (!canSearch) return;
