@@ -134,10 +134,7 @@ function HouseholdContent() {
   const isLastOwner =
     isAdmin && others.length > 0 && !others.some((member) => member.isAdmin);
   const mutationError =
-    pauseMutation.error ??
-    resumeMutation.error ??
-    promoteMutation.error ??
-    leaveMutation.error;
+    pauseMutation.error ?? resumeMutation.error ?? promoteMutation.error;
 
   return (
     <>
@@ -366,7 +363,17 @@ function HouseholdContent() {
                   {household.name}
                 </Text>
                 {household.id === householdId && (
-                  <Text style={{ color: colors.primary }}>Aktivt</Text>
+                  <SymbolView
+                    name={{
+                      ios: "checkmark.circle",
+                      android: "check_circle",
+                      web: "check_circle",
+                    }}
+                    size={20}
+                    tintColor={colors.primary}
+                    accessibilityLabel="Aktivt"
+                    fallback={<Text style={{ color: colors.primary }}>✓</Text>}
+                  />
                 )}
               </Pressable>
             ))}
@@ -414,6 +421,11 @@ function HouseholdContent() {
                 onPress={() => setShowLastOwnerNotice(false)}>
                 Du är den enda ägaren. Gör någon annan till ägare innan du
                 lämnar hushållet.
+              </Text>
+            )}
+            {leaveMutation.error && (
+              <Text style={[styles.notice, { color: colors.textMuted }]}>
+                {leaveMutation.error.message}
               </Text>
             )}
           </View>
