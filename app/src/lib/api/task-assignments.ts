@@ -1,15 +1,17 @@
 import {
   memberToTaskSchema,
+  responseTaskAssignmentSchema,
   type MemberToTask,
+  type TaskAssignment,
 } from "@shared/schemas/member-to-task-schema";
 import { getClient } from "./client";
 
-export async function fetchTaskAssignments(householdId: number): Promise<MemberToTask[]> {
+export async function fetchTaskAssignments(householdId: number): Promise<TaskAssignment[]> {
   const res = await getClient().api.v1.households[":householdId"]["task-assignments"].$get({
     param: { householdId: String(householdId) },
   });
   if (!res.ok) throw new Error(`Kunde inte hämta tilldelningar (${res.status})`);
-  return memberToTaskSchema.array().parse(await res.json());
+  return responseTaskAssignmentSchema.array().parse(await res.json());
 }
 
 export async function assignTask(householdId: number, assignment: MemberToTask): Promise<MemberToTask> {

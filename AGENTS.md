@@ -178,6 +178,7 @@ household-manager/
 │       │   ├── auth.ts
 │       │   ├── normalize-points.ts
 │       │   ├── prisma.ts
+│       │   ├── task-rotation.ts
 │       │   └── validate.ts
 │       ├── middleware/
 │       │   └── sessioncontrol.ts
@@ -186,6 +187,7 @@ household-manager/
 │           ├── households.ts
 │           ├── statistics.ts
 │           ├── task-assignments.ts
+│           ├── task-groups.ts
 │           └── tasks.ts
 ├── shared/
 │   ├── .gitignore
@@ -198,6 +200,7 @@ household-manager/
 │       ├── member-to-task-schema.ts
 │       ├── pause-schema.ts
 │       ├── statistics-schema.ts
+│       ├── task-group-schema.ts
 │       └── task-schema.ts
 └── app/
     ├── .gitignore
@@ -246,6 +249,7 @@ household-manager/
         │   ├── _layout.tsx
         │   ├── create-household.tsx
         │   ├── create-task.tsx
+        │   ├── create-task-group.tsx
         │   ├── profile.tsx
         │   ├── sign-in.tsx
         │   └── (tabs)/
@@ -257,6 +261,7 @@ household-manager/
         │   ├── Avatar.tsx
         │   ├── AvatarPicker.tsx
         │   ├── ConfirmBox.tsx
+        │   ├── DeleteTaskGroupModal.tsx
         │   ├── GithubSignInButton.tsx
         │   ├── JoinRequests.tsx
         │   ├── LoadingView.tsx
@@ -264,8 +269,13 @@ household-manager/
         │   ├── NicknameModal.tsx
         │   ├── ScreenHeader.tsx
         │   ├── TaskAssignments.tsx
+        │   ├── TaskAssignmentBadges.tsx
+        │   ├── TaskGroupCard.tsx
+        │   ├── TaskGroupDatePicker.tsx
+        │   ├── TaskGroupDatePicker.web.tsx
         │   ├── TaskCard.tsx
         │   ├── TaskList.tsx
+        │   ├── TaskMemberPicker.tsx
         │   ├── Toast.tsx
         │   └── auth/
         │       └── authColors.ts
@@ -275,6 +285,7 @@ household-manager/
         │   │   ├── households.ts
         │   │   ├── statistics.ts
         │   │   ├── task-assignments.ts
+        │   │   ├── task-groups.ts
         │   │   └── tasks.ts
         │   ├── auth-client.ts
         │   ├── avatars.ts
@@ -286,6 +297,7 @@ household-manager/
         │   ├── auth.ts
         │   ├── households.ts
         │   ├── statistics.ts
+        │   ├── task-groups.ts
         │   └── tasks.ts
         ├── theme/
         │   ├── ThemePicker.tsx

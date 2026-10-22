@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SymbolView } from "expo-symbols";
 import {
+  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,6 +14,7 @@ import { useRouter } from "expo-router";
 import LoadingView from "@/components/LoadingView";
 import MemberMenu from "@/components/MemberMenu";
 import NicknameModal from "@/components/NicknameModal";
+import DeleteTaskGroupModal from "@/components/DeleteTaskGroupModal";
 import {
   pauseMember,
   resumeMember,
@@ -30,12 +32,23 @@ import {
 import { useTheme } from "@/theme";
 import Avatar from "@/components/Avatar";
 import Toast from "@/components/Toast";
+import TaskGroupCard from "@/components/TaskGroupCard";
+import {
+  deleteTaskGroupMutationOptions,
+  taskGroupsQueryOptions,
+} from "@/options/task-groups";
 import ConfirmBox from "@/components/ConfirmBox";
 import * as Clipboard from "expo-clipboard";
 
 type NicknameEdit = {
   householdId: number;
   nickname: string;
+};
+
+type GroupDeletion = {
+  householdId: number;
+  groupId: number;
+  groupName: string;
 };
 
 export default function Household() {
@@ -59,6 +72,9 @@ function HouseholdContent() {
   const queryClient = useQueryClient();
   const households = useQuery(householdsQueryOptions);
   const switchMutation = useMutation(switchHouseholdMutationOptions);
+  const groupsQuery = useQuery(taskGroupsQueryOptions(householdId));
+  const [openGroupMenuId, setOpenGroupMenuId] = useState<number | null>(null);
+  const [deletingGroup, setDeletingGroup] = useState<GroupDeletion | null>(null);
 
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
@@ -119,6 +135,7 @@ function HouseholdContent() {
   };
 
   const renameMutation = useMutation(updateMyNicknameMutationOptions);
+  const deleteGroupMutation = useMutation(deleteTaskGroupMutationOptions);
 
   if (isPending) {
     return <LoadingView />;
@@ -145,12 +162,21 @@ function HouseholdContent() {
       <ScrollView
         contentContainerStyle={styles.grow}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+          <RefreshControl
+            refreshing={isRefetching || groupsQuery.isRefetching}
+            onRefresh={() => {
+              void refetch();
+              void groupsQuery.refetch();
+            }}
+          />
         }>
         {/* Tapping anywhere outside an open menu closes it */}
         <Pressable
           accessible={false}
-          onPress={() => setOpenMenuId(null)}
+          onPress={() => {
+            setOpenMenuId(null);
+            setOpenGroupMenuId(null);
+          }}
           style={[styles.content, styles.grow]}>
           <View
             style={[
@@ -279,11 +305,12 @@ function HouseholdContent() {
                   {(member.isMe || (isAdmin && !member.isAdmin)) && (
                     <MemberMenu
                       open={openMenuId === member.id}
-                      onToggle={() =>
+                      onToggle={() => {
+                        setOpenGroupMenuId(null);
                         setOpenMenuId(
                           openMenuId === member.id ? null : member.id,
-                        )
-                      }
+                        );
+                      }}
                       items={
                         member.isMe
                           ? [
@@ -408,6 +435,69 @@ function HouseholdContent() {
               </Pressable>
             ))}
           </View>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Sysslegrupper
+            </Text>
+            {groupsQuery.isPending && <ActivityIndicator color={colors.textMuted} />}
+            {groupsQuery.error && (
+              <View style={{ gap: 8 }}>
+                <Text accessibilityRole="alert" style={{ color: colors.text }}>
+                  {groupsQuery.error.message}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => groupsQuery.refetch()}>
+                  <Text style={{ color: colors.primary }}>Försök igen</Text>
+                </Pressable>
+              </View>
+            )}
+            {groupsQuery.data?.length === 0 && (
+              <Text style={{ color: colors.textMuted }}>Inga sysslegrupper ännu.</Text>
+            )}
+            {groupsQuery.data?.map((group) => (
+              <View
+                key={group.id}
+                style={[
+                  styles.memberItem,
+                  openGroupMenuId === group.id && styles.rowOnTop,
+                ]}>
+                <TaskGroupCard
+                  group={group}
+                  members={members}
+                  isOwner={isAdmin}
+                  menuOpen={openGroupMenuId === group.id}
+                  onToggleMenu={() => {
+                    setOpenMenuId(null);
+                    setOpenGroupMenuId(
+                      openGroupMenuId === group.id ? null : group.id,
+                    );
+                  }}
+                  onEdit={() => router.push({
+                    pathname: "/create-task-group",
+                    params: { id: String(group.id) },
+                  })}
+                  onDelete={() => {
+                    if (deleteGroupMutation.isPending) return;
+                    deleteGroupMutation.reset();
+                    setDeletingGroup({
+                      householdId: requireHouseholdId(),
+                      groupId: group.id,
+                      groupName: group.name,
+                    });
+                  }}
+                />
+              </View>
+            ))}
+            {isAdmin && (
+              <Pressable
+                accessibilityRole="button"
+                style={{ paddingVertical: 12 }}
+                onPress={() => router.push("/create-task-group")}>
+                <Text style={{ color: colors.primary }}>Skapa sysslegrupp</Text>
+              </Pressable>
+            )}
+          </View>
           <View style={styles.leaveSection}>
             {confirmLeave ? (
               <ConfirmBox
@@ -460,6 +550,25 @@ function HouseholdContent() {
             )}
           </View>
         </Pressable>
+        {isAdmin && deletingGroup && deletingGroup.householdId === householdId && (
+          <DeleteTaskGroupModal
+            groupName={deletingGroup.groupName}
+            isPending={deleteGroupMutation.isPending}
+            error={deleteGroupMutation.error?.message}
+            onConfirm={() => {
+              if (!deleteGroupMutation.isPending) {
+                deleteGroupMutation.mutate(
+                  {
+                    householdId: deletingGroup.householdId,
+                    groupId: deletingGroup.groupId,
+                  },
+                  { onSuccess: () => setDeletingGroup(null) },
+                );
+              }
+            }}
+            onCancel={() => setDeletingGroup(null)}
+          />
+        )}
         {editingNickname && editingNickname.householdId === householdId && (
           <NicknameModal
             key={editingNickname.householdId}
