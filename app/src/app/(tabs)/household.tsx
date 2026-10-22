@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SymbolView } from "expo-symbols";
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,6 +10,7 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { useRouter } from "expo-router";
+import LoadingView from "@/components/LoadingView";
 import MemberMenu from "@/components/MemberMenu";
 import NicknameModal from "@/components/NicknameModal";
 import {
@@ -108,11 +108,7 @@ function HouseholdContent() {
   const renameMutation = useMutation(updateMyNicknameMutationOptions);
 
   if (isPending) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.textMuted} />
-      </View>
-    );
+    return <LoadingView />;
   }
 
   if (error) {
