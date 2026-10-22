@@ -7,7 +7,6 @@ import {
 } from "../../../shared/schemas/task-schema.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
-import { sessionControl } from "../middleware/sessioncontrol.ts";
 
 const taskIdParamSchema = householdIdParamSchema.extend({
   taskId: z.coerce.number<string>().int().nonnegative(),
@@ -16,7 +15,6 @@ const taskIdParamSchema = householdIdParamSchema.extend({
 const app = new Hono()
   .get(
     "/:householdId/tasks",
-    sessionControl(),
     validate("param", householdIdParamSchema),
     async (c) => {
       const { householdId } = c.req.valid("param");
@@ -50,7 +48,6 @@ const app = new Hono()
   )
   .get(
     "/:householdId/tasks/:taskId",
-    sessionControl(),
     validate("param", taskIdParamSchema),
     async (c) => {
       const { householdId, taskId } = c.req.valid("param");
@@ -66,7 +63,6 @@ const app = new Hono()
   )
   .post(
     "/:householdId/tasks",
-    sessionControl(),
     validate("param", householdIdParamSchema),
     validate("json", createTaskBodySchema),
     async (c) => {
@@ -89,7 +85,6 @@ const app = new Hono()
   )
   .patch(
     "/:householdId/tasks/:taskId/archive",
-    sessionControl(),
     validate("param", taskIdParamSchema),
     async (c) => {
       const { householdId, taskId } = c.req.valid("param");
@@ -111,7 +106,6 @@ const app = new Hono()
   )
   .patch(
     "/:householdId/tasks/:taskId",
-    sessionControl(),
     validate("param", taskIdParamSchema),
     validate("json", updateTaskSchema),
     async (c) => {

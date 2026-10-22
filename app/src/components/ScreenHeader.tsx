@@ -1,4 +1,5 @@
 import Avatar from "@/components/Avatar";
+import HeaderLogo from "@/components/HeaderLogo";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { useTheme } from "@/theme";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -23,6 +24,7 @@ export default function ScreenHeader(): React.JSX.Element {
 
   return (
     <SafeAreaView edges={["top"]} style={styles.container}>
+      <HeaderLogo />
       <View style={styles.household}>
         <Pressable
           accessibilityRole="button"

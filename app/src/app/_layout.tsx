@@ -9,6 +9,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
 
+import HeaderLogo from "@/components/HeaderLogo";
 import LoadingView from "@/components/LoadingView";
 import { authClient } from "@/lib/auth-client";
 import { ThemeProvider, useTheme } from "@/theme";
@@ -67,7 +68,7 @@ function RootStack() {
 
   // Expo Router redirects automatically when a guard flips, e.g. after sign-in/out
   return (
-    <Stack>
+    <Stack screenOptions={{ headerRight: () => <HeaderLogo /> }}>
       <Stack.Protected guard={isSignedIn && hasHousehold}>
         <Stack.Screen
           name="(tabs)"
