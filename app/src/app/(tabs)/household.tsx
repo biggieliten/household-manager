@@ -31,6 +31,7 @@ import { useTheme } from "@/theme";
 import Avatar from "@/components/Avatar";
 import Toast from "@/components/Toast";
 import ConfirmBox from "@/components/ConfirmBox";
+import * as Clipboard from "expo-clipboard";
 
 type NicknameEdit = {
   householdId: number;
@@ -67,6 +68,7 @@ function HouseholdContent() {
     null,
   );
   const [hasLeft, setHasLeft] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const router = useRouter();
 
@@ -108,6 +110,12 @@ function HouseholdContent() {
   const handleCloseToast = async () => {
     await queryClient.invalidateQueries({ queryKey: ["households"] });
     setHasLeft(false);
+  };
+  // The icon turns into a checkmark for a moment as feedback
+  const handleCopyCode = async (code: string) => {
+    await Clipboard.setStringAsync(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const renameMutation = useMutation(updateMyNicknameMutationOptions);
@@ -168,12 +176,38 @@ function HouseholdContent() {
                 <Text style={[styles.householdName, { color: colors.text }]}>
                   {name}
                 </Text>
-                <View
-                  style={[styles.badge, { backgroundColor: colors.border }]}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={copied ? "Kopierad" : "Kopiera kod"}
+                  onPress={() => handleCopyCode(accessCode)}
+                  hitSlop={8}
+                  style={[
+                    styles.badge,
+                    styles.codeBadge,
+                    { backgroundColor: colors.border },
+                  ]}>
                   <Text style={[styles.badgeText, { color: colors.text }]}>
                     {accessCode}
                   </Text>
-                </View>
+                  <SymbolView
+                    name={
+                      copied
+                        ? { ios: "checkmark", android: "check", web: "check" }
+                        : {
+                            ios: "doc.on.doc",
+                            android: "content_copy",
+                            web: "content_copy",
+                          }
+                    }
+                    size={12}
+                    tintColor={colors.text}
+                    fallback={
+                      <Text style={{ color: colors.text }}>
+                        {copied ? "✓" : "⧉"}
+                      </Text>
+                    }
+                  />
+                </Pressable>
               </View>
               <Text style={{ color: colors.primary }}>
                 {members.length} medlemmar
@@ -555,5 +589,10 @@ const styles = StyleSheet.create({
   },
   notice: {
     textAlign: "center",
+  },
+  codeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
 });
