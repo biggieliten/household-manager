@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet } from "react-native";
 
-const logo = require("@/assets/images/husallet_logo.webp");
+const logo = require("@/assets/images/husallet_logo.png");
 
 // App logo shown in every header: ScreenHeader on the tabs and the Stack headers
 export default function HeaderLogo(): React.JSX.Element {
@@ -16,6 +16,6 @@ export default function HeaderLogo(): React.JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  // Matches the logo's 1212x918 aspect ratio
-  logo: { width: 37, height: 28 },
+  // Matches the logo's 795x586 aspect ratio
+  logo: { width: 37, height: 27 },
 });
