@@ -176,7 +176,6 @@ household-manager/
 │       │   └── seed.ts
 │       ├── lib/
 │       │   ├── auth.ts
-│       │   ├── normalize-points.test.ts
 │       │   ├── normalize-points.ts
 │       │   ├── prisma.ts
 │       │   ├── task-rotation.test.ts

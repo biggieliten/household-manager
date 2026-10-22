@@ -1,0 +1,66 @@
+name: CI
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DATABASE_URL: file:./ci.db
+
+jobs:
+  api:
+    name: api
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            shared/package-lock.json
+            api/package-lock.json
+      - run: npm ci
+        working-directory: shared
+      - run: npm ci
+        working-directory: api
+      - run: npx prisma generate --config prisma7.config.ts
+        working-directory: api
+      - run: npx tsc --noEmit
+        working-directory: api
+
+  app:
+    name: app
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            shared/package-lock.json
+            api/package-lock.json
+            app/package-lock.json
+      - run: npm ci
+        working-directory: shared
+      - run: npm ci
+        working-directory: api
+      - run: npx prisma generate --config prisma7.config.ts
+        working-directory: api
+      - run: npm ci
+        working-directory: app
+      - run: npx expo lint
+        working-directory: app
+      - run: npx tsc --noEmit
+        working-directory: app
