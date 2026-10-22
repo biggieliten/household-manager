@@ -156,7 +156,7 @@ household-manager/
 ├── package.json
 ├── .github/
 │   └── workflows/
-│       └── discord-pr.yml
+│       └── ci.yml
 ├── .vscode/
 │   ├── extensions.json
 │   └── settings.json
