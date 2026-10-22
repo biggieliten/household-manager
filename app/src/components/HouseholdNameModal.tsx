@@ -55,6 +55,12 @@ export default function HouseholdNameModal({
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled">
+          <Pressable
+            accessible={false}
+            disabled={isPending}
+            onPress={handleCancel}
+            style={StyleSheet.absoluteFill}
+          />
           <View
             accessibilityViewIsModal
             onAccessibilityEscape={handleCancel}
