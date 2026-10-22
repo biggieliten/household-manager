@@ -1,6 +1,5 @@
 import Feather from "@expo/vector-icons/Feather";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,6 +13,7 @@ import {
   type TextInputProps,
 } from "react-native";
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 
 import AvatarPicker from "@/components/AvatarPicker";
 import JoinRequests from "@/components/JoinRequests";
@@ -24,6 +24,7 @@ import {
   createHouseholdMutationOptions,
   householdsQueryOptions,
   joinHouseholdMutationOptions,
+  switchHouseholdMutationOptions,
 } from "@/options/households";
 import { useTheme } from "@/theme";
 import {
@@ -225,12 +226,28 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
       ? joinMutation.data
       : null;
   const isWaiting = request?.status === "PENDING";
-  // Updating the shared list lets the existing route guard open the household.
+  // Polls the list while waiting, so an approval can be noticed below
   const membershipQuery = useQuery({
     ...householdsQueryOptions,
     enabled: isWaiting,
     refetchInterval: isWaiting ? 5000 : false,
   });
+  const { mutate: switchHousehold } = useMutation(
+    switchHouseholdMutationOptions,
+  );
+  // Once the polled list contains the household, the request was approved
+  const approvedId =
+    request &&
+    membershipQuery.data?.some(
+      (household) => household.id === request.householdId,
+    )
+      ? request.householdId
+      : null;
+
+  useEffect(() => {
+    if (approvedId === null) return;
+    switchHousehold(approvedId, { onSuccess: () => router.replace("/") });
+  }, [approvedId, switchHousehold]);
 
   const codeInput = joinHouseholdSchema.safeParse({ accessCode });
   const joinInput = joinMyHouseholdSchema.safeParse({
@@ -246,9 +263,14 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
     previewMutation.mutate(codeInput.data.accessCode);
   };
 
+  // A direct membership opens the tabs; a pending request keeps waiting here
   const handleJoin = () => {
     if (!canJoin) return;
-    joinMutation.mutate(joinInput.data);
+    joinMutation.mutate(joinInput.data, {
+      onSuccess: (result) => {
+        if ("member" in result) router.replace("/");
+      },
+    });
   };
 
   const handleChangeCode = () => {
