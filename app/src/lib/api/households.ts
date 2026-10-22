@@ -7,6 +7,7 @@ import type {
   JoinRequest,
   MyHousehold,
   PendingJoinRequest,
+  UpdateHouseholdInput,
 } from "@shared/schemas/household-schema";
 import {
   householdPreviewSchema,
@@ -128,6 +129,21 @@ export async function fetchHousehold(householdId: number) {
     param: { householdId: String(householdId) },
   });
   if (!res.ok) throw new Error(`Kunde inte hämta hushållet (${res.status})`);
+
+  return res.json();
+}
+
+export async function updateHousehold(
+  householdId: number,
+  input: UpdateHouseholdInput,
+): Promise<{ id: number; name: string }> {
+  const res = await getClient().api.v1.households[":householdId"].$patch({
+    param: { householdId: String(householdId) },
+    json: input,
+  });
+  if (res.status === 400)
+    throw new Error("Hushållets namn måste innehålla minst två tecken");
+  if (!res.ok) throw new Error(`Kunde inte ändra hushållets namn (${res.status})`);
 
   return res.json();
 }
