@@ -11,9 +11,16 @@ import {
   View,
 } from "react-native";
 
+import TaskMemberPicker from "@/components/TaskMemberPicker";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
+import { assignTask } from "@/lib/api/task-assignments";
 import { createTask, updateTask } from "@/lib/api/tasks";
-import { taskQueryOptions, tasksQueryOptions } from "@/options/tasks";
+import { householdQueryOptions } from "@/options/households";
+import {
+  taskAssignmentsQueryOptions,
+  taskQueryOptions,
+  tasksQueryOptions,
+} from "@/options/tasks";
 import { useTheme } from "@/theme";
 import type { CreateTaskBody } from "@shared/schemas/task-schema";
 import { createTaskBodySchema } from "@shared/schemas/task-schema";
@@ -26,9 +33,6 @@ const difficultyOptions = [
   { value: 6, label: "Krävande" },
   { value: 8, label: "Mycket tung" },
 ];
-
-// Placeholder avatars until household members are fetched from the backend.
-const exampleAssignees = ["🦊", "🐸", "🐷"];
 
 const initialTask: CreateTaskBody = {
   name: "",
@@ -71,25 +75,93 @@ export default function CreateTask() {
 
   const isEditing = !!id;
 
+  // Only admins may assign members (the API rejects others)
+  const { data: household } = useQuery(householdQueryOptions(householdId));
+  const isAdmin =
+    household?.members.some((member) => member.isMe && member.isAdmin) ?? false;
+  const [selectedMemberIds, setSelectedMemberIds] = useState<
+    ReadonlySet<number>
+  >(new Set());
+  // Set when the task was created but some members could not be assigned,
+  // so saving again retries only those instead of creating a duplicate task
+  const [partialSave, setPartialSave] = useState<{
+    taskId: number;
+    assignedMemberIds: ReadonlySet<number>;
+    error: string;
+  } | null>(null);
+  const isLocked = partialSave !== null;
+
+  const toggleMember = (memberId: number) =>
+    setSelectedMemberIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(memberId)) next.delete(memberId);
+      else next.add(memberId);
+      return next;
+    });
+
   const saveTaskMutation = useMutation({
-    mutationFn: (body: CreateTaskBody) => {
+    mutationFn: async (body: CreateTaskBody) => {
       if (!householdId) throw new Error("Inget aktivt hushåll");
-      return isEditing
-        ? updateTask(householdId, Number(id), body)
-        : createTask(householdId, body);
-    },
-    onSuccess: async (saved) => {
-      // Also covers the single task, whose key starts with the list's key
-      await queryClient.invalidateQueries({
-        queryKey: tasksQueryOptions(householdId).queryKey,
+      if (isEditing) {
+        const saved = await updateTask(householdId, Number(id), body);
+        return {
+          taskId: saved.id,
+          assignedMemberIds: new Set<number>(),
+          error: undefined,
+        };
+      }
+
+      const taskId =
+        partialSave?.taskId ?? (await createTask(householdId, body)).id;
+      const assignedMemberIds = new Set(partialSave?.assignedMemberIds);
+      const memberIds = [...selectedMemberIds].filter(
+        (memberId) => !assignedMemberIds.has(memberId),
+      );
+      const results = await Promise.allSettled(
+        memberIds.map((memberId) =>
+          assignTask(householdId, { taskId, memberId }),
+        ),
+      );
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled")
+          assignedMemberIds.add(memberIds[index]);
       });
+      const failure = results.find((result) => result.status === "rejected");
+
+      return {
+        taskId,
+        assignedMemberIds,
+        error: failure
+          ? failure.reason instanceof Error
+            ? failure.reason.message
+            : String(failure.reason)
+          : undefined,
+      };
+    },
+    onSuccess: async ({ taskId, assignedMemberIds, error }, body) => {
+      // Also covers the single task, whose key starts with the list's key
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: tasksQueryOptions(householdId).queryKey,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: taskAssignmentsQueryOptions(householdId).queryKey,
+        }),
+      ]);
+      if (error) {
+        setPartialSave({ taskId, assignedMemberIds, error });
+        return;
+      }
+
       setTask(initialTask);
+      setSelectedMemberIds(new Set());
+      setPartialSave(null);
       if (router.canGoBack()) {
         router.push("/");
       } else {
         Alert.alert(
           isEditing ? "Syssla uppdaterad" : "Syssla skapad",
-          saved.name,
+          body.name,
         );
       }
     },
@@ -138,6 +210,7 @@ export default function CreateTask() {
             taskById?.name ? taskById.name : "T.ex. Dammsuga vardagsrummet"
           }
           placeholderTextColor={colors.textMuted}
+          editable={!isLocked}
           style={inputStyle}
         />
       </View>
@@ -150,6 +223,7 @@ export default function CreateTask() {
           placeholder="Beskriv vad som ska göras eller speciella önskemål…"
           placeholderTextColor={colors.textMuted}
           multiline
+          editable={!isLocked}
           style={[inputStyle, styles.multiline]}
         />
       </View>
@@ -209,6 +283,7 @@ export default function CreateTask() {
         </View>
         <FrequencyPicker
           selected={task.frequency}
+          disabled={isLocked}
           onSelect={(value) => update("frequency", value)}
         />
       </View>
@@ -226,48 +301,31 @@ export default function CreateTask() {
         </View>
         <DifficultyPicker
           selected={task.difficultyLevel}
+          disabled={isLocked}
           onSelect={(value) => update("difficultyLevel", value)}
         />
       </View>
 
-      {/* Not functional yet: assignment will use the household's members. */}
-      <View style={styles.assignRow}>
-        <Text style={[styles.panelTitle, { color: colors.text }]}>
-          Tilldela
-        </Text>
-        <View style={styles.avatars}>
-          {exampleAssignees.map((emoji, index) => (
-            <View
-              key={emoji}
-              style={[
-                styles.avatar,
-                index > 0 && styles.avatarOverlap,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.background,
-                },
-              ]}>
-              <Text style={styles.avatarEmoji}>{emoji}</Text>
-            </View>
-          ))}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Tilldela medlem"
-            accessibilityState={{ disabled: true }}
-            disabled
-            style={[
-              styles.avatar,
-              styles.avatarOverlap,
-              styles.disabled,
-              {
-                backgroundColor: colors.surface,
-                borderColor: colors.background,
-              },
-            ]}>
-            <Text style={[styles.addText, { color: colors.text }]}>+</Text>
-          </Pressable>
+      {!isEditing && isAdmin && household && (
+        <View style={panelStyle}>
+          <Text style={[styles.panelTitle, { color: colors.text }]}>
+            Vill du tilldela sysslan?
+          </Text>
+          <TaskMemberPicker
+            members={household.members}
+            selectedMemberIds={selectedMemberIds}
+            isPending={isLocked || saveTaskMutation.isPending}
+            onToggle={toggleMember}
+          />
         </View>
-      </View>
+      )}
+
+      {partialSave && (
+        <Text accessibilityRole="alert" style={{ color: colors.text }}>
+          Sysslan skapades, men tilldelningen misslyckades: {partialSave.error}.
+          Tryck på Försök igen.
+        </Text>
+      )}
 
       <View style={styles.actions}>
         <Pressable
@@ -279,7 +337,9 @@ export default function CreateTask() {
             styles.button,
             { backgroundColor: colors.primary, opacity: canSave ? 1 : 0.5 },
           ]}>
-          <Text style={styles.buttonText}>Spara syssla</Text>
+          <Text style={styles.buttonText}>
+            {isLocked ? "Försök igen" : "Spara syssla"}
+          </Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -296,9 +356,11 @@ export default function CreateTask() {
 
 function FrequencyPicker({
   selected,
+  disabled,
   onSelect,
 }: {
   selected: number;
+  disabled: boolean;
   onSelect: (value: number) => void;
 }) {
   const { colors } = useTheme();
@@ -315,7 +377,8 @@ function FrequencyPicker({
           <Pressable
             key={value}
             accessibilityRole="radio"
-            accessibilityState={{ checked: isSelected }}
+            accessibilityState={{ checked: isSelected, disabled }}
+            disabled={disabled}
             onPress={() => onSelect(value)}
             style={[
               styles.circle,
@@ -341,9 +404,11 @@ function FrequencyPicker({
 
 function DifficultyPicker({
   selected,
+  disabled,
   onSelect,
 }: {
   selected: number;
+  disabled: boolean;
   onSelect: (value: number) => void;
 }) {
   const { colors } = useTheme();
@@ -357,7 +422,8 @@ function DifficultyPicker({
             key={value}
             accessibilityRole="radio"
             accessibilityLabel={`${value}, ${label}`}
-            accessibilityState={{ checked: isSelected }}
+            accessibilityState={{ checked: isSelected, disabled }}
+            disabled={disabled}
             onPress={() => onSelect(value)}
             style={[
               styles.tile,
@@ -526,35 +592,6 @@ const styles = StyleSheet.create({
   tileLabel: {
     fontSize: 11,
     textAlign: "center",
-  },
-  assignRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  avatars: {
-    flexDirection: "row",
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarOverlap: {
-    marginLeft: -10,
-  },
-  avatarEmoji: {
-    fontSize: 18,
-  },
-  addText: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  disabled: {
-    opacity: 0.5,
   },
   actions: {
     gap: 4,
