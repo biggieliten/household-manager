@@ -257,13 +257,6 @@ function HouseholdContent() {
                                 });
                               },
                             },
-                            {
-                              label: "Lämna hushåll",
-                              onPress: () =>
-                                isLastOwner
-                                  ? setShowLastOwnerNotice(true)
-                                  : setConfirmLeave(true),
-                            },
                           ]
                         : member.isPaused
                           ? [
@@ -297,27 +290,6 @@ function HouseholdContent() {
                     promoteMutation.mutate(member.id);
                   }}
                 />
-              )}
-
-              {member.isMe && confirmLeave && (
-                <ConfirmBox
-                  message="Vill du lämna hushållet?"
-                  confirmLabel="Ja, lämna"
-                  onCancel={() => setConfirmLeave(false)}
-                  onConfirm={() => {
-                    setConfirmLeave(false);
-                    leaveMutation.mutate();
-                  }}
-                />
-              )}
-
-              {member.isMe && showLastOwnerNotice && isLastOwner && (
-                <Text
-                  style={{ color: colors.textMuted }}
-                  onPress={() => setShowLastOwnerNotice(false)}>
-                  Du är den enda ägaren. Gör någon annan till ägare innan du
-                  lämnar hushållet.
-                </Text>
               )}
             </View>
           ))}
@@ -383,6 +355,52 @@ function HouseholdContent() {
               )}
             </Pressable>
           ))}
+        </View>
+        <View style={styles.leaveSection}>
+          {confirmLeave ? (
+            <ConfirmBox
+              message="Vill du lämna hushållet?"
+              confirmLabel="Ja, lämna"
+              onCancel={() => setConfirmLeave(false)}
+              onConfirm={() => {
+                setConfirmLeave(false);
+                leaveMutation.mutate();
+              }}
+            />
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() =>
+                isLastOwner
+                  ? setShowLastOwnerNotice(true)
+                  : setConfirmLeave(true)
+              }
+              hitSlop={8}
+              style={styles.leaveButton}>
+              <SymbolView
+                name={{
+                  ios: "rectangle.portrait.and.arrow.right",
+                  android: "logout",
+                  web: "logout",
+                }}
+                size={16}
+                tintColor={colors.primary}
+                fallback={<Text style={{ color: colors.primary }}>⇥</Text>}
+              />
+              <Text style={[styles.leaveText, { color: colors.primary }]}>
+                Lämna hushållet
+              </Text>
+            </Pressable>
+          )}
+
+          {showLastOwnerNotice && isLastOwner && (
+            <Text
+              style={[styles.notice, { color: colors.textMuted }]}
+              onPress={() => setShowLastOwnerNotice(false)}>
+              Du är den enda ägaren. Gör någon annan till ägare innan du lämnar
+              hushållet.
+            </Text>
+          )}
         </View>
       </Pressable>
       {editingNickname && editingNickname.householdId === householdId && (
@@ -489,5 +507,22 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 13,
     fontWeight: "600",
+  },
+  leaveSection: {
+    gap: 8,
+  },
+  leaveButton: {
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    padding: 12,
+  },
+  leaveText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  notice: {
+    textAlign: "center",
   },
 });
