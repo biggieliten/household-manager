@@ -89,7 +89,7 @@ const app = new Hono()
   )
   .patch(
     "/:householdId/tasks/:taskId/archive",
-    sessionControl(),
+    sessionControl(true),
     validate("param", taskIdParamSchema),
     async (c) => {
       const { householdId, taskId } = c.req.valid("param");
@@ -111,7 +111,7 @@ const app = new Hono()
   )
   .patch(
     "/:householdId/tasks/:taskId",
-    sessionControl(),
+    sessionControl(true),
     validate("param", taskIdParamSchema),
     validate("json", updateTaskSchema),
     async (c) => {

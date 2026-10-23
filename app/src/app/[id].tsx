@@ -123,6 +123,11 @@ export default function TaskById() {
   });
 
   const householdQuery = useQuery(householdQueryOptions(householdId));
+  const isOwner =
+    householdQuery.data?.members.some(
+      (member) => member.isMe && member.isAdmin,
+    ) ?? false;
+
   const assignmentsKey = taskAssignmentsQueryOptions(householdId).queryKey;
   const assignmentsQuery = useQuery(taskAssignmentsQueryOptions(householdId));
   const assignmentMutation = useMutation({
@@ -382,64 +387,68 @@ export default function TaskById() {
           Sysslan är markerad som klar
         </Text>
       )}
-      <View style={styles.actionRow}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Redigera inställningar"
-          onPress={() =>
-            router.push({
-              pathname: "/create-task",
-              params: { id: String(task.id) },
-            })
-          }
-          style={({ pressed }) => [
-            styles.editButton,
-            { backgroundColor: accent.chip, opacity: pressed ? 0.8 : 1 },
-          ]}>
-          <Text style={[styles.editButtonText, { color: colors.text }]}>
-            ☰ Redigera inställningar
-          </Text>
-        </Pressable>
-      </View>
-
-      <Pressable
-        accessibilityRole="button"
-        onPress={handleArchive}
-        disabled={archiveMutation.isPending}
-        style={styles.textButton}>
-        <Text style={[styles.archiveText, { color: colors.text }]}>
-          Arkivera syssla
-        </Text>
-      </Pressable>
-      {confirmDelete ? (
-        <View style={{ gap: 8 }}>
-          <ConfirmBox
-            message="All statistik för sysslan tas också bort. Vill du arkivera den istället?"
-            confirmLabel="Ta bort ändå"
-            onCancel={() => setConfirmDelete(false)}
-            onConfirm={() => deleteMutation.mutate(task.id)}
-          />
+      {isOwner && (
+        <View style={styles.actionRow}>
           <Pressable
             accessibilityRole="button"
-            onPress={handleArchive}
-            disabled={archiveMutation.isPending}
-            style={styles.textButton}>
-            <Text style={[styles.archiveText, { color: colors.text }]}>
-              Arkivera istället
+            accessibilityLabel="Redigera inställningar"
+            onPress={() =>
+              router.push({
+                pathname: "/create-task",
+                params: { id: String(task.id) },
+              })
+            }
+            style={({ pressed }) => [
+              styles.editButton,
+              { backgroundColor: accent.chip, opacity: pressed ? 0.8 : 1 },
+            ]}>
+            <Text style={[styles.editButtonText, { color: colors.text }]}>
+              ☰ Redigera inställningar
             </Text>
           </Pressable>
         </View>
-      ) : (
+      )}
+      {isOwner && (
         <Pressable
           accessibilityRole="button"
-          onPress={() => setConfirmDelete(true)}
-          disabled={deleteMutation.isPending}
+          onPress={handleArchive}
+          disabled={archiveMutation.isPending}
           style={styles.textButton}>
-          <Text style={[styles.deleteText, { color: accent.dangerText }]}>
-            Ta bort syssla
+          <Text style={[styles.archiveText, { color: colors.text }]}>
+            Arkivera syssla
           </Text>
         </Pressable>
       )}
+      {isOwner &&
+        (confirmDelete ? (
+          <View style={{ gap: 8 }}>
+            <ConfirmBox
+              message="All statistik för sysslan tas också bort. Vill du arkivera den istället?"
+              confirmLabel="Ta bort ändå"
+              onCancel={() => setConfirmDelete(false)}
+              onConfirm={() => deleteMutation.mutate(task.id)}
+            />
+            <Pressable
+              accessibilityRole="button"
+              onPress={handleArchive}
+              disabled={archiveMutation.isPending}
+              style={styles.textButton}>
+              <Text style={[styles.archiveText, { color: colors.text }]}>
+                Arkivera istället
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setConfirmDelete(true)}
+            disabled={deleteMutation.isPending}
+            style={styles.textButton}>
+            <Text style={[styles.deleteText, { color: accent.dangerText }]}>
+              Ta bort syssla
+            </Text>
+          </Pressable>
+        ))}
       {deleteMutation.isError && (
         <Text style={{ color: accent.dangerText }}>
           {deleteMutation.error.message}
