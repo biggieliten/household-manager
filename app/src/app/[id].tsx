@@ -11,14 +11,19 @@ import {
 
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
+import ConfirmBox from "@/components/ConfirmBox";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { assignTask, removeTaskAssignment } from "@/lib/api/task-assignments";
-import { archiveTask, completeTask } from "@/lib/api/tasks";
+import { archiveTask, completeTask, deleteTask } from "@/lib/api/tasks";
 import { householdQueryOptions } from "@/options/households";
-import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
+import {
+  taskAssignmentsQueryOptions,
+  tasksQueryOptions,
+} from "@/options/tasks";
 import { useTheme } from "@/theme";
 import Avatar from "@/components/Avatar";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
+import { useState } from "react";
 
 const accents = {
   light: {
@@ -69,6 +74,7 @@ export default function TaskById() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
   const householdId = useActiveHouseholdId();
@@ -98,6 +104,24 @@ export default function TaskById() {
       archiveMutation.mutate(task.id);
     }
   };
+  const deleteMutation = useMutation({
+    mutationFn: (taskId: number) => {
+      if (!householdId) throw new Error("Inget aktivt hushåll");
+      return deleteTask(householdId, taskId);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: tasksQueryOptions(householdId).queryKey,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["households", householdId, "statistics"],
+        }),
+      ]);
+      router.replace("/");
+    },
+  });
+
   const householdQuery = useQuery(householdQueryOptions(householdId));
   const assignmentsKey = taskAssignmentsQueryOptions(householdId).queryKey;
   const assignmentsQuery = useQuery(taskAssignmentsQueryOptions(householdId));
@@ -212,12 +236,10 @@ export default function TaskById() {
         <TaskAssignments
           taskId={task.id}
           assignments={assignmentsQuery.data}
-          members={householdQuery.data.members.map(
-            (member) => ({
-              ...member,
-              leftAt: null,
-            }),
-          )}
+          members={householdQuery.data.members.map((member) => ({
+            ...member,
+            leftAt: null,
+          }))}
           isOwner={householdQuery.data.members.some(
             (member: { isMe: boolean; isAdmin: boolean }) =>
               member.isMe && member.isAdmin,
@@ -389,6 +411,40 @@ export default function TaskById() {
           Arkivera syssla
         </Text>
       </Pressable>
+      {confirmDelete ? (
+        <View style={{ gap: 8 }}>
+          <ConfirmBox
+            message="All statistik för sysslan tas också bort. Vill du arkivera den istället?"
+            confirmLabel="Ta bort ändå"
+            onCancel={() => setConfirmDelete(false)}
+            onConfirm={() => deleteMutation.mutate(task.id)}
+          />
+          <Pressable
+            accessibilityRole="button"
+            onPress={handleArchive}
+            disabled={archiveMutation.isPending}
+            style={styles.textButton}>
+            <Text style={[styles.archiveText, { color: colors.text }]}>
+              Arkivera istället
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setConfirmDelete(true)}
+          disabled={deleteMutation.isPending}
+          style={styles.textButton}>
+          <Text style={[styles.deleteText, { color: accent.dangerText }]}>
+            Ta bort syssla
+          </Text>
+        </Pressable>
+      )}
+      {deleteMutation.isError && (
+        <Text style={{ color: accent.dangerText }}>
+          {deleteMutation.error.message}
+        </Text>
+      )}
     </ScrollView>
   );
 }
