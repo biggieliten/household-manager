@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import ErrorView from "@/components/ErrorView";
 import LoadingView from "@/components/LoadingView";
 import ScreenHeader from "@/components/ScreenHeader";
 import Avatar from "@/components/Avatar";
@@ -75,19 +76,15 @@ export default function Statistics() {
   }
 
   const failed = results.filter((result) => result.error);
-  if (failed.length > 0) {
+  const error = failed[0]?.error;
+  if (error) {
     return (
       <View style={[styles.screen, { backgroundColor: colors.background }]}>
         <ScreenHeader />
-        <View style={styles.centered}>
-          <Text style={{ color: colors.text }}>{failed[0].error?.message}</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => failed.forEach((result) => result.refetch())}
-            style={[styles.retryButton, { backgroundColor: colors.primary }]}>
-            <Text style={styles.retryButtonText}>Försök igen</Text>
-          </Pressable>
-        </View>
+        <ErrorView
+          error={error}
+          retry={() => failed.forEach((result) => result.refetch())}
+        />
       </View>
     );
   }
@@ -173,17 +170,7 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
   }
 
   if (error) {
-    return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.text }}>{error.message}</Text>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => refetch()}
-          style={[styles.retryButton, { backgroundColor: colors.primary }]}>
-          <Text style={styles.retryButtonText}>Försök igen</Text>
-        </Pressable>
-      </View>
-    );
+    return <ErrorView error={error} retry={() => refetch()} />;
   }
 
   const { members, tasks, totalPoints } = data;
@@ -323,22 +310,6 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-  },
-  centered: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-    gap: 12,
-  },
-  retryButton: {
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  retryButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
   },
   empty: {
     textAlign: "center",

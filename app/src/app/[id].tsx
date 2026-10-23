@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 
+import ErrorView from "@/components/ErrorView";
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
@@ -167,13 +168,8 @@ export default function TaskById() {
 
   if (error) {
     return (
-      <View style={[styles.notFound, { backgroundColor: colors.screen }]}>
-        <Text style={[styles.notFoundText, { color: colors.textMuted }]}>
-          {error.message}
-        </Text>
-        <Pressable accessibilityRole="button" onPress={() => refetch()}>
-          <Text style={{ color: colors.primary }}>Försök igen</Text>
-        </Pressable>
+      <View style={{ flex: 1, backgroundColor: colors.screen }}>
+        <ErrorView error={error} retry={() => refetch()} />
       </View>
     );
   }
