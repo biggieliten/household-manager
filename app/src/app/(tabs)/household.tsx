@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { useRouter } from "expo-router";
+import ErrorView from "@/components/ErrorView";
 import LoadingView from "@/components/LoadingView";
 import MemberMenu from "@/components/MemberMenu";
 import NicknameModal from "@/components/NicknameModal";
@@ -165,11 +166,7 @@ function HouseholdContent() {
   }
 
   if (error) {
-    return (
-      <View style={styles.centered}>
-        <Text style={{ color: colors.text }}>{error.message}</Text>
-      </View>
-    );
+    return <ErrorView error={error} retry={() => refetch()} />;
   }
 
   const { name, accessCode, members } = data;
@@ -831,11 +828,6 @@ function HouseholdContent() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-  },
-  centered: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
   content: {
     padding: 16,
