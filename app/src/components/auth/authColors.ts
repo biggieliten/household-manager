@@ -14,7 +14,6 @@ const authColors = {
     divider: "#ECE9F5",
     primary: "#A3393A",
     onPrimary: "#FFFFFF",
-    logo: "#EE7B72",
     secure: "#2F6B4F",
   },
   dark: {
@@ -29,7 +28,6 @@ const authColors = {
     divider: "#2E2B36",
     primary: "#C9504F",
     onPrimary: "#FFFFFF",
-    logo: "#EE7B72",
     secure: "#5FB38A",
   },
 } as const;
