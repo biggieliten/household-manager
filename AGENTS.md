@@ -178,6 +178,7 @@ household-manager/
 │       │   ├── auth.ts
 │       │   ├── normalize-points.ts
 │       │   ├── prisma.ts
+│       │   ├── task-media.ts
 │       │   ├── task-rotation.ts
 │       │   └── validate.ts
 │       ├── middleware/
@@ -188,6 +189,7 @@ household-manager/
 │           ├── statistics.ts
 │           ├── task-assignments.ts
 │           ├── task-groups.ts
+│           ├── task-media.ts
 │           └── tasks.ts
 ├── shared/
 │   ├── .gitignore
@@ -201,6 +203,7 @@ household-manager/
 │       ├── pause-schema.ts
 │       ├── statistics-schema.ts
 │       ├── task-group-schema.ts
+│       ├── task-media-schema.ts
 │       └── task-schema.ts
 └── app/
     ├── .gitignore
