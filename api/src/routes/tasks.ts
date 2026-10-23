@@ -6,6 +6,7 @@ import {
   updateTaskSchema,
 } from "../../../shared/schemas/task-schema.ts";
 import { db } from "../lib/prisma.ts";
+import { taskMediaSelect, withTaskMedia } from "../lib/task-media.ts";
 import { validate } from "../lib/validate.ts";
 import { sessionControl } from "../middleware/sessioncontrol.ts";
 
@@ -27,6 +28,7 @@ const app = new Hono()
             where: { isArchived: false, deletedAt: null },
             orderBy: { id: "asc" },
             include: {
+              ...taskMediaSelect,
               completedTasks: {
                 where: { deletedAt: null },
                 orderBy: { completedAt: "desc" },
@@ -45,7 +47,7 @@ const app = new Hono()
         return c.json({ error: "Household not found" }, 404);
       }
 
-      return c.json(household.tasks, 200);
+      return c.json(household.tasks.map(withTaskMedia), 200);
     },
   )
   .get(
@@ -56,12 +58,13 @@ const app = new Hono()
       const { householdId, taskId } = c.req.valid("param");
       const task = await db.task.findFirst({
         where: { id: taskId, householdId, deletedAt: null },
+        include: taskMediaSelect,
       });
       if (!task) {
         return c.json({ error: "Task not found" }, 404);
       }
 
-      return c.json(task, 200);
+      return c.json(withTaskMedia(task), 200);
     },
   )
   .post(
@@ -82,9 +85,10 @@ const app = new Hono()
 
       const task = await db.task.create({
         data: { ...body, householdId },
+        include: taskMediaSelect,
       });
 
-      return c.json(task, 201);
+      return c.json(withTaskMedia(task), 201);
     },
   )
   .patch(
@@ -104,9 +108,10 @@ const app = new Hono()
       const task = await db.task.update({
         where: { id: taskId },
         data: { isArchived: true },
+        include: taskMediaSelect,
       });
 
-      return c.json(task, 200);
+      return c.json(withTaskMedia(task), 200);
     },
   )
   .patch(
@@ -128,9 +133,10 @@ const app = new Hono()
       const task = await db.task.update({
         where: { id: taskId },
         data: body,
+        include: taskMediaSelect,
       });
 
-      return c.json(task, 200);
+      return c.json(withTaskMedia(task), 200);
     },
   );
 

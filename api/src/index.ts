@@ -10,6 +10,7 @@ import statistics from "./routes/statistics.ts";
 import tasks from "./routes/tasks.ts";
 import taskAssignments from "./routes/task-assignments.ts";
 import taskGroups from "./routes/task-groups.ts";
+import taskMedia from "./routes/task-media.ts";
 
 const app = new Hono();
 
@@ -41,6 +42,7 @@ const v1 = new Hono()
   .route("/households", completions)
   .route("/households", taskAssignments)
   .route("/households", taskGroups)
+  .route("/households", taskMedia)
   .route("/households", statistics);
 
 const routes = app.route("/api/v1", v1);
