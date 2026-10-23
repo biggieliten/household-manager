@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SymbolView } from "expo-symbols";
 
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
@@ -402,8 +403,14 @@ export default function TaskById() {
               styles.editButton,
               { backgroundColor: accent.chip, opacity: pressed ? 0.8 : 1 },
             ]}>
+            <SymbolView
+              name={{ ios: "pencil", android: "edit", web: "edit" }}
+              size={20}
+              tintColor={colors.text}
+              fallback={<Text>✏️</Text>}
+            />
             <Text style={[styles.editButtonText, { color: colors.text }]}>
-              ☰ Redigera inställningar
+              Redigera syssla
             </Text>
           </Pressable>
         </View>
@@ -534,6 +541,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 14,
     paddingVertical: 14,
+    flexDirection: "row",
+    gap: 8,
   },
   editButtonText: { fontSize: 17, fontWeight: "500" },
   shareButton: {
