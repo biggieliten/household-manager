@@ -133,9 +133,26 @@ model Task {
     taskToTaskGroups TaskToTaskGroup[]
     completedTasks  CompletedTask[]
     memberToTasks   MemberToTask[]
+    media           TaskMedia[]
     createdAt       DateTime        @default(now())
     updatedAt       DateTime        @updatedAt
     deletedAt       DateTime?
+}
+
+// An image or voice note describing a task, stored in the database itself
+model TaskMedia {
+    id        Int       @id @default(autoincrement())
+    kind      MediaKind
+    mimeType  String
+    size      Int
+    data      Bytes
+    task      Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+    taskId    Int
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+
+    // A task holds at most one image and one voice note
+    @@unique([taskId, kind])
 }
 
 model TaskGroup {
@@ -213,4 +230,9 @@ enum Avatar {
     DOLPHIN
     OWL
     UNICORN
+}
+
+enum MediaKind {
+    IMAGE
+    AUDIO
 }
