@@ -12,7 +12,7 @@ import { SymbolView } from "expo-symbols";
 
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
-import ConfirmBox from "@/components/ConfirmBox";
+import DeleteTaskModal from "@/components/DeleteTaskModal";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { assignTask, removeTaskAssignment } from "@/lib/api/task-assignments";
 import { archiveTask, completeTask, deleteTask } from "@/lib/api/tasks";
@@ -75,7 +75,10 @@ export default function TaskById() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<"closed" | "choose" | "confirm">(
+    "closed",
+  );
+
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
   const householdId = useActiveHouseholdId();
@@ -418,48 +421,26 @@ export default function TaskById() {
       {isOwner && (
         <Pressable
           accessibilityRole="button"
-          onPress={handleArchive}
-          disabled={archiveMutation.isPending}
+          onPress={() => setDeleteStep("choose")}
           style={styles.textButton}>
-          <Text style={[styles.archiveText, { color: colors.text }]}>
-            Arkivera syssla
+          <Text style={[styles.deleteText, { color: accent.dangerText }]}>
+            Ta bort syssla
           </Text>
         </Pressable>
       )}
-      {isOwner &&
-        (confirmDelete ? (
-          <View style={{ gap: 8 }}>
-            <ConfirmBox
-              message="All statistik för sysslan tas också bort. Vill du arkivera den istället?"
-              confirmLabel="Ta bort ändå"
-              onCancel={() => setConfirmDelete(false)}
-              onConfirm={() => deleteMutation.mutate(task.id)}
-            />
-            <Pressable
-              accessibilityRole="button"
-              onPress={handleArchive}
-              disabled={archiveMutation.isPending}
-              style={styles.textButton}>
-              <Text style={[styles.archiveText, { color: colors.text }]}>
-                Arkivera istället
-              </Text>
-            </Pressable>
-          </View>
-        ) : (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setConfirmDelete(true)}
-            disabled={deleteMutation.isPending}
-            style={styles.textButton}>
-            <Text style={[styles.deleteText, { color: accent.dangerText }]}>
-              Ta bort syssla
-            </Text>
-          </Pressable>
-        ))}
-      {deleteMutation.isError && (
-        <Text style={{ color: accent.dangerText }}>
-          {deleteMutation.error.message}
-        </Text>
+      {isOwner && deleteStep !== "closed" && (
+        <DeleteTaskModal
+          step={deleteStep}
+          dangerColor={accent.danger}
+          isPending={deleteMutation.isPending || archiveMutation.isPending}
+          error={
+            deleteMutation.error?.message ?? archiveMutation.error?.message
+          }
+          onArchive={handleArchive}
+          onChooseDelete={() => setDeleteStep("confirm")}
+          onConfirmDelete={() => deleteMutation.mutate(task.id)}
+          onCancel={() => setDeleteStep("closed")}
+        />
       )}
     </ScrollView>
   );
