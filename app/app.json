@@ -33,7 +33,21 @@
           "imageWidth": 76
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Tillåt $(PRODUCT_NAME) att komma åt dina bilder så att du kan lägga till en bild på en syssla.",
+          "cameraPermission": "Tillåt $(PRODUCT_NAME) att använda kameran så att du kan fotografera en syssla.",
+          "microphonePermission": "Tillåt $(PRODUCT_NAME) att använda mikrofonen så att du kan spela in ett röstmeddelande till en syssla."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Tillåt $(PRODUCT_NAME) att använda mikrofonen så att du kan spela in ett röstmeddelande till en syssla."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
