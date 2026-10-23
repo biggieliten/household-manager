@@ -108,3 +108,17 @@ export async function archiveTask(
 
   return responseTaskSchema.parse(await res.json());
 }
+export async function deleteTask(
+  householdId: number,
+  taskId: number,
+): Promise<void> {
+  const res = await getClient().api.v1.households[":householdId"].tasks[
+    ":taskId"
+  ].$delete({
+    param: {
+      householdId: String(householdId),
+      taskId: String(taskId),
+    },
+  });
+  if (!res.ok) throw new Error(`Kunde inte ta bort syssla (${res.status})`);
+}
