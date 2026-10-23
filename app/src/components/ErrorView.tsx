@@ -1,9 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { getErrorMessage } from "@/lib/errors";
 import { useTheme } from "@/theme";
 
 interface Props {
-  error: string;
+  error: Error;
   retry: () => void;
 }
 
@@ -14,7 +15,9 @@ export default function ErrorView({ error, retry }: Props) {
   return (
     <View style={styles.centered}>
       <Text style={[styles.title, { color: colors.text }]}>Något gick fel</Text>
-      <Text style={[styles.message, { color: colors.textMuted }]}>{error}</Text>
+      <Text style={[styles.message, { color: colors.textMuted }]}>
+        {getErrorMessage(error)}
+      </Text>
       <Pressable
         accessibilityRole="button"
         onPress={retry}

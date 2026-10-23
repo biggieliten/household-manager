@@ -290,6 +290,7 @@ household-manager/
         │   │   └── tasks.ts
         │   ├── auth-client.ts
         │   ├── avatars.ts
+        │   ├── errors.ts
         │   ├── statistics-period.ts
         │   └── storage.ts
         ├── hooks/

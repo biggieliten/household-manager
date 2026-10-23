@@ -35,7 +35,7 @@ export default function Index() {
       {isPending ? (
         <LoadingView />
       ) : error ? (
-        <ErrorView error={error.message} retry={() => refetch()} />
+        <ErrorView error={error} retry={() => refetch()} />
       ) : (
         tasks && (
           <TaskList
