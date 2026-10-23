@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import ErrorView from "@/components/ErrorView";
 import LoadingView from "@/components/LoadingView";
 import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
@@ -34,15 +35,7 @@ export default function Index() {
       {isPending ? (
         <LoadingView />
       ) : error ? (
-        <View style={styles.centered}>
-          <Text style={{ color: colors.text }}>{error.message}</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => refetch()}
-            style={[styles.retryButton, { backgroundColor: colors.primary }]}>
-            <Text style={styles.retryButtonText}>Försök igen</Text>
-          </Pressable>
-        </View>
+        <ErrorView error={error.message} retry={() => refetch()} />
       ) : (
         tasks && (
           <TaskList
@@ -71,19 +64,6 @@ export default function Index() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  centered: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-    gap: 12,
-  },
-  retryButton: {
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  retryButtonText: { color: "#FFFFFF", fontWeight: "600" },
   addButton: {
     position: "absolute",
     right: 16,
