@@ -17,8 +17,7 @@ import {
   responseTaskListItemSchema,
   responseTaskSchema,
 } from "@shared/schemas/task-schema";
-import { File as FileSystemFile } from "expo-file-system";
-import { fetch } from "expo/fetch";
+import { File as FileSystemFile, UploadType } from "expo-file-system";
 import { getAuthHeaders, getClient } from "./client";
 
 export async function fetchHouseholdTasks(
@@ -130,30 +129,59 @@ const mediaRoute = (
   param: { householdId: String(householdId), taskId: String(taskId), kind },
 });
 
-// fileUri is a local file from expo-image-picker or expo-audio.
-// Uploads are sent as multipart/form-data. The typed client only accepts the
-// browser's File type for form fields, and expo-file-system's File isn't one,
-// so we build the FormData ourselves and send it with fetch.
+// The API answers JSON; a non-JSON body (e.g. a proxy error page) becomes undefined
+function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+// The API's { error } body, so failures can say why the upload was rejected
+function apiErrorMessage(body: unknown): string | undefined {
+  return typeof body === "object" &&
+    body !== null &&
+    "error" in body &&
+    typeof body.error === "string"
+    ? body.error
+    : undefined;
+}
+
+// fileUri is a local file from expo-image-picker or expo-audio. The upload is
+// sent as multipart/form-data with expo-file-system's native upload, because it
+// lets us set mimeType: Android guesses e.g. audio/mpeg for .m4a recordings
 export async function uploadTaskMedia(
   householdId: number,
   taskId: number,
   kind: TaskMediaKind,
   fileUri: string,
+  mimeType: string,
 ): Promise<TaskMedia> {
   const { route, param } = mediaRoute(householdId, taskId, kind);
-  const form = new FormData();
-  form.append("file", new FileSystemFile(fileUri));
+  const result = await new FileSystemFile(fileUri).upload(
+    route.$url({ param }).toString(),
+    {
+      httpMethod: "PUT",
+      uploadType: UploadType.MULTIPART,
+      fieldName: "file",
+      mimeType,
+      headers: await getAuthHeaders(),
+      // A short upload we wait for, not a transfer that should outlive the app
+      sessionType: "foreground",
+    },
+  );
 
-  const res = await fetch(route.$url({ param }).toString(), {
-    method: "PUT",
-    body: form,
-    headers: await getAuthHeaders(),
-    credentials: "omit",
-  });
-  if (!res.ok)
-    throw new Error(`Kunde inte ladda upp ${mediaLabel[kind]} (${res.status})`);
+  const body = parseJson(result.body);
+  if (result.status < 200 || result.status >= 300) {
+    const reason = apiErrorMessage(body);
+    throw new Error(
+      `Kunde inte ladda upp ${mediaLabel[kind]} (${result.status})` +
+        (reason ? `: ${reason}` : ""),
+    );
+  }
 
-  return responseTaskMediaSchema.parse(await res.json());
+  return responseTaskMediaSchema.parse(body);
 }
 
 export async function deleteTaskMedia(
