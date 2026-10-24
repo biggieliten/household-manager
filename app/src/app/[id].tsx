@@ -9,16 +9,20 @@ import {
   View,
 } from "react-native";
 
+import Avatar from "@/components/Avatar";
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { assignTask, removeTaskAssignment } from "@/lib/api/task-assignments";
 import { archiveTask, completeTask } from "@/lib/api/tasks";
 import { householdQueryOptions } from "@/options/households";
-import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
+import {
+  taskAssignmentsQueryOptions,
+  tasksQueryOptions,
+} from "@/options/tasks";
 import { useTheme } from "@/theme";
-import Avatar from "@/components/Avatar";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
+import { Alert } from "react-native";
 
 const accents = {
   light: {
@@ -94,6 +98,18 @@ export default function TaskById() {
   });
 
   const handleArchive = () => {
+    Alert.alert(
+      `Akrivera ${task?.name}`,
+      "Är du säler på att du vill arkivera sysslan?",
+      [
+        { text: "Avbryt", style: "cancel" },
+        { text: "Arkivera", style: "destructive", onPress: () => archive() },
+      ],
+      { cancelable: true }, // dismiss when tapping outside (Android)
+    );
+  };
+
+  const archive = () => {
     if (task) {
       archiveMutation.mutate(task.id);
     }
@@ -212,12 +228,10 @@ export default function TaskById() {
         <TaskAssignments
           taskId={task.id}
           assignments={assignmentsQuery.data}
-          members={householdQuery.data.members.map(
-            (member) => ({
-              ...member,
-              leftAt: null,
-            }),
-          )}
+          members={householdQuery.data.members.map((member) => ({
+            ...member,
+            leftAt: null,
+          }))}
           isOwner={householdQuery.data.members.some(
             (member: { isMe: boolean; isAdmin: boolean }) =>
               member.isMe && member.isAdmin,
