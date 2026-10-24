@@ -11,23 +11,26 @@ import { View } from "react-native";
 
 import LoadingView from "@/components/LoadingView";
 import { authClient } from "@/lib/auth-client";
+import { householdsQueryOptions } from "@/options/households";
 import { ThemeProvider, useTheme } from "@/theme";
 import {
   QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
-import { householdsQueryOptions } from "@/options/households";
+import { ToastProvider } from "react-native-toastify-expo";
 
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <StatusBar style="auto" />
-        <RootStack />
-      </ThemeProvider>
+      <ToastProvider>
+        <ThemeProvider>
+          <StatusBar style="auto" />
+          <RootStack />
+        </ThemeProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
