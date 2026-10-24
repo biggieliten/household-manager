@@ -2,6 +2,7 @@ import { mutationOptions, queryOptions, skipToken } from "@tanstack/react-query"
 import type {
   CreateMyHouseholdInput,
   JoinMyHouseholdInput,
+  UpdateHouseholdInput,
 } from "@shared/schemas/household-schema";
 import {
   acceptJoinRequest,
@@ -13,6 +14,7 @@ import {
   getActiveHouseholdId,
   joinHousehold,
   setActiveHouseholdId,
+  updateHousehold,
   updateMyNickname,
 } from "@/lib/api/households";
 
@@ -106,6 +108,21 @@ export const joinHouseholdMutationOptions = mutationOptions({
     }
     return result;
   },
+  onSuccess: (_data, _input, _onMutateResult, { client: queryClient }) =>
+    queryClient.invalidateQueries({
+      queryKey: householdsQueryOptions.queryKey,
+    }),
+});
+
+export const updateHouseholdMutationOptions = mutationOptions({
+  mutationKey: ["households", "update"],
+  mutationFn: ({
+    householdId,
+    input,
+  }: {
+    householdId: number;
+    input: UpdateHouseholdInput;
+  }) => updateHousehold(householdId, input),
   onSuccess: (_data, _input, _onMutateResult, { client: queryClient }) =>
     queryClient.invalidateQueries({
       queryKey: householdsQueryOptions.queryKey,
