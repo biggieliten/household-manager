@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
+import { useState } from "react";
+import PausedInfoModal from "@/components/PausedInfoModal";
 
 import LoadingView from "@/components/LoadingView";
 import ScreenHeader from "@/components/ScreenHeader";
@@ -31,6 +33,7 @@ export default function Index() {
   )?.member;
   const memberId = member?.id;
   const isPaused = member?.isPaused ?? false;
+  const [showPausedInfo, setShowPausedInfo] = useState(false);
 
   return (
     <View
@@ -38,8 +41,14 @@ export default function Index() {
       style={[styles.container, { backgroundColor: colors.screen }]}>
       <ScreenHeader />
       {isPaused && (
-        <View
-          style={[styles.pausedBanner, { backgroundColor: colors.warning }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Du är pausad, visa mer information"
+          onPress={() => setShowPausedInfo(true)}
+          style={({ pressed }) => [
+            styles.pausedBanner,
+            { backgroundColor: colors.warning, opacity: pressed ? 0.8 : 1 },
+          ]}>
           <Feather name="pause-circle" size={28} color={colors.warningText} />
           <View style={styles.pausedTextBox}>
             <Text style={[styles.pausedTitle, { color: colors.warningText }]}>
@@ -50,7 +59,8 @@ export default function Index() {
               Du kan inte utföra sysslor just nu
             </Text>
           </View>
-        </View>
+          <Feather name="info" size={20} color={colors.warningText} />
+        </Pressable>
       )}
 
       {isPending ? (
@@ -88,6 +98,9 @@ export default function Index() {
           <Text style={styles.addButtonText}>+</Text>
         </Pressable>
       </Link>
+      {showPausedInfo && (
+        <PausedInfoModal onClose={() => setShowPausedInfo(false)} />
+      )}
     </View>
   );
 }
