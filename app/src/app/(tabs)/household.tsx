@@ -315,11 +315,10 @@ function HouseholdContent() {
                   </Text>
                 </View>
               ) : requestsQuery.isError ? (
-                <Text
-                  accessibilityLiveRegion="polite"
-                  style={{ color: colors.textMuted }}>
-                  {requestsQuery.error.message}
-                </Text>
+                <ErrorView
+                  error={requestsQuery.error}
+                  retry={() => requestsQuery.refetch()}
+                />
               ) : requestsQuery.data.length === 0 ? (
                 <Text style={{ color: colors.textMuted }}>
                   Inga väntande förfrågningar
@@ -652,16 +651,10 @@ function HouseholdContent() {
             </Text>
             {groupsQuery.isPending && <ActivityIndicator color={colors.textMuted} />}
             {groupsQuery.error && (
-              <View style={{ gap: 8 }}>
-                <Text accessibilityRole="alert" style={{ color: colors.text }}>
-                  {groupsQuery.error.message}
-                </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => groupsQuery.refetch()}>
-                  <Text style={{ color: colors.primary }}>Försök igen</Text>
-                </Pressable>
-              </View>
+              <ErrorView
+                error={groupsQuery.error}
+                retry={() => groupsQuery.refetch()}
+              />
             )}
             {groupsQuery.data?.length === 0 && (
               <Text style={{ color: colors.textMuted }}>Inga sysslegrupper ännu.</Text>

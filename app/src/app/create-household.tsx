@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import * as Clipboard from "expo-clipboard";
 
 import AvatarPicker from "@/components/AvatarPicker";
+import ErrorView from "@/components/ErrorView";
 import JoinRequests from "@/components/JoinRequests";
 import { fetchHouseholdPreview } from "@/lib/api/households";
 import { authClient } from "@/lib/auth-client";
@@ -325,9 +326,10 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
               <>
                 <JoinRequests request={request} />
                 {membershipQuery.error && (
-                  <Text style={[styles.error, { color: colors.text }]}>
-                    {membershipQuery.error.message}
-                  </Text>
+                  <ErrorView
+                    error={membershipQuery.error}
+                    retry={() => membershipQuery.refetch()}
+                  />
                 )}
               </>
             ) : (
@@ -384,9 +386,7 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
             />
 
             {previewMutation.error && (
-              <Text style={[styles.error, { color: colors.text }]}>
-                {previewMutation.error.message}
-              </Text>
+              <ErrorView error={previewMutation.error} retry={handleSearch} />
             )}
 
             <PrimaryButton

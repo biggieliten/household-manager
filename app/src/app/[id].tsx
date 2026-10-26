@@ -281,9 +281,13 @@ export default function TaskById() {
         <ActivityIndicator color={colors.textMuted} />
       )}
       {assignmentError && (
-        <Text accessibilityRole="alert" style={{ color: accent.dangerText }}>
-          {assignmentError.message}
-        </Text>
+        <ErrorView
+          error={assignmentError}
+          retry={() => {
+            void householdQuery.refetch();
+            void assignmentsQuery.refetch();
+          }}
+        />
       )}
       {householdQuery.data && assignmentsQuery.data && (
         <TaskAssignments

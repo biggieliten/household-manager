@@ -60,14 +60,15 @@ export async function fetchPendingJoinRequests(
     param: { householdId: String(householdId) },
   });
   if (!res.ok)
-    throw new Error(`Kunde inte hämta förfrågningar (${res.status})`);
+    throw new ApiError(`Kunde inte hämta förfrågningar (${res.status})`, res.status);
 
   return responsePendingJoinRequestSchema.array().parse(await res.json());
 }
 
 export async function fetchMyHouseholds(): Promise<MyHousehold[]> {
   const res = await getClient().api.v1.households.$get();
-  if (!res.ok) throw new Error(`Kunde inte hämta hushåll (${res.status})`);
+  if (!res.ok)
+    throw new ApiError(`Kunde inte hämta hushåll (${res.status})`, res.status);
 
   return responseMyHouseholdSchema.array().parse(await res.json());
 }
@@ -87,10 +88,11 @@ export async function fetchHouseholdPreview(
     param: { accessCode },
   });
   if (res.status === 404)
-    throw new Error("Det finns inget hushåll med den koden");
+    throw new ApiError("Det finns inget hushåll med den koden", res.status);
   if (res.status === 409)
-    throw new Error("Du är redan med i det här hushållet");
-  if (!res.ok) throw new Error(`Kunde inte hitta hushållet (${res.status})`);
+    throw new ApiError("Du är redan med i det här hushållet", res.status);
+  if (!res.ok)
+    throw new ApiError(`Kunde inte hitta hushållet (${res.status})`, res.status);
 
   return householdPreviewSchema.parse(await res.json());
 }
