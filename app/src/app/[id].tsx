@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { SymbolView } from "expo-symbols";
 import {
   ActivityIndicator,
   Pressable,
@@ -8,11 +9,11 @@ import {
   Text,
   View,
 } from "react-native";
-import { SymbolView } from "expo-symbols";
 
+import Avatar from "@/components/Avatar";
+import DeleteTaskModal from "@/components/DeleteTaskModal";
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
-import DeleteTaskModal from "@/components/DeleteTaskModal";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { assignTask, removeTaskAssignment } from "@/lib/api/task-assignments";
 import { archiveTask, completeTask, deleteTask } from "@/lib/api/tasks";
@@ -22,7 +23,6 @@ import {
   tasksQueryOptions,
 } from "@/options/tasks";
 import { useTheme } from "@/theme";
-import Avatar from "@/components/Avatar";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
 import { useState } from "react";
 
@@ -108,6 +108,14 @@ export default function TaskById() {
       archiveMutation.mutate(task.id);
     }
   };
+
+  const handleCompleteTask = (id: number) => {
+    if (!completeTaskMutation.isError) {
+      completeTaskMutation.mutate(id);
+      router.push("/");
+    }
+  };
+
   const deleteMutation = useMutation({
     mutationFn: (taskId: number) => {
       if (!householdId) throw new Error("Inget aktivt hushåll");
@@ -172,6 +180,9 @@ export default function TaskById() {
           queryKey: ["households", householdId, "statistics"],
         }),
       ]);
+    },
+    onError: (error) => {
+      console.error(error);
     },
   });
 
@@ -366,7 +377,7 @@ export default function TaskById() {
           disabled: !householdId || completeTaskMutation.isPending,
         }}
         disabled={!householdId || completeTaskMutation.isPending}
-        onPress={() => completeTaskMutation.mutate(task.id)}
+        onPress={() => handleCompleteTask(task.id)}
         style={({ pressed }) => [
           styles.doneButton,
           {
