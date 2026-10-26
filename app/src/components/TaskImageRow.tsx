@@ -1,82 +1,138 @@
+import Feather from "@expo/vector-icons/Feather";
 import { Image } from "expo-image";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/theme";
 
 type Props = {
   // A local file before saving, or the API URL with auth headers afterwards
   source: { uri: string; headers?: Record<string, string> };
-  // When given, a button shows the image at full width below the row
-  expanded?: boolean;
-  onToggleExpanded?: () => void;
+  // Tapping the image opens it full screen (pinch to zoom on iOS)
+  openable?: boolean;
 };
 
 // Removing the image is done by wrapping the row in SwipeToDelete
-export default function TaskImageRow({
-  source,
-  expanded = false,
-  onToggleExpanded,
-}: Props) {
+export default function TaskImageRow({ source, openable = false }: Props) {
   const { colors } = useTheme();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const thumbnail = (
+    <Image
+      source={source}
+      contentFit="cover"
+      accessibilityLabel="Bifogad bild"
+      style={[styles.thumbnail, { backgroundColor: colors.border }]}
+    />
+  );
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <View style={styles.row}>
-        <Image
-          source={source}
-          contentFit="cover"
-          accessibilityLabel="Bifogad bild"
-          style={[styles.thumbnail, { backgroundColor: colors.border }]}
-        />
-        <View style={styles.text}>
-          <Text style={[styles.title, { color: colors.text }]}>Bild</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            Bifogad referensbild
-          </Text>
-        </View>
-        {onToggleExpanded && (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={
-              expanded ? "Minimera bilden" : "Visa bilden i full storlek"
-            }
-            accessibilityState={{ expanded }}
-            onPress={onToggleExpanded}
-            style={({ pressed }) => [
-              styles.expandButton,
-              {
-                backgroundColor: colors.background,
-                opacity: pressed ? 0.6 : 1,
-              },
-            ]}>
-            <Text style={[styles.expandIcon, { color: colors.text }]}>
-              {expanded ? "⤡" : "⤢"}
-            </Text>
-          </Pressable>
-        )}
+    <View style={[styles.row, { backgroundColor: colors.surface }]}>
+      {openable ? (
+        <Pressable
+          accessibilityRole="imagebutton"
+          accessibilityLabel="Visa bilden i helskärm"
+          onPress={() => setIsOpen(true)}>
+          {thumbnail}
+        </Pressable>
+      ) : (
+        thumbnail
+      )}
+      <View style={styles.text}>
+        <Text style={[styles.title, { color: colors.text }]}>Bild</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+          Bifogad referensbild
+        </Text>
       </View>
-      {expanded && (
-        <Image
-          source={source}
-          contentFit="contain"
-          accessibilityLabel="Bifogad bild i full storlek"
-          style={styles.fullImage}
-        />
+      {openable && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Visa bilden i helskärm"
+          onPress={() => setIsOpen(true)}
+          style={({ pressed }) => [
+            styles.openButton,
+            {
+              backgroundColor: colors.background,
+              opacity: pressed ? 0.6 : 1,
+            },
+          ]}>
+          <Feather name="maximize-2" size={18} color={colors.text} />
+        </Pressable>
+      )}
+      {isOpen && (
+        <FullScreenImage source={source} onClose={() => setIsOpen(false)} />
       )}
     </View>
   );
 }
 
+// ScrollView's built-in zoom gives pinch and pan on iOS; Android shows the
+// image fitted to the screen
+function FullScreenImage({
+  source,
+  onClose,
+}: {
+  source: Props["source"];
+  onClose: () => void;
+}) {
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Modal
+      visible
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={onClose}>
+      <View
+        accessibilityViewIsModal
+        onAccessibilityEscape={onClose}
+        style={styles.viewer}>
+        <ScrollView
+          minimumZoomScale={1}
+          maximumZoomScale={4}
+          centerContent
+          bouncesZoom
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}>
+          <Image
+            source={source}
+            contentFit="contain"
+            accessibilityLabel="Bifogad bild i helskärm"
+            style={{ width, height }}
+          />
+        </ScrollView>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Stäng bilden"
+          onPress={onClose}
+          style={({ pressed }) => [
+            styles.closeButton,
+            { top: insets.top + 8, opacity: pressed ? 0.6 : 1 },
+          ]}>
+          <Feather name="x" size={22} color="#FFFFFF" />
+        </Pressable>
+      </View>
+    </Modal>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    gap: 8,
-    padding: 8,
-    borderRadius: 12,
-  },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    padding: 8,
+    borderRadius: 12,
   },
   thumbnail: {
     width: 40,
@@ -95,19 +151,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 1,
   },
-  expandButton: {
+  openButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
   },
-  expandIcon: {
-    fontSize: 22,
+  viewer: {
+    flex: 1,
+    backgroundColor: "#000000",
   },
-  fullImage: {
-    width: "100%",
-    aspectRatio: 4 / 3,
-    borderRadius: 8,
+  closeButton: {
+    position: "absolute",
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
 });

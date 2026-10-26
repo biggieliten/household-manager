@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -148,7 +147,6 @@ export default function TaskById() {
 
   // Media is only shown here; it is changed in the edit task view
   const { data: authHeaders } = useQuery(authHeadersQueryOptions);
-  const [isImageExpanded, setIsImageExpanded] = useState(false);
 
   const history = task?.completedTasks
     .filter(
@@ -284,8 +282,7 @@ export default function TaskById() {
               uri: taskMediaUrl(householdId, task.id, image),
               headers: authHeaders,
             }}
-            expanded={isImageExpanded}
-            onToggleExpanded={() => setIsImageExpanded((prev) => !prev)}
+            openable
           />
         )}
 
