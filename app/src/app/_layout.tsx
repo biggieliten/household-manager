@@ -13,13 +13,15 @@ import { useEffect, useState } from "react";
 import HeaderLogo from "@/components/HeaderLogo";
 import AnimatedSplash, { LOOP_DURATION_MS } from "@/components/AnimatedSplash";
 import { authClient } from "@/lib/auth-client";
-import { ThemeProvider } from "@/theme";
+import { householdsQueryOptions } from "@/options/households";
+import { ThemeProvider, useTheme } from "@/theme";
+
 import {
   QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
-import { householdsQueryOptions } from "@/options/households";
+import { ToastProvider } from "react-native-toastify-expo";
 
 const queryClient = new QueryClient();
 
@@ -29,10 +31,12 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <StatusBar style="auto" />
-        <RootStack />
-      </ThemeProvider>
+      <ToastProvider>
+        <ThemeProvider>
+          <StatusBar style="auto" />
+          <RootStack />
+        </ThemeProvider>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

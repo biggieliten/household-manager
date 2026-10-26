@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { SymbolView } from "expo-symbols";
 import {
   ActivityIndicator,
   Pressable,
@@ -8,11 +9,11 @@ import {
   Text,
   View,
 } from "react-native";
-import { SymbolView } from "expo-symbols";
 
+import Avatar from "@/components/Avatar";
+import DeleteTaskModal from "@/components/DeleteTaskModal";
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
-import DeleteTaskModal from "@/components/DeleteTaskModal";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { assignTask, removeTaskAssignment } from "@/lib/api/task-assignments";
 import { archiveTask, completeTask, deleteTask } from "@/lib/api/tasks";
@@ -22,9 +23,10 @@ import {
   tasksQueryOptions,
 } from "@/options/tasks";
 import { useTheme } from "@/theme";
-import Avatar from "@/components/Avatar";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
 import { useState } from "react";
+import { Alert } from "react-native";
+import { useToast } from "react-native-toastify-expo";
 
 const accents = {
   light: {
@@ -88,6 +90,8 @@ export default function TaskById() {
     isPending,
     refetch,
   } = useQuery(tasksQueryOptions(householdId));
+
+  const { showToast } = useToast();
   const task = tasks?.find((task) => task.id === Number(id));
 
   const archiveMutation = useMutation({
@@ -96,7 +100,13 @@ export default function TaskById() {
       await queryClient.invalidateQueries({
         queryKey: tasksQueryOptions(householdId).queryKey,
       });
-      router.push("/");
+      showToast({
+        message: `${task?.name} arkiverad`,
+        type: "success",
+        duration: 5000,
+        position: "bottom",
+      });
+      setTimeout(() => router.back(), 100);
     },
     onError: (error) => {
       console.error(error);
@@ -104,6 +114,18 @@ export default function TaskById() {
   });
 
   const handleArchive = () => {
+    Alert.alert(
+      `Akrivera ${task?.name}`,
+      "Är du säker på att du vill arkivera sysslan?",
+      [
+        { text: "Avbryt", style: "cancel" },
+        { text: "Arkivera", style: "destructive", onPress: () => archive() },
+      ],
+      { cancelable: true },
+    );
+  };
+
+  const archive = () => {
     if (task) {
       archiveMutation.mutate(task.id);
     }

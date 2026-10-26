@@ -25,6 +25,7 @@ import {
 import { useTheme } from "@/theme";
 import type { CreateTaskBody } from "@shared/schemas/task-schema";
 import { createTaskBodySchema } from "@shared/schemas/task-schema";
+import { useToast } from "react-native-toastify-expo";
 
 const frequencyOptions = Array.from({ length: 31 }, (_, i) => i);
 const difficultyOptions = [
@@ -58,6 +59,7 @@ export default function CreateTask() {
   );
 
   const [prefilledId, setPrefilledId] = useState<number | null>(null);
+  const { showToast } = useToast();
 
   if (taskById && prefilledId !== taskById.id) {
     setPrefilledId(taskById.id);
@@ -151,14 +153,27 @@ export default function CreateTask() {
       ]);
       if (error) {
         setPartialSave({ taskId, assignedMemberIds, error });
+        showToast({
+          message: `Syssla ${body.name} skapad men tilldelningen misslyckades: ${error}`,
+          type: "error",
+          duration: 5000,
+          position: "bottom",
+        });
         return;
       }
 
       setTask(initialTask);
       setSelectedMemberIds(new Set());
       setPartialSave(null);
+
+      showToast({
+        message: `Syssla ${body.name} har ${isEditing ? "uppdaterats" : "skapats"}`,
+        type: "success",
+        duration: 5000,
+        position: "bottom",
+      });
       if (router.canGoBack()) {
-        router.push("/");
+        setTimeout(() => router.back(), 100);
       } else {
         Alert.alert(
           isEditing ? "Syssla uppdaterad" : "Syssla skapad",
@@ -178,7 +193,9 @@ export default function CreateTask() {
 
   const handleSave = () => {
     const result = createTaskBodySchema.safeParse(task);
-    if (!result.success) return;
+    if (!result.success) {
+      return;
+    }
 
     saveTaskMutation.mutate(result.data);
   };
@@ -199,8 +216,9 @@ export default function CreateTask() {
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled">
-      {/*
-       */}
+      {
+        /* */
+      }
 
       <View style={styles.section}>
         <Text style={labelStyle}>Titel</Text>
