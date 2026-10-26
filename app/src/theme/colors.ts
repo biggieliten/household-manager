@@ -11,7 +11,8 @@ export const colors = {
     card: "#FFFFFF",
     // Small pills and avatar circles
     chip: "#ECEBFD",
-    warning: "#F59E0B",
+    warning: "#FEF3C7",
+    warningText: "#92400E",
   },
   dark: {
     background: "#0B0B0D",
@@ -23,7 +24,8 @@ export const colors = {
     screen: "#0B0B0D",
     card: "#1C1C1E",
     chip: "#33354A",
-    warning: "#FBBF24",
+    warning: "#3A2E14",
+    warningText: "#FCD34D",
   },
 } as const;
 

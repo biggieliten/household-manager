@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
 
 import LoadingView from "@/components/LoadingView";
 import ScreenHeader from "@/components/ScreenHeader";
@@ -37,8 +38,18 @@ export default function Index() {
       style={[styles.container, { backgroundColor: colors.screen }]}>
       <ScreenHeader />
       {isPaused && (
-        <View style={[styles.pausedBanner, { backgroundColor: colors.card }]}>
-          <Text style={{ color: colors.text }}>Du är pausad</Text>
+        <View
+          style={[styles.pausedBanner, { backgroundColor: colors.warning }]}>
+          <Feather name="pause-circle" size={28} color={colors.warningText} />
+          <View style={styles.pausedTextBox}>
+            <Text style={[styles.pausedTitle, { color: colors.warningText }]}>
+              Du är pausad
+            </Text>
+            <Text
+              style={[styles.pausedSubtitle, { color: colors.warningText }]}>
+              Du kan inte utföra sysslor just nu
+            </Text>
+          </View>
         </View>
       )}
 
@@ -111,9 +122,14 @@ const styles = StyleSheet.create({
     lineHeight: 34,
   },
   pausedBanner: {
-    margin: 16,
-    padding: 12,
-    borderRadius: 10,
+    flexDirection: "row",
     alignItems: "center",
+    gap: 12,
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
   },
+  pausedTextBox: { flex: 1 },
+  pausedTitle: { fontSize: 18, fontWeight: "700" },
+  pausedSubtitle: { fontSize: 14 },
 });
