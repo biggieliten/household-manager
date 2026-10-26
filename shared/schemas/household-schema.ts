@@ -41,7 +41,9 @@ export const responseMyHouseholdSchema = responseHouseholdSchema
     }),
   });
 
-export const updateHouseholdSchema = createHouseholdSchema.partial();
+export const updateHouseholdSchema = createHouseholdSchema
+  .extend({ name: z.string().trim().min(2) })
+  .partial();
 
 export const joinHouseholdSchema = z.object({
   accessCode: accessCodeSchema,
@@ -60,6 +62,16 @@ export const responseJoinRequestSchema = z.object({
 
 export type JoinRequest = z.infer<typeof responseJoinRequestSchema>;
 
+export const responsePendingJoinRequestSchema = z.object({
+  id: z.int(),
+  nickname: createMemberSchema.shape.nickname,
+  avatar: avatarSchema,
+});
+
+export type PendingJoinRequest = z.infer<
+  typeof responsePendingJoinRequestSchema
+>;
+
 // What a user sees after entering a code, before joining
 export const householdPreviewSchema = responseHouseholdSchema
   .pick({ id: true, name: true })
@@ -73,6 +85,10 @@ export const householdIdParamSchema = z.object({
 // e.g. /households/:householdId/members/:memberId/pause
 export const memberIdParamSchema = householdIdParamSchema.extend({
   memberId: z.coerce.number<string>().int().nonnegative(),
+});
+
+export const joinRequestIdParamSchema = householdIdParamSchema.extend({
+  requestId: z.coerce.number<string>().int().positive(),
 });
 
 export type Household = z.infer<typeof responseHouseholdSchema>;

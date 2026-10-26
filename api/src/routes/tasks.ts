@@ -93,7 +93,7 @@ const app = new Hono()
   )
   .patch(
     "/:householdId/tasks/:taskId/archive",
-    sessionControl(),
+    sessionControl(true),
     validate("param", taskIdParamSchema),
     async (c) => {
       const { householdId, taskId } = c.req.valid("param");
@@ -116,7 +116,7 @@ const app = new Hono()
   )
   .patch(
     "/:householdId/tasks/:taskId",
-    sessionControl(),
+    sessionControl(true),
     validate("param", taskIdParamSchema),
     validate("json", updateTaskSchema),
     async (c) => {
@@ -137,6 +137,25 @@ const app = new Hono()
       });
 
       return c.json(withTaskMedia(task), 200);
+    },
+  )
+  .delete(
+    "/:householdId/tasks/:taskId",
+    sessionControl(true),
+    validate("param", taskIdParamSchema),
+    async (c) => {
+      const { householdId, taskId } = c.req.valid("param");
+
+      const existing = await db.task.findFirst({
+        where: { id: taskId, householdId, deletedAt: null },
+      });
+      if (!existing) {
+        return c.json({ error: "Task not found" }, 404);
+      }
+
+      await db.task.delete({ where: { id: taskId } });
+
+      return c.body(null, 204);
     },
   );
 

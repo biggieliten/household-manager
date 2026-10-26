@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import LoadingView from "@/components/LoadingView";
 import MemberMenu from "@/components/MemberMenu";
 import NicknameModal from "@/components/NicknameModal";
+import HouseholdNameModal from "@/components/HouseholdNameModal";
 import DeleteTaskGroupModal from "@/components/DeleteTaskGroupModal";
 import {
   pauseMember,
@@ -23,9 +24,14 @@ import {
 } from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
+import usePullToRefresh from "@/hooks/use-pull-to-refresh";
 import {
   householdQueryOptions,
   householdsQueryOptions,
+  pendingJoinRequestsQueryOptions,
+  updateHouseholdMutationOptions,
+  acceptJoinRequestMutationOptions,
+  rejectJoinRequestMutationOptions,
   updateMyNicknameMutationOptions,
   switchHouseholdMutationOptions,
 } from "@/options/households";
@@ -43,6 +49,11 @@ import * as Clipboard from "expo-clipboard";
 type NicknameEdit = {
   householdId: number;
   nickname: string;
+};
+
+type HouseholdNameEdit = {
+  householdId: number;
+  name: string;
 };
 
 type GroupDeletion = {
@@ -66,13 +77,26 @@ function HouseholdContent() {
   const { colors } = useTheme();
 
   const householdId = useActiveHouseholdId();
-  const { data, error, isPending, refetch, isRefetching } = useQuery(
+  const { data, error, isPending, refetch } = useQuery(
     householdQueryOptions(householdId),
   );
   const queryClient = useQueryClient();
   const households = useQuery(householdsQueryOptions);
   const switchMutation = useMutation(switchHouseholdMutationOptions);
   const groupsQuery = useQuery(taskGroupsQueryOptions(householdId));
+  const isAdmin =
+    !error &&
+    (data?.members.some((member) => member.isMe && member.isAdmin) ?? false);
+  const requestsQuery = useQuery(
+    pendingJoinRequestsQueryOptions(householdId, isAdmin),
+  );
+  const pullToRefresh = usePullToRefresh(() =>
+    Promise.all([
+      refetch(),
+      groupsQuery.refetch(),
+      isAdmin && requestsQuery.refetch(),
+    ]),
+  );
   const [openGroupMenuId, setOpenGroupMenuId] = useState<number | null>(null);
   const [deletingGroup, setDeletingGroup] = useState<GroupDeletion | null>(null);
 
@@ -84,6 +108,8 @@ function HouseholdContent() {
     null,
   );
   const [hasLeft, setHasLeft] = useState(false);
+  const [editingHouseholdName, setEditingHouseholdName] =
+    useState<HouseholdNameEdit | null>(null);
   const [copied, setCopied] = useState(false);
 
   const router = useRouter();
@@ -135,7 +161,12 @@ function HouseholdContent() {
   };
 
   const renameMutation = useMutation(updateMyNicknameMutationOptions);
+  const updateHouseholdMutation = useMutation(updateHouseholdMutationOptions);
   const deleteGroupMutation = useMutation(deleteTaskGroupMutationOptions);
+  const acceptRequestMutation = useMutation(acceptJoinRequestMutationOptions);
+  const rejectRequestMutation = useMutation(rejectJoinRequestMutationOptions);
+  const isHandlingRequest =
+    acceptRequestMutation.isPending || rejectRequestMutation.isPending;
 
   if (isPending) {
     return <LoadingView />;
@@ -150,7 +181,6 @@ function HouseholdContent() {
   }
 
   const { name, accessCode, members } = data;
-  const isAdmin = members.some((member) => member.isMe && member.isAdmin);
   const others = members.filter((member) => !member.isMe);
   const isLastOwner =
     isAdmin && others.length > 0 && !others.some((member) => member.isAdmin);
@@ -163,11 +193,8 @@ function HouseholdContent() {
         contentContainerStyle={styles.grow}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching || groupsQuery.isRefetching}
-            onRefresh={() => {
-              void refetch();
-              void groupsQuery.refetch();
-            }}
+            refreshing={pullToRefresh.refreshing}
+            onRefresh={pullToRefresh.onRefresh}
           />
         }>
         {/* Tapping anywhere outside an open menu closes it */}
@@ -193,49 +220,236 @@ function HouseholdContent() {
                 fallback={<Text>🏠</Text>}
               />
             </View>
-            <View style={styles.flex}>
+            <View style={styles.householdDetails}>
               <View style={styles.nameRow}>
                 <Text style={[styles.householdName, { color: colors.text }]}>
                   {name}
                 </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={copied ? "Kopierad" : "Kopiera kod"}
-                  onPress={() => handleCopyCode(accessCode)}
-                  hitSlop={8}
-                  style={[
-                    styles.badge,
-                    styles.codeBadge,
-                    { backgroundColor: colors.border },
-                  ]}>
-                  <Text style={[styles.badgeText, { color: colors.text }]}>
-                    {accessCode}
-                  </Text>
-                  <SymbolView
-                    name={
-                      copied
-                        ? { ios: "checkmark", android: "check", web: "check" }
-                        : {
-                            ios: "doc.on.doc",
-                            android: "content_copy",
-                            web: "content_copy",
-                          }
-                    }
-                    size={12}
-                    tintColor={colors.text}
-                    fallback={
-                      <Text style={{ color: colors.text }}>
-                        {copied ? "✓" : "⧉"}
-                      </Text>
-                    }
-                  />
-                </Pressable>
+                {isAdmin && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Ändra hushållets namn"
+                    hitSlop={8}
+                    onPress={() => {
+                      setOpenMenuId(null);
+                      setOpenGroupMenuId(null);
+                      updateHouseholdMutation.reset();
+                      setEditingHouseholdName({
+                        householdId: requireHouseholdId(),
+                        name,
+                      });
+                    }}>
+                    <SymbolView
+                      name={{ ios: "pencil", android: "edit", web: "edit" }}
+                      size={20}
+                      tintColor={colors.primary}
+                      fallback={<Text>✏️</Text>}
+                    />
+                  </Pressable>
+                )}
               </View>
               <Text style={{ color: colors.primary }}>
                 {members.length} medlemmar
               </Text>
             </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={copied ? "Kopierad" : "Kopiera kod"}
+              onPress={() => handleCopyCode(accessCode)}
+              hitSlop={8}
+              style={[
+                styles.badge,
+                styles.codeBadge,
+                { backgroundColor: colors.border },
+              ]}>
+              <Text style={[styles.badgeText, { color: colors.text }]}>
+                {accessCode}
+              </Text>
+              <SymbolView
+                name={
+                  copied
+                    ? { ios: "checkmark", android: "check", web: "check" }
+                    : {
+                        ios: "doc.on.doc",
+                        android: "content_copy",
+                        web: "content_copy",
+                      }
+                }
+                size={12}
+                tintColor={colors.text}
+                fallback={
+                  <Text style={{ color: colors.text }}>
+                    {copied ? "✓" : "⧉"}
+                  </Text>
+                }
+              />
+            </Pressable>
           </View>
+
+          {isAdmin && (
+            <View style={[styles.card, { backgroundColor: colors.surface }]}>
+              <View style={styles.row}>
+                <Text
+                  accessibilityRole="header"
+                  style={[
+                    styles.sectionTitle,
+                    styles.flex,
+                    { color: colors.text },
+                  ]}>
+                  Väntande förfrågningar
+                </Text>
+                {requestsQuery.isSuccess && (
+                  <View
+                    style={[styles.badge, { backgroundColor: colors.border }]}>
+                    <Text
+                      accessibilityLabel={`${requestsQuery.data.length} väntande förfrågningar`}
+                      style={[styles.badgeText, { color: colors.text }]}>
+                      {requestsQuery.data.length}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {requestsQuery.isPending ? (
+                <View style={styles.row}>
+                  <ActivityIndicator color={colors.textMuted} />
+                  <Text style={{ color: colors.textMuted }}>
+                    Hämtar förfrågningar…
+                  </Text>
+                </View>
+              ) : requestsQuery.isError ? (
+                <Text
+                  accessibilityLiveRegion="polite"
+                  style={{ color: colors.textMuted }}>
+                  {requestsQuery.error.message}
+                </Text>
+              ) : requestsQuery.data.length === 0 ? (
+                <Text style={{ color: colors.textMuted }}>
+                  Inga väntande förfrågningar
+                </Text>
+              ) : (
+                requestsQuery.data.map((request) => {
+                  const competingRequest = requestsQuery.data.some(
+                    (other) =>
+                      other.id !== request.id && other.avatar === request.avatar,
+                  );
+                  const avatarTaken = members.some(
+                    (member) => member.avatar === request.avatar,
+                  );
+                  const conflictMessage = competingRequest
+                    ? "Flera personer har valt samma avatar. Neka de andra förfrågningarna först."
+                    : avatarTaken
+                      ? "En medlem använder redan den här avataren. Förfrågan kan inte godkännas."
+                      : null;
+                  const acceptError =
+                    acceptRequestMutation.variables?.householdId === householdId &&
+                    acceptRequestMutation.variables?.requestId === request.id
+                      ? acceptRequestMutation.error
+                      : null;
+                  const rejectError =
+                    rejectRequestMutation.variables?.householdId === householdId &&
+                    rejectRequestMutation.variables?.requestId === request.id
+                      ? rejectRequestMutation.error
+                      : null;
+                  const actionError = acceptError ?? rejectError;
+                  const accepting =
+                    acceptRequestMutation.isPending &&
+                    acceptRequestMutation.variables.householdId === householdId &&
+                    acceptRequestMutation.variables.requestId === request.id;
+                  const rejecting =
+                    rejectRequestMutation.isPending &&
+                    rejectRequestMutation.variables.householdId === householdId &&
+                    rejectRequestMutation.variables.requestId === request.id;
+
+                  return (
+                    <View
+                      key={request.id}
+                      style={[
+                        styles.memberRow,
+                        styles.memberItem,
+                        { backgroundColor: colors.background },
+                      ]}>
+                      <View style={styles.row}>
+                        <Avatar avatar={request.avatar} size={36} />
+                        <View style={styles.flex}>
+                          <Text
+                            style={[styles.memberName, { color: colors.text }]}>
+                            {request.nickname}
+                          </Text>
+                          <Text style={{ color: colors.textMuted }}>
+                            Vill gå med i hushållet
+                          </Text>
+                        </View>
+                      </View>
+                      {conflictMessage && (
+                        <Text style={{ color: colors.textMuted }}>
+                          {conflictMessage}
+                        </Text>
+                      )}
+                      {actionError && (
+                        <Text
+                          accessibilityLiveRegion="polite"
+                          style={{ color: colors.textMuted }}>
+                          {actionError.message}
+                        </Text>
+                      )}
+                      <View style={styles.requestActions}>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Neka ${request.nickname}`}
+                          accessibilityState={{ disabled: isHandlingRequest }}
+                          disabled={isHandlingRequest}
+                          onPress={() => {
+                            if (isHandlingRequest) return;
+                            acceptRequestMutation.reset();
+                            rejectRequestMutation.reset();
+                            rejectRequestMutation.mutate({
+                              householdId: requireHouseholdId(),
+                              requestId: request.id,
+                            });
+                          }}
+                          style={[
+                            styles.requestButton,
+                            { backgroundColor: colors.surface },
+                            isHandlingRequest && styles.paused,
+                          ]}>
+                          <Text style={[styles.badgeText, { color: colors.text }]}>
+                            {rejecting ? "Nekar…" : "Neka"}
+                          </Text>
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Godkänn ${request.nickname}`}
+                          accessibilityState={{
+                            disabled: isHandlingRequest || !!conflictMessage,
+                          }}
+                          disabled={isHandlingRequest || !!conflictMessage}
+                          onPress={() => {
+                            if (isHandlingRequest || conflictMessage) return;
+                            acceptRequestMutation.reset();
+                            rejectRequestMutation.reset();
+                            acceptRequestMutation.mutate({
+                              householdId: requireHouseholdId(),
+                              requestId: request.id,
+                            });
+                          }}
+                          style={[
+                            styles.requestButton,
+                            { backgroundColor: colors.primary },
+                            (isHandlingRequest || !!conflictMessage) &&
+                              styles.paused,
+                          ]}>
+                          <Text style={[styles.badgeText, { color: "#FFFFFF" }]}>
+                            {accepting ? "Godkänner…" : "Godkänn"}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          )}
 
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={styles.row}>
@@ -569,6 +783,28 @@ function HouseholdContent() {
             onCancel={() => setDeletingGroup(null)}
           />
         )}
+        {isAdmin &&
+          editingHouseholdName &&
+          editingHouseholdName.householdId === householdId && (
+            <HouseholdNameModal
+              key={editingHouseholdName.householdId}
+              name={editingHouseholdName.name}
+              isPending={updateHouseholdMutation.isPending}
+              error={updateHouseholdMutation.error?.message}
+              onSave={(name) => {
+                if (!updateHouseholdMutation.isPending) {
+                  updateHouseholdMutation.mutate(
+                    {
+                      householdId: editingHouseholdName.householdId,
+                      input: { name },
+                    },
+                    { onSuccess: () => setEditingHouseholdName(null) },
+                  );
+                }
+              }}
+              onCancel={() => setEditingHouseholdName(null)}
+            />
+          )}
         {editingNickname && editingNickname.householdId === householdId && (
           <NicknameModal
             key={editingNickname.householdId}
@@ -628,13 +864,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  householdDetails: {
+    flex: 1,
+    minWidth: 0,
+  },
   nameRow: {
     flexDirection: "row",
     alignItems: "center",
-    flexWrap: "wrap",
+    justifyContent: "flex-start",
     gap: 8,
   },
   householdName: {
+    flexShrink: 1,
+    textAlign: "left",
     fontSize: 20,
     fontWeight: "700",
   },
@@ -669,6 +911,18 @@ const styles = StyleSheet.create({
   memberItem: {
     gap: 8,
   },
+  requestActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  requestButton: {
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    minHeight: 44,
+    justifyContent: "center",
+  },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -696,6 +950,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   codeBadge: {
+    flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,

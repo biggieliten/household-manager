@@ -2,14 +2,19 @@ import { mutationOptions, queryOptions, skipToken } from "@tanstack/react-query"
 import type {
   CreateMyHouseholdInput,
   JoinMyHouseholdInput,
+  UpdateHouseholdInput,
 } from "@shared/schemas/household-schema";
 import {
+  acceptJoinRequest,
+  rejectJoinRequest,
   createHousehold,
   fetchHousehold,
   fetchMyHouseholds,
+  fetchPendingJoinRequests,
   getActiveHouseholdId,
   joinHousehold,
   setActiveHouseholdId,
+  updateHousehold,
   updateMyNickname,
 } from "@/lib/api/households";
 
@@ -34,6 +39,44 @@ export const householdQueryOptions = (householdId: number | null | undefined) =>
     queryKey: ["households", householdId],
     queryFn: householdId ? () => fetchHousehold(householdId) : skipToken,
   });
+
+export const pendingJoinRequestsQueryOptions = (
+  householdId: number | null | undefined,
+  isOwner: boolean,
+) =>
+  queryOptions({
+    queryKey: ["households", householdId, "join-requests"],
+    queryFn:
+      householdId && isOwner
+        ? () => fetchPendingJoinRequests(householdId)
+        : skipToken,
+  });
+
+export const acceptJoinRequestMutationOptions = mutationOptions({
+  mutationKey: ["households", "join-requests", "accept"],
+  mutationFn: ({
+    householdId,
+    requestId,
+  }: {
+    householdId: number;
+    requestId: number;
+  }) => acceptJoinRequest(householdId, requestId),
+  onSuccess: (_data, { householdId }, _onMutateResult, { client }) =>
+    client.invalidateQueries({ queryKey: ["households", householdId] }),
+});
+
+export const rejectJoinRequestMutationOptions = mutationOptions({
+  mutationKey: ["households", "join-requests", "reject"],
+  mutationFn: ({
+    householdId,
+    requestId,
+  }: {
+    householdId: number;
+    requestId: number;
+  }) => rejectJoinRequest(householdId, requestId),
+  onSuccess: (_data, { householdId }, _onMutateResult, { client }) =>
+    client.invalidateQueries({ queryKey: ["households", householdId] }),
+});
 
 export const switchHouseholdMutationOptions = mutationOptions({
   mutationKey: ["households", "switch"],
@@ -65,6 +108,21 @@ export const joinHouseholdMutationOptions = mutationOptions({
     }
     return result;
   },
+  onSuccess: (_data, _input, _onMutateResult, { client: queryClient }) =>
+    queryClient.invalidateQueries({
+      queryKey: householdsQueryOptions.queryKey,
+    }),
+});
+
+export const updateHouseholdMutationOptions = mutationOptions({
+  mutationKey: ["households", "update"],
+  mutationFn: ({
+    householdId,
+    input,
+  }: {
+    householdId: number;
+    input: UpdateHouseholdInput;
+  }) => updateHousehold(householdId, input),
   onSuccess: (_data, _input, _onMutateResult, { client: queryClient }) =>
     queryClient.invalidateQueries({
       queryKey: householdsQueryOptions.queryKey,

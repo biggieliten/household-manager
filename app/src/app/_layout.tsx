@@ -6,21 +6,26 @@ import {
   useFonts,
 } from "@expo-google-fonts/plus-jakarta-sans";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { View } from "react-native";
+import { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import LoadingView from "@/components/LoadingView";
+import AnimatedSplash, { LOOP_DURATION_MS } from "@/components/AnimatedSplash";
+import HeaderLogo from "@/components/HeaderLogo";
 import { authClient } from "@/lib/auth-client";
-import { ThemeProvider, useTheme } from "@/theme";
+import { householdsQueryOptions } from "@/options/households";
+import { ThemeProvider } from "@/theme";
 import {
   QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
-import { householdsQueryOptions } from "@/options/households";
 
 const queryClient = new QueryClient();
+
+// Keep the native splash up until the animated one has rendered
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   // Gesture Handler needs one root view for gestures such as swipe-to-delete;
@@ -38,7 +43,6 @@ export default function RootLayout() {
 }
 
 function RootStack() {
-  const { colors } = useTheme();
   const { data: session, isPending: isSessionPending } =
     authClient.useSession();
   const [fontsLoaded, fontError] = useFonts({
@@ -54,17 +58,21 @@ function RootStack() {
     enabled: isSignedIn,
   });
 
+  // Show at least one full lap of the splash animation, even on a fast start
+  const [hasShownSplash, setHasShownSplash] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setHasShownSplash(true), LOOP_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Fall back to the system font if loading fails
   if (
+    !hasShownSplash ||
     isSessionPending ||
     (isSignedIn && households.isPending) ||
     (!fontsLoaded && !fontError)
   ) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <LoadingView />
-      </View>
-    );
+    return <AnimatedSplash onLayout={() => SplashScreen.hideAsync()} />;
   }
 
   // On error, show the tabs: their screens already show the error message
@@ -72,7 +80,7 @@ function RootStack() {
 
   // Expo Router redirects automatically when a guard flips, e.g. after sign-in/out
   return (
-    <Stack>
+    <Stack screenOptions={{ headerRight: () => <HeaderLogo /> }}>
       <Stack.Protected guard={isSignedIn && hasHousehold}>
         <Stack.Screen
           name="(tabs)"
@@ -106,6 +114,7 @@ function RootStack() {
 
             return {
               title: params?.name ?? "Syssla",
+              headerRight: undefined,
             };
           }}
         />

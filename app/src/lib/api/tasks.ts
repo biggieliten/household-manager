@@ -115,6 +115,32 @@ export async function archiveTask(
   return responseTaskSchema.parse(await res.json());
 }
 
+export async function deleteTaskMedia(
+  householdId: number,
+  taskId: number,
+  kind: TaskMediaKind,
+): Promise<void> {
+  const { route, param } = mediaRoute(householdId, taskId, kind);
+  const res = await route.$delete({ param });
+  if (!res.ok)
+    throw new Error(`Kunde inte ta bort ${mediaLabel[kind]} (${res.status})`);
+}
+
+export async function deleteTask(
+  householdId: number,
+  taskId: number,
+): Promise<void> {
+  const res = await getClient().api.v1.households[":householdId"].tasks[
+    ":taskId"
+  ].$delete({
+    param: {
+      householdId: String(householdId),
+      taskId: String(taskId),
+    },
+  });
+  if (!res.ok) throw new Error(`Kunde inte ta bort syssla (${res.status})`);
+}
+
 const mediaLabel = { image: "bilden", audio: "röstmeddelandet" } as const;
 
 const mediaRoute = (
@@ -182,17 +208,6 @@ export async function uploadTaskMedia(
   }
 
   return responseTaskMediaSchema.parse(body);
-}
-
-export async function deleteTaskMedia(
-  householdId: number,
-  taskId: number,
-  kind: TaskMediaKind,
-): Promise<void> {
-  const { route, param } = mediaRoute(householdId, taskId, kind);
-  const res = await route.$delete({ param });
-  if (!res.ok)
-    throw new Error(`Kunde inte ta bort ${mediaLabel[kind]} (${res.status})`);
 }
 
 // Full URL for <Image> and useAudioPlayer. ?v= changes when the file is replaced,

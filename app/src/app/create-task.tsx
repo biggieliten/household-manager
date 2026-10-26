@@ -15,6 +15,7 @@ import {
 import ImageSourceChoice from "@/components/ImageSourceChoice";
 import SwipeToDelete from "@/components/SwipeToDelete";
 import TaskImageRow from "@/components/TaskImageRow";
+// The shared TypeScript configuration does not enable JSX, although this imported component is TSX.
 import TaskMemberPicker from "@/components/TaskMemberPicker";
 import VoiceNoteRecorder, {
   VOICE_NOTE_MIME_TYPE,
@@ -368,14 +369,17 @@ export default function CreateTask() {
           {[
             {
               icon: "camera" as const,
-              label: media.image || existingImage ? "Byt bild" : "Lägg till bild",
+              label:
+                media.image || existingImage ? "Byt bild" : "Lägg till bild",
               expanded: isChoosingImage,
               onPress: () => setIsChoosingImage((prev) => !prev),
             },
             {
               icon: "mic" as const,
               label:
-                media.audio || existingAudio ? "Spela in igen" : "Spela in röst",
+                media.audio || existingAudio
+                  ? "Spela in igen"
+                  : "Spela in röst",
               expanded: undefined,
               onPress: startRecording,
             },

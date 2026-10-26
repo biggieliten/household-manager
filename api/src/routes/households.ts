@@ -4,7 +4,9 @@ import {
   householdIdParamSchema,
   joinHouseholdSchema,
   joinMyHouseholdSchema,
+  joinRequestIdParamSchema,
   memberIdParamSchema,
+  updateHouseholdSchema,
 } from "../../../shared/schemas/household-schema.ts";
 import {
   updateAvatarSchema,
@@ -228,6 +230,138 @@ const app = new Hono()
     },
   )
   .get(
+    "/:householdId/join-requests",
+    sessionControl(true),
+    validate("param", householdIdParamSchema),
+    async (c) => {
+      const { householdId } = c.req.valid("param");
+
+      const requests = await db.joinRequest.findMany({
+        where: { householdId },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        select: { id: true, nickname: true, avatar: true },
+      });
+
+      return c.json(requests, 200);
+    },
+  )
+  .post(
+    "/:householdId/join-requests/:requestId/accept",
+    sessionControl(true),
+    validate("param", joinRequestIdParamSchema),
+    async (c) => {
+      const { householdId, requestId } = c.req.valid("param");
+
+      try {
+        const result = await db.$transaction(async (tx) => {
+          const request = await tx.joinRequest.findFirst({
+            where: { id: requestId, householdId },
+          });
+          if (!request) {
+            return { status: 404 as const, error: "Förfrågan finns inte kvar." };
+          }
+
+          const competingRequest = await tx.joinRequest.findFirst({
+            where: {
+              householdId,
+              avatar: request.avatar,
+              id: { not: requestId },
+            },
+            select: { id: true },
+          });
+          if (competingRequest) {
+            return {
+              status: 409 as const,
+              error:
+                "Flera personer har valt samma avatar. Neka de andra förfrågningarna först.",
+            };
+          }
+
+          const avatarTaken = await tx.member.findFirst({
+            where: { householdId, avatar: request.avatar, leftAt: null },
+            select: { id: true },
+          });
+          if (avatarTaken) {
+            return {
+              status: 409 as const,
+              error: "En medlem använder redan den här avataren. Förfrågan kan inte godkännas.",
+            };
+          }
+
+          const membership = await tx.member.findUnique({
+            where: {
+              userId_householdId: { userId: request.userId, householdId },
+            },
+            select: { id: true, leftAt: true },
+          });
+          if (membership && membership.leftAt === null) {
+            return {
+              status: 409 as const,
+              error: "Användaren är redan medlem i hushållet.",
+            };
+          }
+
+          // Deleting and granting membership must either both succeed or roll back.
+          await tx.joinRequest.delete({ where: { id: requestId, householdId } });
+          const data = {
+            nickname: request.nickname,
+            avatar: request.avatar,
+            isAdmin: false,
+            leftAt: null,
+          };
+          if (membership) {
+            await tx.member.update({ where: { id: membership.id }, data });
+          } else {
+            await tx.member.create({
+              data: { ...data, userId: request.userId, householdId },
+            });
+          }
+
+          return { status: 200 as const };
+        });
+
+        if (result.status !== 200) {
+          return c.json({ error: result.error }, result.status);
+        }
+        return c.json({ success: true }, 200);
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          if (error.code === "P2002") {
+            return c.json(
+              { error: "Avataren eller medlemskapet används redan. Uppdatera listan och försök igen." },
+              409,
+            );
+          }
+          if (error.code === "P2025") {
+            return c.json({ error: "Förfrågan finns inte kvar." }, 404);
+          }
+          if (error.code === "P2034") {
+            return c.json(
+              { error: "Förfrågan ändrades samtidigt. Uppdatera listan och försök igen." },
+              409,
+            );
+          }
+        }
+        throw error;
+      }
+    },
+  )
+  .post(
+    "/:householdId/join-requests/:requestId/reject",
+    sessionControl(true),
+    validate("param", joinRequestIdParamSchema),
+    async (c) => {
+      const { householdId, requestId } = c.req.valid("param");
+      const result = await db.joinRequest.deleteMany({
+        where: { id: requestId, householdId },
+      });
+      if (result.count === 0) {
+        return c.json({ error: "Förfrågan finns inte kvar." }, 404);
+      }
+      return c.json({ success: true }, 200);
+    },
+  )
+  .get(
     "/:householdId",
     sessionControl(),
     validate("param", householdIdParamSchema),
@@ -271,6 +405,24 @@ const app = new Hono()
         },
         200,
       );
+    },
+  )
+  .patch(
+    "/:householdId",
+    sessionControl(true),
+    validate("param", householdIdParamSchema),
+    validate("json", updateHouseholdSchema),
+    async (c) => {
+      const { householdId } = c.req.valid("param");
+      const body = c.req.valid("json");
+
+      const household = await db.household.update({
+        where: { id: householdId, deletedAt: null },
+        data: body,
+        select: { id: true, name: true },
+      });
+
+      return c.json(household, 200);
     },
   )
   .patch(
