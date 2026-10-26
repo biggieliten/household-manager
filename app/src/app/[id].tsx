@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { SymbolView } from "expo-symbols";
+import Feather from "@expo/vector-icons/Feather";
 
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
@@ -78,6 +79,7 @@ export default function TaskById() {
   const [deleteStep, setDeleteStep] = useState<"closed" | "choose" | "confirm">(
     "closed",
   );
+  const [showPausedInfo, setShowPausedInfo] = useState(false);
 
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
@@ -130,6 +132,11 @@ export default function TaskById() {
   const isOwner =
     householdQuery.data?.members.some(
       (member) => member.isMe && member.isAdmin,
+    ) ?? false;
+
+  const isPaused =
+    householdQuery.data?.members.some(
+      (member) => member.isMe && member.isPaused,
     ) ?? false;
 
   const assignmentsKey = taskAssignmentsQueryOptions(householdId).queryKey;
@@ -358,29 +365,45 @@ export default function TaskById() {
             </View>
           ))}
       </View>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
-        accessibilityState={{
-          disabled: !householdId || completeTaskMutation.isPending,
-        }}
-        disabled={!householdId || completeTaskMutation.isPending}
-        onPress={() => completeTaskMutation.mutate(task.id)}
-        style={({ pressed }) => [
-          styles.doneButton,
-          {
-            backgroundColor: accent.danger,
-            opacity: completeTaskMutation.isPending ? 0.5 : pressed ? 0.8 : 1,
-          },
-        ]}>
-        <Text style={styles.doneButtonText}>
-          {completeTaskMutation.isPending ? "Sparar…" : "✓ Markera som klar"}
-        </Text>
-        <View style={styles.doneBadge}>
-          <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
-        </View>
-      </Pressable>
+      {isPaused ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Du är pausad, visa mer information"
+          onPress={() => setShowPausedInfo(true)}
+          style={({ pressed }) => [
+            styles.doneButton,
+            {
+              backgroundColor: colors.textMuted,
+              opacity: pressed ? 0.8 : 1,
+            },
+          ]}>
+          <Feather name="pause-circle" size={20} color="#FFFFFF" />
+          <Text style={styles.doneButtonText}>Du är pausad</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
+          accessibilityState={{
+            disabled: !householdId || completeTaskMutation.isPending,
+          }}
+          disabled={!householdId || completeTaskMutation.isPending}
+          onPress={() => completeTaskMutation.mutate(task.id)}
+          style={({ pressed }) => [
+            styles.doneButton,
+            {
+              backgroundColor: accent.danger,
+              opacity: completeTaskMutation.isPending ? 0.5 : pressed ? 0.8 : 1,
+            },
+          ]}>
+          <Text style={styles.doneButtonText}>
+            {completeTaskMutation.isPending ? "Sparar…" : "✓ Markera som klar"}
+          </Text>
+          <View style={styles.doneBadge}>
+            <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
+          </View>
+        </Pressable>
+      )}
       {completeTaskMutation.isError && (
         <Text style={{ color: accent.dangerText }}>
           {completeTaskMutation.error.message}
