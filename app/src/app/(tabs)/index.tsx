@@ -36,6 +36,12 @@ export default function Index() {
       // edges={["top"]}
       style={[styles.container, { backgroundColor: colors.screen }]}>
       <ScreenHeader />
+      {isPaused && (
+        <View style={[styles.pausedBanner, { backgroundColor: colors.card }]}>
+          <Text style={{ color: colors.text }}>Du är pausad</Text>
+        </View>
+      )}
+
       {isPending ? (
         <LoadingView />
       ) : error ? (
@@ -103,5 +109,11 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 32,
     lineHeight: 34,
+  },
+  pausedBanner: {
+    margin: 16,
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
   },
 });
