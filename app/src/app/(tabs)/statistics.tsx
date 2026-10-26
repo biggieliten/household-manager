@@ -17,6 +17,7 @@ import LoadingView from "@/components/LoadingView";
 import ScreenHeader from "@/components/ScreenHeader";
 import Avatar from "@/components/Avatar";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
+import usePullToRefresh from "@/hooks/use-pull-to-refresh";
 import {
   currentWeek,
   formatPeriodRange,
@@ -161,9 +162,10 @@ export default function Statistics() {
 function StatisticsContent({ period }: { period: StatisticsPeriod }) {
   const { colors } = useTheme();
   const householdId = useActiveHouseholdId();
-  const { data, error, isPending, refetch, isRefetching } = useQuery(
+  const { data, error, isPending, refetch } = useQuery(
     statisticsQueryOptions(householdId, period),
   );
+  const pullToRefresh = usePullToRefresh(refetch);
 
   if (isPending) {
     return <LoadingView />;
@@ -188,7 +190,10 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
         style={{ backgroundColor: colors.background }}
         contentContainerStyle={styles.content}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+          <RefreshControl
+            refreshing={pullToRefresh.refreshing}
+            onRefresh={pullToRefresh.onRefresh}
+          />
         }>
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <View style={styles.cardHeader}>

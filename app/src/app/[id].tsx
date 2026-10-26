@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { SymbolView } from "expo-symbols";
 import {
   ActivityIndicator,
   Pressable,
@@ -7,19 +8,34 @@ import {
   StyleSheet,
   Text,
   View,
+  Alert
 } from "react-native";
 
+import Avatar from "@/components/Avatar";
+import DeleteTaskModal from "@/components/DeleteTaskModal";
 import ErrorView from "@/components/ErrorView";
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
+import TaskImageRow from "@/components/TaskImageRow";
+import VoiceNoteRow from "@/components/VoiceNoteRow";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { assignTask, removeTaskAssignment } from "@/lib/api/task-assignments";
-import { archiveTask, completeTask } from "@/lib/api/tasks";
+import {
+  archiveTask,
+  completeTask,
+  deleteTask,
+  taskMediaUrl,
+} from "@/lib/api/tasks";
+import { authHeadersQueryOptions } from "@/options/auth";
 import { householdQueryOptions } from "@/options/households";
-import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
+import {
+  taskAssignmentsQueryOptions,
+  tasksQueryOptions,
+} from "@/options/tasks";
 import { useTheme } from "@/theme";
-import Avatar from "@/components/Avatar";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
+import { useState } from "react";
+import { toast } from "sonner-native";
 
 const accents = {
   light: {
@@ -28,6 +44,8 @@ const accents = {
     categoryBg: "#D9F5E6",
     categoryText: "#1E7A4C",
     danger: "#A63A3A",
+    muted: "#5d5d5d",
+    mutedText: "#434242",
     dangerText: "#C0504D",
   },
   dark: {
@@ -35,6 +53,8 @@ const accents = {
     chip: "#33354A",
     categoryBg: "#1E3B2E",
     categoryText: "#7FD8A8",
+    muted: "#5d5d5d",
+    mutedText: "#434242",
     danger: "#B04646",
     dangerText: "#F08A85",
   },
@@ -70,6 +90,10 @@ export default function TaskById() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [deleteStep, setDeleteStep] = useState<"closed" | "choose" | "confirm">(
+    "closed",
+  );
+
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
   const householdId = useActiveHouseholdId();
@@ -79,6 +103,7 @@ export default function TaskById() {
     isPending,
     refetch,
   } = useQuery(tasksQueryOptions(householdId));
+
   const task = tasks?.find((task) => task.id === Number(id));
 
   const archiveMutation = useMutation({
@@ -87,7 +112,8 @@ export default function TaskById() {
       await queryClient.invalidateQueries({
         queryKey: tasksQueryOptions(householdId).queryKey,
       });
-      router.push("/");
+      toast.success(`${task?.name} arkiverad`);
+      setTimeout(() => router.back(), 100);
     },
     onError: (error) => {
       console.error(error);
@@ -95,11 +121,54 @@ export default function TaskById() {
   });
 
   const handleArchive = () => {
+    Alert.alert(
+      `Akrivera ${task?.name}`,
+      "Är du säker på att du vill arkivera sysslan?",
+      [
+        { text: "Avbryt", style: "cancel" },
+        { text: "Arkivera", style: "destructive", onPress: () => archive() },
+      ],
+      { cancelable: true },
+    );
+  };
+
+  const archive = () => {
     if (task) {
       archiveMutation.mutate(task.id);
     }
   };
+
+  const handleCompleteTask = (id: number) => {
+    if (!completeTaskMutation.isError) {
+      completeTaskMutation.mutate(id);
+      router.push("/");
+    }
+  };
+
+  const deleteMutation = useMutation({
+    mutationFn: (taskId: number) => {
+      if (!householdId) throw new Error("Inget aktivt hushåll");
+      return deleteTask(householdId, taskId);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: tasksQueryOptions(householdId).queryKey,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["households", householdId, "statistics"],
+        }),
+      ]);
+      router.replace("/");
+    },
+  });
+
   const householdQuery = useQuery(householdQueryOptions(householdId));
+  const isOwner =
+    householdQuery.data?.members.some(
+      (member) => member.isMe && member.isAdmin,
+    ) ?? false;
+
   const assignmentsKey = taskAssignmentsQueryOptions(householdId).queryKey;
   const assignmentsQuery = useQuery(taskAssignmentsQueryOptions(householdId));
   const assignmentMutation = useMutation({
@@ -141,7 +210,13 @@ export default function TaskById() {
         }),
       ]);
     },
+    onError: (error) => {
+      console.error(error);
+    },
   });
+
+  // Media is only shown here; it is changed in the edit task view
+  const { data: authHeaders } = useQuery(authHeadersQueryOptions);
 
   const history = task?.completedTasks
     .filter(
@@ -155,6 +230,10 @@ export default function TaskById() {
         (other) => other.member.id === completion.member.id,
       ).length,
     }));
+
+  const count = task?.completedTasks.length ?? 0;
+
+  console.log({ count });
 
   const cardStyle = [styles.card, { backgroundColor: colors.card }];
 
@@ -191,6 +270,8 @@ export default function TaskById() {
   const totalThisYear = task.completedTasks.filter(
     (ct) => ct.completedAt.getUTCFullYear() === new Date().getUTCFullYear(),
   ).length;
+  const image = task.media.find((media) => media.kind === "image");
+  const audio = task.media.find((media) => media.kind === "audio");
 
   return (
     <ScrollView
@@ -208,12 +289,10 @@ export default function TaskById() {
         <TaskAssignments
           taskId={task.id}
           assignments={assignmentsQuery.data}
-          members={householdQuery.data.members.map(
-            (member) => ({
-              ...member,
-              leftAt: null,
-            }),
-          )}
+          members={householdQuery.data.members.map((member) => ({
+            ...member,
+            leftAt: null,
+          }))}
           isOwner={householdQuery.data.members.some(
             (member: { isMe: boolean; isAdmin: boolean }) =>
               member.isMe && member.isAdmin,
@@ -255,23 +334,26 @@ export default function TaskById() {
           </Text>
         </View>
 
-        <View style={[styles.tile, { backgroundColor: accent.tile }]}>
-          <View
-            style={[styles.playButton, { backgroundColor: colors.background }]}>
-            <Text style={[styles.playIcon, { color: colors.text }]}>▶</Text>
-          </View>
-          <View style={styles.tileContent}>
-            <Text style={[styles.tileTitle, { color: colors.text }]}>
-              Röstmemo: Tröskeln
-            </Text>
-            <Text style={[styles.tileTitle, { color: colors.text }]}>0:24</Text>
-          </View>
-        </View>
+        {householdId && authHeaders && audio && (
+          <VoiceNoteRow
+            source={{
+              uri: taskMediaUrl(householdId, task.id, audio),
+              headers: authHeaders,
+            }}
+          />
+        )}
+
+        {householdId && authHeaders && image && (
+          <TaskImageRow
+            source={{
+              uri: taskMediaUrl(householdId, task.id, image),
+              headers: authHeaders,
+            }}
+            openable
+          />
+        )}
 
         <View style={[styles.tile, { backgroundColor: accent.tile }]}>
-          <View style={[styles.thumbnail, { backgroundColor: accent.chip }]}>
-            <Text style={styles.thumbnailEmoji}>🛋️</Text>
-          </View>
           <View style={styles.tileContent}>
             <Text style={[styles.tileTitle, { color: colors.text }]}>
               Beskrivning
@@ -280,7 +362,6 @@ export default function TaskById() {
               {task.description}
             </Text>
           </View>
-          <Text style={[styles.iconText, { color: colors.text }]}>⤢</Text>
         </View>
       </View>
 
@@ -324,28 +405,31 @@ export default function TaskById() {
           ))}
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
-        accessibilityState={{
-          disabled: !householdId || completeTaskMutation.isPending,
-        }}
-        disabled={!householdId || completeTaskMutation.isPending}
-        onPress={() => completeTaskMutation.mutate(task.id)}
-        style={({ pressed }) => [
-          styles.doneButton,
-          {
-            backgroundColor: accent.danger,
-            opacity: completeTaskMutation.isPending ? 0.5 : pressed ? 0.8 : 1,
-          },
-        ]}>
-        <Text style={styles.doneButtonText}>
-          {completeTaskMutation.isPending ? "Sparar…" : "✓ Markera som klar"}
-        </Text>
-        <View style={styles.doneBadge}>
-          <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
-        </View>
-      </Pressable>
+      {!task?.completedTasks?.length && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
+          accessibilityState={{
+            disabled: !householdId || completeTaskMutation.isPending,
+          }}
+          disabled={!householdId || completeTaskMutation.isPending}
+          onPress={() => handleCompleteTask(task.id)}
+          style={({ pressed }) => [
+            styles.doneButton,
+            {
+              backgroundColor: accent.danger,
+              opacity: completeTaskMutation.isPending ? 0.5 : pressed ? 0.8 : 1,
+            },
+          ]}>
+          <Text style={styles.doneButtonText}>
+            {completeTaskMutation.isPending ? "Sparar…" : "✓ Markera som klar"}
+          </Text>
+          <View style={styles.doneBadge}>
+            <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
+          </View>
+        </Pressable>
+      )}
+
       {completeTaskMutation.isError && (
         <Text style={{ color: accent.dangerText }}>
           {completeTaskMutation.error.message}
@@ -356,35 +440,57 @@ export default function TaskById() {
           Sysslan är markerad som klar
         </Text>
       )}
-      <View style={styles.actionRow}>
+      {isOwner && (
+        <View style={styles.actionRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Redigera inställningar"
+            onPress={() =>
+              router.push({
+                pathname: "/create-task",
+                params: { id: String(task.id) },
+              })
+            }
+            style={({ pressed }) => [
+              styles.editButton,
+              { backgroundColor: accent.chip, opacity: pressed ? 0.8 : 1 },
+            ]}>
+            <SymbolView
+              name={{ ios: "pencil", android: "edit", web: "edit" }}
+              size={20}
+              tintColor={colors.text}
+              fallback={<Text>✏️</Text>}
+            />
+            <Text style={[styles.editButtonText, { color: colors.text }]}>
+              Redigera syssla
+            </Text>
+          </Pressable>
+        </View>
+      )}
+      {isOwner && (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Redigera inställningar"
-          onPress={() =>
-            router.push({
-              pathname: "/create-task",
-              params: { id: String(task.id) },
-            })
-          }
-          style={({ pressed }) => [
-            styles.editButton,
-            { backgroundColor: accent.chip, opacity: pressed ? 0.8 : 1 },
-          ]}>
-          <Text style={[styles.editButtonText, { color: colors.text }]}>
-            ☰ Redigera inställningar
+          onPress={() => setDeleteStep("choose")}
+          style={styles.textButton}>
+          <Text style={[styles.deleteText, { color: accent.dangerText }]}>
+            Ta bort syssla
           </Text>
         </Pressable>
-      </View>
-
-      <Pressable
-        accessibilityRole="button"
-        onPress={handleArchive}
-        disabled={archiveMutation.isPending}
-        style={styles.textButton}>
-        <Text style={[styles.archiveText, { color: colors.text }]}>
-          Arkivera syssla
-        </Text>
-      </Pressable>
+      )}
+      {isOwner && deleteStep !== "closed" && (
+        <DeleteTaskModal
+          step={deleteStep}
+          dangerColor={accent.danger}
+          isPending={deleteMutation.isPending || archiveMutation.isPending}
+          error={
+            deleteMutation.error?.message ?? archiveMutation.error?.message
+          }
+          onArchive={handleArchive}
+          onChooseDelete={() => setDeleteStep("confirm")}
+          onConfirmDelete={() => deleteMutation.mutate(task.id)}
+          onCancel={() => setDeleteStep("closed")}
+        />
+      )}
     </ScrollView>
   );
 }
@@ -427,7 +533,6 @@ const styles = StyleSheet.create({
   doneBadgeText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
   sectionTitle: { fontSize: 18, fontWeight: "600" },
   iconRow: { flexDirection: "row", gap: 16 },
-  iconText: { fontSize: 18 },
   tile: {
     flexDirection: "row",
     alignItems: "center",
@@ -435,22 +540,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 12,
   },
-  playButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  playIcon: { fontSize: 14 },
-  thumbnail: {
-    width: 52,
-    height: 52,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  thumbnailEmoji: { fontSize: 26 },
   tileContent: { flex: 1, gap: 2 },
   tileTitle: { fontSize: 15, fontWeight: "600" },
   tileBody: { fontSize: 15 },
@@ -465,6 +554,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 14,
     paddingVertical: 14,
+    flexDirection: "row",
+    gap: 8,
   },
   editButtonText: { fontSize: 17, fontWeight: "500" },
   shareButton: {

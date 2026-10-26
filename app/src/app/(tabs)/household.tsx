@@ -25,6 +25,7 @@ import {
 } from "@/lib/api/households";
 import ScreenHeader from "@/components/ScreenHeader";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
+import usePullToRefresh from "@/hooks/use-pull-to-refresh";
 import {
   householdQueryOptions,
   householdsQueryOptions,
@@ -77,7 +78,7 @@ function HouseholdContent() {
   const { colors } = useTheme();
 
   const householdId = useActiveHouseholdId();
-  const { data, error, isPending, refetch, isRefetching } = useQuery(
+  const { data, error, isPending, refetch } = useQuery(
     householdQueryOptions(householdId),
   );
   const queryClient = useQueryClient();
@@ -89,6 +90,13 @@ function HouseholdContent() {
     (data?.members.some((member) => member.isMe && member.isAdmin) ?? false);
   const requestsQuery = useQuery(
     pendingJoinRequestsQueryOptions(householdId, isAdmin),
+  );
+  const pullToRefresh = usePullToRefresh(() =>
+    Promise.all([
+      refetch(),
+      groupsQuery.refetch(),
+      isAdmin && requestsQuery.refetch(),
+    ]),
   );
   const [openGroupMenuId, setOpenGroupMenuId] = useState<number | null>(null);
   const [deletingGroup, setDeletingGroup] = useState<GroupDeletion | null>(null);
@@ -182,16 +190,8 @@ function HouseholdContent() {
         contentContainerStyle={styles.grow}
         refreshControl={
           <RefreshControl
-            refreshing={
-              isRefetching ||
-              groupsQuery.isRefetching ||
-              (isAdmin && requestsQuery.isFetching)
-            }
-            onRefresh={() => {
-              void refetch();
-              void groupsQuery.refetch();
-              if (isAdmin) void requestsQuery.refetch();
-            }}
+            refreshing={pullToRefresh.refreshing}
+            onRefresh={pullToRefresh.onRefresh}
           />
         }>
         {/* Tapping anywhere outside an open menu closes it */}
