@@ -386,7 +386,9 @@ function JoinForm({ initialNickname }: HouseholdFormProps) {
             />
 
             {previewMutation.error && (
-              <ErrorView error={previewMutation.error} retry={handleSearch} />
+              <Text style={[styles.error, { color: colors.text }]}>
+                {previewMutation.error.message}
+              </Text>
             )}
 
             <PrimaryButton
