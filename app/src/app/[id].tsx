@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Alert
 } from "react-native";
 
 import Avatar from "@/components/Avatar";
@@ -33,7 +34,6 @@ import {
 import { useTheme } from "@/theme";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
 import { useState } from "react";
-import { Alert } from "react-native";
 import { toast } from "sonner-native";
 
 const accents = {
@@ -43,6 +43,8 @@ const accents = {
     categoryBg: "#D9F5E6",
     categoryText: "#1E7A4C",
     danger: "#A63A3A",
+    muted: "#5d5d5d",
+    mutedText: "#434242",
     dangerText: "#C0504D",
   },
   dark: {
@@ -50,6 +52,8 @@ const accents = {
     chip: "#33354A",
     categoryBg: "#1E3B2E",
     categoryText: "#7FD8A8",
+    muted: "#5d5d5d",
+    mutedText: "#434242",
     danger: "#B04646",
     dangerText: "#F08A85",
   },
@@ -132,6 +136,14 @@ export default function TaskById() {
       archiveMutation.mutate(task.id);
     }
   };
+
+  const handleCompleteTask = (id: number) => {
+    if (!completeTaskMutation.isError) {
+      completeTaskMutation.mutate(id);
+      router.push("/");
+    }
+  };
+
   const deleteMutation = useMutation({
     mutationFn: (taskId: number) => {
       if (!householdId) throw new Error("Inget aktivt hushåll");
@@ -197,6 +209,9 @@ export default function TaskById() {
         }),
       ]);
     },
+    onError: (error) => {
+      console.error(error);
+    },
   });
 
   // Media is only shown here; it is changed in the edit task view
@@ -214,6 +229,10 @@ export default function TaskById() {
         (other) => other.member.id === completion.member.id,
       ).length,
     }));
+
+  const count = task?.completedTasks.length ?? 0;
+
+  console.log({ count });
 
   const cardStyle = [styles.card, { backgroundColor: colors.card }];
 
@@ -390,28 +409,31 @@ export default function TaskById() {
           ))}
       </View>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
-        accessibilityState={{
-          disabled: !householdId || completeTaskMutation.isPending,
-        }}
-        disabled={!householdId || completeTaskMutation.isPending}
-        onPress={() => completeTaskMutation.mutate(task.id)}
-        style={({ pressed }) => [
-          styles.doneButton,
-          {
-            backgroundColor: accent.danger,
-            opacity: completeTaskMutation.isPending ? 0.5 : pressed ? 0.8 : 1,
-          },
-        ]}>
-        <Text style={styles.doneButtonText}>
-          {completeTaskMutation.isPending ? "Sparar…" : "✓ Markera som klar"}
-        </Text>
-        <View style={styles.doneBadge}>
-          <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
-        </View>
-      </Pressable>
+      {!task?.completedTasks?.length && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
+          accessibilityState={{
+            disabled: !householdId || completeTaskMutation.isPending,
+          }}
+          disabled={!householdId || completeTaskMutation.isPending}
+          onPress={() => handleCompleteTask(task.id)}
+          style={({ pressed }) => [
+            styles.doneButton,
+            {
+              backgroundColor: accent.danger,
+              opacity: completeTaskMutation.isPending ? 0.5 : pressed ? 0.8 : 1,
+            },
+          ]}>
+          <Text style={styles.doneButtonText}>
+            {completeTaskMutation.isPending ? "Sparar…" : "✓ Markera som klar"}
+          </Text>
+          <View style={styles.doneBadge}>
+            <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
+          </View>
+        </Pressable>
+      )}
+
       {completeTaskMutation.isError && (
         <Text style={{ color: accent.dangerText }}>
           {completeTaskMutation.error.message}
