@@ -13,6 +13,10 @@ export const colors = {
     chip: "#ECEBFD",
     warning: "#FEF3C7",
     warningText: "#92400E",
+    // Destructive actions, e.g. swipe-to-delete
+    danger: "#A63A3A",
+    // Confirmations, e.g. success toasts
+    success: "#2E7D32",
   },
   dark: {
     background: "#0B0B0D",
@@ -26,6 +30,8 @@ export const colors = {
     chip: "#33354A",
     warning: "#3A2E14",
     warningText: "#FCD34D",
+    danger: "#B04646",
+    success: "#3D8B40",
   },
 } as const;
 

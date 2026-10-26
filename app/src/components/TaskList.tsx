@@ -22,7 +22,7 @@ export default function TaskList({
   isPaused,
 }: Props): React.JSX.Element {
   const { colors } = useTheme();
-  const [onlyMine, setOnlyMine] = useState(false);
+  const [onlyMine, setOnlyMine] = useState(true);
   const visibleTasks = onlyMine
     ? tasks.filter((task) =>
         assignments.some(
