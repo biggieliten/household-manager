@@ -1,4 +1,5 @@
 import Feather from "@expo/vector-icons/Feather";
+import { Image } from "expo-image";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -18,6 +19,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { fonts, useAuthColors } from "@/components/auth/authColors";
 import { GithubSignInButton } from "@/components/GithubSignInButton";
 import { authClient } from "@/lib/auth-client";
+
+const logo = require("@/assets/images/husallet_logo.webp");
 
 type Mode = "signIn" | "signUp";
 
@@ -93,9 +96,12 @@ export default function SignIn() {
           contentContainerStyle={styles.container}
           keyboardShouldPersistTaps='handled'>
           <View style={styles.header}>
-            <View style={[styles.logo, { backgroundColor: colors.logo }]}>
-              <Text style={styles.logoEmoji}>🏡</Text>
-            </View>
+            <Image
+              source={logo}
+              contentFit='contain'
+              accessibilityLabel='Hushållet logotyp'
+              style={styles.logo}
+            />
             <Text style={[styles.appName, { color: colors.text }]}>
               Hushållet
             </Text>
@@ -360,15 +366,10 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 4,
   },
+  // Matches the logo's 795x586 aspect ratio
   logo: {
-    width: 48,
+    width: 65,
     height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoEmoji: {
-    fontSize: 24,
   },
   appName: {
     fontFamily: fonts.bold,

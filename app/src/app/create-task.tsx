@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 
+// The shared TypeScript configuration does not enable JSX, although this imported component is TSX.
 import TaskMemberPicker from "@/components/TaskMemberPicker";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { assignTask } from "@/lib/api/task-assignments";

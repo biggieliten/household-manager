@@ -8,7 +8,8 @@
     "scheme": "household-manager",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.danielmo.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -28,12 +29,17 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/husallet_logo.png",
+          "imageWidth": 200,
+          "dark": {
+            "backgroundColor": "#0B0B0D",
+            "image": "./assets/images/husallet_logo.png"
+          }
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "./plugins/withSceneLifecycle"
     ],
     "experiments": {
       "typedRoutes": true,
