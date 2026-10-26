@@ -1,3 +1,4 @@
+import Feather from "@expo/vector-icons/Feather";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { ImageSource } from "@/lib/pick-task-image";
@@ -8,9 +9,13 @@ type Props = {
   onPick: (source: ImageSource) => void;
 };
 
-const choices: { source: ImageSource; label: string }[] = [
-  { source: "library", label: "🖼  Välj från biblioteket" },
-  { source: "camera", label: "📷  Ta ett foto" },
+const choices: {
+  source: ImageSource;
+  icon: keyof typeof Feather.glyphMap;
+  label: string;
+}[] = [
+  { source: "library", icon: "image", label: "Välj från biblioteket" },
+  { source: "camera", icon: "camera", label: "Ta ett foto" },
 ];
 
 // Shown inline under "Lägg till bild" instead of an action sheet
@@ -23,7 +28,7 @@ export default function ImageSourceChoice({ disabled, onPick }: Props) {
         styles.container,
         { backgroundColor: colors.surface, borderColor: colors.border },
       ]}>
-      {choices.map(({ source, label }, index) => (
+      {choices.map(({ source, icon, label }, index) => (
         <Pressable
           key={source}
           accessibilityRole="button"
@@ -37,6 +42,7 @@ export default function ImageSourceChoice({ disabled, onPick }: Props) {
               borderTopWidth: StyleSheet.hairlineWidth,
             },
           ]}>
+          <Feather name={icon} size={18} color={colors.text} />
           <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
         </Pressable>
       ))}
@@ -51,6 +57,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   choice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },

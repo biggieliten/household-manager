@@ -1,3 +1,4 @@
+import Feather from "@expo/vector-icons/Feather";
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -46,9 +47,17 @@ export default function VoiceNoteRow({ source, durationMillis }: Props) {
         disabled={!status.isLoaded}
         onPress={togglePlayback}
         style={[styles.playButton, { backgroundColor: colors.background }]}>
-        <Text style={[styles.playIcon, { color: colors.text }]}>
-          {status.playing ? "❚❚" : "▶"}
-        </Text>
+        {status.playing ? (
+          <Feather name="pause" size={16} color={colors.text} />
+        ) : (
+          // A triangle looks off-centre when centred by its box
+          <Feather
+            name="play"
+            size={16}
+            color={colors.text}
+            style={styles.playIcon}
+          />
+        )}
       </Pressable>
       <View style={styles.text}>
         <Text style={[styles.title, { color: colors.text }]}>Röstmemo</Text>
@@ -78,8 +87,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   playIcon: {
-    fontSize: 13,
-    fontWeight: "700",
+    marginLeft: 2,
   },
   text: {
     flex: 1,

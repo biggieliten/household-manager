@@ -1,3 +1,4 @@
+import Feather from "@expo/vector-icons/Feather";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -366,22 +367,19 @@ export default function CreateTask() {
         <View style={styles.row}>
           {[
             {
-              label:
-                media.image || existingImage
-                  ? "📷  Byt bild"
-                  : "📷  Lägg till bild",
+              icon: "camera" as const,
+              label: media.image || existingImage ? "Byt bild" : "Lägg till bild",
               expanded: isChoosingImage,
               onPress: () => setIsChoosingImage((prev) => !prev),
             },
             {
+              icon: "mic" as const,
               label:
-                media.audio || existingAudio
-                  ? "🎙  Spela in igen"
-                  : "🎙  Spela in röst",
+                media.audio || existingAudio ? "Spela in igen" : "Spela in röst",
               expanded: undefined,
               onPress: startRecording,
             },
-          ].map(({ label, expanded, onPress }) => {
+          ].map(({ icon, label, expanded, onPress }) => {
             const disabled = isLocked || isRecording;
             return (
               <Pressable
@@ -398,6 +396,7 @@ export default function CreateTask() {
                     opacity: disabled ? 0.5 : 1,
                   },
                 ]}>
+                <Feather name={icon} size={16} color={colors.text} />
                 <Text style={[styles.aidText, { color: colors.text }]}>
                   {label}
                 </Text>
@@ -755,7 +754,10 @@ const styles = StyleSheet.create({
   },
   aidButton: {
     flex: 1,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth,
