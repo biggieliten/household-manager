@@ -8,17 +8,23 @@ import {
   Text,
   View,
 } from "react-native";
+import { SymbolView } from "expo-symbols";
 
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
+import DeleteTaskModal from "@/components/DeleteTaskModal";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { assignTask, removeTaskAssignment } from "@/lib/api/task-assignments";
-import { archiveTask, completeTask } from "@/lib/api/tasks";
+import { archiveTask, completeTask, deleteTask } from "@/lib/api/tasks";
 import { householdQueryOptions } from "@/options/households";
-import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
+import {
+  taskAssignmentsQueryOptions,
+  tasksQueryOptions,
+} from "@/options/tasks";
 import { useTheme } from "@/theme";
 import Avatar from "@/components/Avatar";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
+import { useState } from "react";
 
 const accents = {
   light: {
@@ -69,6 +75,10 @@ export default function TaskById() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [deleteStep, setDeleteStep] = useState<"closed" | "choose" | "confirm">(
+    "closed",
+  );
+
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
   const householdId = useActiveHouseholdId();
@@ -98,7 +108,30 @@ export default function TaskById() {
       archiveMutation.mutate(task.id);
     }
   };
+  const deleteMutation = useMutation({
+    mutationFn: (taskId: number) => {
+      if (!householdId) throw new Error("Inget aktivt hushåll");
+      return deleteTask(householdId, taskId);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: tasksQueryOptions(householdId).queryKey,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["households", householdId, "statistics"],
+        }),
+      ]);
+      router.replace("/");
+    },
+  });
+
   const householdQuery = useQuery(householdQueryOptions(householdId));
+  const isOwner =
+    householdQuery.data?.members.some(
+      (member) => member.isMe && member.isAdmin,
+    ) ?? false;
+
   const assignmentsKey = taskAssignmentsQueryOptions(householdId).queryKey;
   const assignmentsQuery = useQuery(taskAssignmentsQueryOptions(householdId));
   const assignmentMutation = useMutation({
@@ -212,12 +245,10 @@ export default function TaskById() {
         <TaskAssignments
           taskId={task.id}
           assignments={assignmentsQuery.data}
-          members={householdQuery.data.members.map(
-            (member) => ({
-              ...member,
-              leftAt: null,
-            }),
-          )}
+          members={householdQuery.data.members.map((member) => ({
+            ...member,
+            leftAt: null,
+          }))}
           isOwner={householdQuery.data.members.some(
             (member: { isMe: boolean; isAdmin: boolean }) =>
               member.isMe && member.isAdmin,
@@ -360,35 +391,57 @@ export default function TaskById() {
           Sysslan är markerad som klar
         </Text>
       )}
-      <View style={styles.actionRow}>
+      {isOwner && (
+        <View style={styles.actionRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Redigera inställningar"
+            onPress={() =>
+              router.push({
+                pathname: "/create-task",
+                params: { id: String(task.id) },
+              })
+            }
+            style={({ pressed }) => [
+              styles.editButton,
+              { backgroundColor: accent.chip, opacity: pressed ? 0.8 : 1 },
+            ]}>
+            <SymbolView
+              name={{ ios: "pencil", android: "edit", web: "edit" }}
+              size={20}
+              tintColor={colors.text}
+              fallback={<Text>✏️</Text>}
+            />
+            <Text style={[styles.editButtonText, { color: colors.text }]}>
+              Redigera syssla
+            </Text>
+          </Pressable>
+        </View>
+      )}
+      {isOwner && (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Redigera inställningar"
-          onPress={() =>
-            router.push({
-              pathname: "/create-task",
-              params: { id: String(task.id) },
-            })
-          }
-          style={({ pressed }) => [
-            styles.editButton,
-            { backgroundColor: accent.chip, opacity: pressed ? 0.8 : 1 },
-          ]}>
-          <Text style={[styles.editButtonText, { color: colors.text }]}>
-            ☰ Redigera inställningar
+          onPress={() => setDeleteStep("choose")}
+          style={styles.textButton}>
+          <Text style={[styles.deleteText, { color: accent.dangerText }]}>
+            Ta bort syssla
           </Text>
         </Pressable>
-      </View>
-
-      <Pressable
-        accessibilityRole="button"
-        onPress={handleArchive}
-        disabled={archiveMutation.isPending}
-        style={styles.textButton}>
-        <Text style={[styles.archiveText, { color: colors.text }]}>
-          Arkivera syssla
-        </Text>
-      </Pressable>
+      )}
+      {isOwner && deleteStep !== "closed" && (
+        <DeleteTaskModal
+          step={deleteStep}
+          dangerColor={accent.danger}
+          isPending={deleteMutation.isPending || archiveMutation.isPending}
+          error={
+            deleteMutation.error?.message ?? archiveMutation.error?.message
+          }
+          onArchive={handleArchive}
+          onChooseDelete={() => setDeleteStep("confirm")}
+          onConfirmDelete={() => deleteMutation.mutate(task.id)}
+          onCancel={() => setDeleteStep("closed")}
+        />
+      )}
     </ScrollView>
   );
 }
@@ -469,6 +522,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 14,
     paddingVertical: 14,
+    flexDirection: "row",
+    gap: 8,
   },
   editButtonText: { fontSize: 17, fontWeight: "500" },
   shareButton: {
