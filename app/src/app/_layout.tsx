@@ -9,9 +9,10 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import HeaderLogo from "@/components/HeaderLogo";
 import AnimatedSplash, { LOOP_DURATION_MS } from "@/components/AnimatedSplash";
+import HeaderLogo from "@/components/HeaderLogo";
 import { authClient } from "@/lib/auth-client";
 import { householdsQueryOptions } from "@/options/households";
 import { ThemeProvider, useTheme } from "@/theme";
@@ -29,8 +30,11 @@ const queryClient = new QueryClient();
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  // Gesture Handler needs one root view for gestures such as swipe-to-delete;
+  // without a style it fills the screen (flex: 1)
   return (
-    <QueryClientProvider client={queryClient}>
+    <GestureHandlerRootView>
+      <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <ThemeProvider>
           <StatusBar style="auto" />
@@ -38,6 +42,7 @@ export default function RootLayout() {
         </ThemeProvider>
       </ToastProvider>
     </QueryClientProvider>
+      </GestureHandlerRootView>
   );
 }
 

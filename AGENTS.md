@@ -178,6 +178,7 @@ household-manager/
 │       │   ├── auth.ts
 │       │   ├── normalize-points.ts
 │       │   ├── prisma.ts
+│       │   ├── task-media.ts
 │       │   ├── task-rotation.ts
 │       │   └── validate.ts
 │       ├── middleware/
@@ -188,6 +189,7 @@ household-manager/
 │           ├── statistics.ts
 │           ├── task-assignments.ts
 │           ├── task-groups.ts
+│           ├── task-media.ts
 │           └── tasks.ts
 ├── shared/
 │   ├── .gitignore
@@ -201,6 +203,7 @@ household-manager/
 │       ├── pause-schema.ts
 │       ├── statistics-schema.ts
 │       ├── task-group-schema.ts
+│       ├── task-media-schema.ts
 │       └── task-schema.ts
 └── app/
     ├── .gitignore
@@ -263,21 +266,26 @@ household-manager/
         │   ├── ConfirmBox.tsx
         │   ├── DeleteTaskGroupModal.tsx
         │   ├── GithubSignInButton.tsx
+        │   ├── ImageSourceChoice.tsx
         │   ├── HouseholdNameModal.tsx
         │   ├── JoinRequests.tsx
         │   ├── LoadingView.tsx
         │   ├── MemberMenu.tsx
         │   ├── NicknameModal.tsx
         │   ├── ScreenHeader.tsx
+        │   ├── SwipeToDelete.tsx
         │   ├── TaskAssignments.tsx
         │   ├── TaskAssignmentBadges.tsx
         │   ├── TaskGroupCard.tsx
         │   ├── TaskGroupDatePicker.tsx
         │   ├── TaskGroupDatePicker.web.tsx
         │   ├── TaskCard.tsx
+        │   ├── TaskImageRow.tsx
         │   ├── TaskList.tsx
         │   ├── TaskMemberPicker.tsx
         │   ├── Toast.tsx
+        │   ├── VoiceNoteRecorder.tsx
+        │   ├── VoiceNoteRow.tsx
         │   └── auth/
         │       └── authColors.ts
         ├── lib/
@@ -290,6 +298,7 @@ household-manager/
         │   │   └── tasks.ts
         │   ├── auth-client.ts
         │   ├── avatars.ts
+        │   ├── pick-task-image.ts
         │   ├── statistics-period.ts
         │   └── storage.ts
         ├── hooks/
