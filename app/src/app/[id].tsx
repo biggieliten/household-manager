@@ -33,6 +33,8 @@ import {
 import { useTheme } from "@/theme";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
 import { useState } from "react";
+import { Alert } from "react-native";
+import { useToast } from "react-native-toastify-expo";
 
 const accents = {
   light: {
@@ -96,6 +98,8 @@ export default function TaskById() {
     isPending,
     refetch,
   } = useQuery(tasksQueryOptions(householdId));
+
+  const { showToast } = useToast();
   const task = tasks?.find((task) => task.id === Number(id));
 
   const archiveMutation = useMutation({
@@ -104,7 +108,13 @@ export default function TaskById() {
       await queryClient.invalidateQueries({
         queryKey: tasksQueryOptions(householdId).queryKey,
       });
-      router.push("/");
+      showToast({
+        message: `${task?.name} arkiverad`,
+        type: "success",
+        duration: 5000,
+        position: "bottom",
+      });
+      setTimeout(() => router.back(), 100);
     },
     onError: (error) => {
       console.error(error);
@@ -112,6 +122,18 @@ export default function TaskById() {
   });
 
   const handleArchive = () => {
+    Alert.alert(
+      `Akrivera ${task?.name}`,
+      "Är du säker på att du vill arkivera sysslan?",
+      [
+        { text: "Avbryt", style: "cancel" },
+        { text: "Arkivera", style: "destructive", onPress: () => archive() },
+      ],
+      { cancelable: true },
+    );
+  };
+
+  const archive = () => {
     if (task) {
       archiveMutation.mutate(task.id);
     }

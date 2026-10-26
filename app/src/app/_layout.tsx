@@ -15,12 +15,14 @@ import AnimatedSplash, { LOOP_DURATION_MS } from "@/components/AnimatedSplash";
 import HeaderLogo from "@/components/HeaderLogo";
 import { authClient } from "@/lib/auth-client";
 import { householdsQueryOptions } from "@/options/households";
-import { ThemeProvider } from "@/theme";
+import { ThemeProvider, useTheme } from "@/theme";
+
 import {
   QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
+import { ToastProvider } from "react-native-toastify-expo";
 
 const queryClient = new QueryClient();
 
@@ -33,12 +35,14 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView>
       <QueryClientProvider client={queryClient}>
+      <ToastProvider>
         <ThemeProvider>
           <StatusBar style="auto" />
           <RootStack />
         </ThemeProvider>
-      </QueryClientProvider>
-    </GestureHandlerRootView>
+      </ToastProvider>
+    </QueryClientProvider>
+      </GestureHandlerRootView>
   );
 }
 
