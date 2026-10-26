@@ -72,6 +72,7 @@ export default function Index() {
             today={today}
             memberId={memberId}
             assignments={assignments.data ?? []}
+            isPaused={isPaused}
           />
         )
       )}

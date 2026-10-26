@@ -11,6 +11,7 @@ interface Props {
   today: Date;
   memberId: number | undefined;
   assignments: MemberToTask[];
+  isPaused: boolean;
 }
 
 export default function TaskList({
@@ -18,6 +19,7 @@ export default function TaskList({
   today,
   memberId,
   assignments,
+  isPaused,
 }: Props): React.JSX.Element {
   const { colors } = useTheme();
   const [onlyMine, setOnlyMine] = useState(false);
@@ -34,7 +36,12 @@ export default function TaskList({
     <FlatList
       data={visibleTasks}
       keyExtractor={(task) => String(task.id)}
-      renderItem={({ item }) => <TaskCard task={item} today={today} />}
+      renderItem={({ item }) => (
+        <View style={isPaused && styles.pausedCard}>
+          <TaskCard task={item} today={today} />
+        </View>
+      )}
+
       contentContainerStyle={styles.listContent}
       ListHeaderComponent={
         <View style={styles.header}>
@@ -78,4 +85,5 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   emptyText: { fontSize: 16, textAlign: "center", marginTop: 32 },
+  pausedCard: { opacity: 0.5 },
 });
