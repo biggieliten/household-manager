@@ -22,7 +22,9 @@ export default function ErrorView({ error, retry }: Props) {
         accessibilityRole="button"
         onPress={retry}
         style={[styles.retryButton, { backgroundColor: colors.primary }]}>
-        <Text style={styles.retryButtonText}>Försök igen</Text>
+        <Text style={[styles.retryButtonText, { color: colors.background }]}>
+          Försök igen
+        </Text>
       </Pressable>
     </View>
   );
@@ -54,5 +56,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
-  retryButtonText: { color: "#FFFFFF", fontWeight: "600" },
+  retryButtonText: { fontWeight: "600" },
 });
