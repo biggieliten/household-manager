@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -11,9 +12,12 @@ import {
 
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
+import TaskImageRow from "@/components/TaskImageRow";
+import VoiceNoteRow from "@/components/VoiceNoteRow";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { assignTask, removeTaskAssignment } from "@/lib/api/task-assignments";
-import { archiveTask, completeTask } from "@/lib/api/tasks";
+import { archiveTask, completeTask, taskMediaUrl } from "@/lib/api/tasks";
+import { authHeadersQueryOptions } from "@/options/auth";
 import { householdQueryOptions } from "@/options/households";
 import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
 import { useTheme } from "@/theme";
@@ -142,6 +146,10 @@ export default function TaskById() {
     },
   });
 
+  // Media is only shown here; it is changed in the edit task view
+  const { data: authHeaders } = useQuery(authHeadersQueryOptions);
+  const [isImageExpanded, setIsImageExpanded] = useState(false);
+
   const history = task?.completedTasks
     .filter(
       (completion, index, all) =>
@@ -195,6 +203,8 @@ export default function TaskById() {
   const totalThisYear = task.completedTasks.filter(
     (ct) => ct.completedAt.getUTCFullYear() === new Date().getUTCFullYear(),
   ).length;
+  const image = task.media.find((media) => media.kind === "image");
+  const audio = task.media.find((media) => media.kind === "audio");
 
   return (
     <ScrollView
@@ -259,23 +269,27 @@ export default function TaskById() {
           </Text>
         </View>
 
-        <View style={[styles.tile, { backgroundColor: accent.tile }]}>
-          <View
-            style={[styles.playButton, { backgroundColor: colors.background }]}>
-            <Text style={[styles.playIcon, { color: colors.text }]}>▶</Text>
-          </View>
-          <View style={styles.tileContent}>
-            <Text style={[styles.tileTitle, { color: colors.text }]}>
-              Röstmemo: Tröskeln
-            </Text>
-            <Text style={[styles.tileTitle, { color: colors.text }]}>0:24</Text>
-          </View>
-        </View>
+        {householdId && authHeaders && audio && (
+          <VoiceNoteRow
+            source={{
+              uri: taskMediaUrl(householdId, task.id, audio),
+              headers: authHeaders,
+            }}
+          />
+        )}
+
+        {householdId && authHeaders && image && (
+          <TaskImageRow
+            source={{
+              uri: taskMediaUrl(householdId, task.id, image),
+              headers: authHeaders,
+            }}
+            expanded={isImageExpanded}
+            onToggleExpanded={() => setIsImageExpanded((prev) => !prev)}
+          />
+        )}
 
         <View style={[styles.tile, { backgroundColor: accent.tile }]}>
-          <View style={[styles.thumbnail, { backgroundColor: accent.chip }]}>
-            <Text style={styles.thumbnailEmoji}>🛋️</Text>
-          </View>
           <View style={styles.tileContent}>
             <Text style={[styles.tileTitle, { color: colors.text }]}>
               Beskrivning
@@ -284,7 +298,6 @@ export default function TaskById() {
               {task.description}
             </Text>
           </View>
-          <Text style={[styles.iconText, { color: colors.text }]}>⤢</Text>
         </View>
       </View>
 
@@ -431,7 +444,6 @@ const styles = StyleSheet.create({
   doneBadgeText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
   sectionTitle: { fontSize: 18, fontWeight: "600" },
   iconRow: { flexDirection: "row", gap: 16 },
-  iconText: { fontSize: 18 },
   tile: {
     flexDirection: "row",
     alignItems: "center",
@@ -439,22 +451,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 12,
   },
-  playButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  playIcon: { fontSize: 14 },
-  thumbnail: {
-    width: 52,
-    height: 52,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  thumbnailEmoji: { fontSize: 26 },
   tileContent: { flex: 1, gap: 2 },
   tileTitle: { fontSize: 15, fontWeight: "600" },
   tileBody: { fontSize: 15 },
