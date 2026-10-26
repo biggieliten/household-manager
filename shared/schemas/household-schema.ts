@@ -33,12 +33,14 @@ export const responseHouseholdSchema = createHouseholdSchema.extend({
 export const responseMyHouseholdSchema = responseHouseholdSchema
   .pick({ id: true, name: true, accessCode: true })
   .extend({
-    member: responseMemberSchema.pick({
-      id: true,
-      nickname: true,
-      avatar: true,
-      isAdmin: true,
-    }),
+    member: responseMemberSchema
+      .pick({
+        id: true,
+        nickname: true,
+        avatar: true,
+        isAdmin: true,
+      })
+      .extend({ isPaused: z.boolean().default(false) }),
   });
 
 export const updateHouseholdSchema = createHouseholdSchema

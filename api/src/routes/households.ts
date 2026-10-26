@@ -71,7 +71,10 @@ const app = new Hono()
     });
 
     return c.json(
-      members.map(({ household, ...member }) => ({ ...household, member })),
+      members.map(({ household, pauses, ...member }) => ({
+        ...household,
+        member: { ...member, isPaused: pauses.length > 0 },
+      })),
       200,
     );
   })

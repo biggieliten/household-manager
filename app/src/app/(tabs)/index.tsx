@@ -7,7 +7,10 @@ import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { householdsQueryOptions } from "@/options/households";
-import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
+import {
+  taskAssignmentsQueryOptions,
+  tasksQueryOptions,
+} from "@/options/tasks";
 import { useTheme } from "@/theme";
 
 export default function Index() {
@@ -22,9 +25,11 @@ export default function Index() {
   } = useQuery(tasksQueryOptions(householdId));
   const households = useQuery(householdsQueryOptions);
   const assignments = useQuery(taskAssignmentsQueryOptions(householdId));
-  const memberId = households.data?.find(
+  const member = households.data?.find(
     (household) => household.id === householdId,
-  )?.member.id;
+  )?.member;
+  const memberId = member?.id;
+  const isPaused = member?.isPaused ?? false;
 
   return (
     <View
