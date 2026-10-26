@@ -8,6 +8,7 @@ import {
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import LoadingView from "@/components/LoadingView";
 import { authClient } from "@/lib/auth-client";
@@ -22,13 +23,17 @@ import { householdsQueryOptions } from "@/options/households";
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  // Gesture Handler needs one root view for gestures such as swipe-to-delete;
+  // without a style it fills the screen (flex: 1)
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <StatusBar style="auto" />
-        <RootStack />
-      </ThemeProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <StatusBar style="auto" />
+          <RootStack />
+        </ThemeProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
 
