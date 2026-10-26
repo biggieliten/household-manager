@@ -85,10 +85,18 @@ jobs:
           AUTHOR: ${{ github.event.pull_request.user.login }}
           API_RESULT: ${{ needs.api.result }}
           APP_RESULT: ${{ needs.app.result }}
+        shell: bash
         run: |
-          if [ "$AUTHOR" = "VarxTheBaron" ]; then
-            AUTHOR="Dansken"
-          fi
+          case "$AUTHOR" in
+            VarxTheBaron) NAMES=("Danksken" "MacLovin" "08a" "Sossen") ;;
+            isacgustavsson) NAMES=("Android") ;;
+            stenarvid) NAMES=("Closeted Furry" "Furry") ;;
+            ElisaSte) NAMES=("Al dente" "PastaQueen" "Ketchup") ;;
+            therealdanmalmx) NAMES=("ThinkPad") ;;
+            biggieliten) NAMES=("Örjan") ;;
+            *) NAMES=("$AUTHOR") ;;
+          esac
+          AUTHOR="${NAMES[RANDOM % ${#NAMES[@]}]}"
           if [ "$API_RESULT" = "success" ] && [ "$APP_RESULT" = "success" ]; then
             STATUS="✅ CI passed"
           elif [ "$API_RESULT" = "cancelled" ] || [ "$APP_RESULT" = "cancelled" ]; then
