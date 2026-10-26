@@ -89,7 +89,9 @@ jobs:
         run: |
           case "$AUTHOR" in
             VarxTheBaron) NAMES=("Danksken" "MacLovin" "08a" "Sossen") ;;
-            ElisaSte) NAMES=("Alldente" "PastaQueen" "Ketchup") ;;
+            isacgustavsson) NAMES=("Android") ;;
+            stenarvid) NAMES=("Closeted Furry" "Furry") ;;
+            ElisaSte) NAMES=("Al dente" "PastaQueen" "Ketchup") ;;
             therealdanmalmx) NAMES=("ThinkPad") ;;
             biggieliten) NAMES=("Örjan") ;;
             *) NAMES=("$AUTHOR") ;;
