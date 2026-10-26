@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SymbolView } from "expo-symbols";
 import Feather from "@expo/vector-icons/Feather";
+import PausedInfoModal from "@/components/PausedInfoModal";
 
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
@@ -373,12 +374,14 @@ export default function TaskById() {
           style={({ pressed }) => [
             styles.doneButton,
             {
-              backgroundColor: colors.textMuted,
+              backgroundColor: colors.warning,
               opacity: pressed ? 0.8 : 1,
             },
           ]}>
-          <Feather name="pause-circle" size={20} color="#FFFFFF" />
-          <Text style={styles.doneButtonText}>Du är pausad</Text>
+          <Feather name="pause-circle" size={20} color={colors.warningText} />
+          <Text style={[styles.doneButtonText, { color: colors.warningText }]}>
+            Du är pausad
+          </Text>
         </Pressable>
       ) : (
         <Pressable
@@ -464,6 +467,9 @@ export default function TaskById() {
           onConfirmDelete={() => deleteMutation.mutate(task.id)}
           onCancel={() => setDeleteStep("closed")}
         />
+      )}
+      {showPausedInfo && (
+        <PausedInfoModal onClose={() => setShowPausedInfo(false)} />
       )}
     </ScrollView>
   );

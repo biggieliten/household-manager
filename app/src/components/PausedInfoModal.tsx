@@ -25,7 +25,7 @@ export default function PausedInfoModal({ onClose }: Props) {
           </View>
           <Text style={{ color: colors.textMuted }}>
             Medan du är pausad kan du inte utföra sysslor. Dina poäng i
-            statistiken räknas om, så att pausen inte drar ner dig.
+            statistiken räknas bara för tiden du inte är pausad.
           </Text>
           <Pressable
             accessibilityRole="button"
