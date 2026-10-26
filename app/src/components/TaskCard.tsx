@@ -27,11 +27,20 @@ interface Props {
 
 export default function TaskCard({ task, today }: Props): React.JSX.Element {
   const { colors } = useTheme();
-  const latestCompletion = task.completedTasks[0];
+  // `today` can be a past day, so ignore completions made after it
+  const endOfDay = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate() + 1,
+  );
+  const completions = task.completedTasks.filter(
+    ({ completedAt }) => completedAt < endOfDay,
+  );
+  const latestCompletion = completions[0];
   const elapsed = latestCompletion
     ? daysSince(latestCompletion.completedAt, today)
     : null;
-  const completedToday = task.completedTasks.filter(
+  const completedToday = completions.filter(
     ({ completedAt }) => completedAt.toDateString() === today.toDateString(),
   );
   const members = [
