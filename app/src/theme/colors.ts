@@ -11,6 +11,8 @@ export const colors = {
     card: "#FFFFFF",
     // Small pills and avatar circles
     chip: "#ECEBFD",
+    warning: "#FEF3C7",
+    warningText: "#92400E",
     // Destructive actions, e.g. swipe-to-delete
     danger: "#A63A3A",
     // Confirmations, e.g. success toasts
@@ -26,6 +28,8 @@ export const colors = {
     screen: "#0B0B0D",
     card: "#1C1C1E",
     chip: "#33354A",
+    warning: "#3A2E14",
+    warningText: "#FCD34D",
     danger: "#B04646",
     success: "#3D8B40",
   },

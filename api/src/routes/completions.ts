@@ -19,6 +19,13 @@ const app = new Hono().post(
     if (!task) {
       return c.json({ error: "Task not found" }, 404);
     }
+    const activePause = await db.pause.findFirst({
+      where: { memberId: member.id, endDate: null, deletedAt: null },
+      select: { id: true },
+    });
+    if (activePause) {
+      return c.json({ error: "Paused members cannot complete tasks" }, 403);
+    }
 
     const completedTask = await db.completedTask.create({
       data: {
