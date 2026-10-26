@@ -42,7 +42,7 @@ import { useTheme } from "@/theme";
 import type { TaskMediaKind } from "@shared/schemas/task-media-schema";
 import type { CreateTaskBody } from "@shared/schemas/task-schema";
 import { createTaskBodySchema } from "@shared/schemas/task-schema";
-import { useToast } from "react-native-toastify-expo";
+import { toast } from "sonner-native";
 
 const frequencyOptions = Array.from({ length: 31 }, (_, i) => i);
 const difficultyOptions = [
@@ -84,7 +84,6 @@ export default function CreateTask() {
   );
 
   const [prefilledId, setPrefilledId] = useState<number | null>(null);
-  const { showToast } = useToast();
 
   if (taskById && prefilledId !== taskById.id) {
     setPrefilledId(taskById.id);
@@ -280,12 +279,9 @@ export default function CreateTask() {
       if (error) {
         setPartialSave({ taskId, assignedMemberIds, savedMedia, error });
         
-        showToast({
-          message: `Syssla ${body.name} skapad men tilldelningen misslyckades: ${error}`,
-          type: "error",
-          duration: 5000,
-          position: "bottom",
-        });
+        toast.error(
+          `Syssla ${body.name} skapad men tilldelningen misslyckades: ${error}`,
+        );
         return;
       }
 
@@ -297,12 +293,9 @@ export default function CreateTask() {
       setMediaError(null);
       setPartialSave(null);
 
-      showToast({
-        message: `Syssla ${body.name} har ${isEditing ? "uppdaterats" : "skapats"}`,
-        type: "success",
-        duration: 5000,
-        position: "bottom",
-      });
+      toast.success(
+        `Syssla ${body.name} har ${isEditing ? "uppdaterats" : "skapats"}`,
+      );
       if (router.canGoBack()) {
         setTimeout(() => router.back(), 100);
       } else {

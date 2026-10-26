@@ -34,7 +34,7 @@ import { useTheme } from "@/theme";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
 import { useState } from "react";
 import { Alert } from "react-native";
-import { useToast } from "react-native-toastify-expo";
+import { toast } from "sonner-native";
 
 const accents = {
   light: {
@@ -99,7 +99,6 @@ export default function TaskById() {
     refetch,
   } = useQuery(tasksQueryOptions(householdId));
 
-  const { showToast } = useToast();
   const task = tasks?.find((task) => task.id === Number(id));
 
   const archiveMutation = useMutation({
@@ -108,12 +107,7 @@ export default function TaskById() {
       await queryClient.invalidateQueries({
         queryKey: tasksQueryOptions(householdId).queryKey,
       });
-      showToast({
-        message: `${task?.name} arkiverad`,
-        type: "success",
-        duration: 5000,
-        position: "bottom",
-      });
+      toast.success(`${task?.name} arkiverad`);
       setTimeout(() => router.back(), 100);
     },
     onError: (error) => {
