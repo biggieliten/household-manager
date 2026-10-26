@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Alert
 } from "react-native";
 
 import Avatar from "@/components/Avatar";
@@ -33,7 +34,6 @@ import {
 import { useTheme } from "@/theme";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
 import { useState } from "react";
-import { Alert } from "react-native";
 import { toast } from "sonner-native";
 
 const accents = {
