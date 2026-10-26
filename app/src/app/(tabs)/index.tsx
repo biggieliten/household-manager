@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
+import PausedInfoModal from "@/components/PausedInfoModal";
 
 import DateCarousel from "@/components/DateCarousel";
 import LoadingView from "@/components/LoadingView";
@@ -9,7 +11,10 @@ import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { householdsQueryOptions } from "@/options/households";
-import { taskAssignmentsQueryOptions, tasksQueryOptions } from "@/options/tasks";
+import {
+  taskAssignmentsQueryOptions,
+  tasksQueryOptions,
+} from "@/options/tasks";
 import { useTheme } from "@/theme";
 
 function startOfToday(): Date {
@@ -29,15 +34,41 @@ export default function Index() {
   } = useQuery(tasksQueryOptions(householdId));
   const households = useQuery(householdsQueryOptions);
   const assignments = useQuery(taskAssignmentsQueryOptions(householdId));
-  const memberId = households.data?.find(
+  const member = households.data?.find(
     (household) => household.id === householdId,
-  )?.member.id;
+  )?.member;
+  const memberId = member?.id;
+  const isPaused = member?.isPaused ?? false;
+  const [showPausedInfo, setShowPausedInfo] = useState(false);
 
   return (
     <View
       // edges={["top"]}
       style={[styles.container, { backgroundColor: colors.screen }]}>
       <ScreenHeader />
+      {isPaused && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Du är pausad, visa mer information"
+          onPress={() => setShowPausedInfo(true)}
+          style={({ pressed }) => [
+            styles.pausedBanner,
+            { backgroundColor: colors.warning, opacity: pressed ? 0.8 : 1 },
+          ]}>
+          <Feather name="pause-circle" size={28} color={colors.warningText} />
+          <View style={styles.pausedTextBox}>
+            <Text style={[styles.pausedTitle, { color: colors.warningText }]}>
+              Du är pausad
+            </Text>
+            <Text
+              style={[styles.pausedSubtitle, { color: colors.warningText }]}>
+              Du kan inte utföra sysslor just nu
+            </Text>
+          </View>
+          <Feather name="info" size={20} color={colors.warningText} />
+        </Pressable>
+      )}
+
       {isPending ? (
         <LoadingView />
       ) : error ? (
@@ -62,6 +93,7 @@ export default function Index() {
               today={selectedDate}
               memberId={memberId}
               assignments={assignments.data ?? []}
+              isPaused={isPaused}
             />
           </>
         )
@@ -78,6 +110,9 @@ export default function Index() {
           <Text style={styles.addButtonText}>+</Text>
         </Pressable>
       </Link>
+      {showPausedInfo && (
+        <PausedInfoModal onClose={() => setShowPausedInfo(false)} />
+      )}
     </View>
   );
 }
@@ -112,4 +147,15 @@ const styles = StyleSheet.create({
     fontSize: 32,
     lineHeight: 34,
   },
+  pausedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+  },
+  pausedTextBox: { flex: 1 },
+  pausedTitle: { fontSize: 18, fontWeight: "700" },
+  pausedSubtitle: { fontSize: 14 },
 });
