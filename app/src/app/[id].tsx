@@ -33,6 +33,8 @@ const accents = {
     categoryBg: "#D9F5E6",
     categoryText: "#1E7A4C",
     danger: "#A63A3A",
+    muted: "#5d5d5d",
+    mutedText: "#434242",
     dangerText: "#C0504D",
   },
   dark: {
@@ -40,6 +42,8 @@ const accents = {
     chip: "#33354A",
     categoryBg: "#1E3B2E",
     categoryText: "#7FD8A8",
+    muted: "#5d5d5d",
+    mutedText: "#434242",
     danger: "#B04646",
     dangerText: "#F08A85",
   },
@@ -198,6 +202,10 @@ export default function TaskById() {
         (other) => other.member.id === completion.member.id,
       ).length,
     }));
+
+  const count = task?.completedTasks.length ?? 0;
+
+  console.log({ count });
 
   const cardStyle = [styles.card, { backgroundColor: colors.card }];
 
@@ -374,22 +382,43 @@ export default function TaskById() {
         accessibilityRole="button"
         accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
         accessibilityState={{
-          disabled: !householdId || completeTaskMutation.isPending,
+          disabled:
+            !householdId ||
+            completeTaskMutation.isPending ||
+            !!task?.completedTasks?.length,
         }}
-        disabled={!householdId || completeTaskMutation.isPending}
+        disabled={
+          !householdId ||
+          completeTaskMutation.isPending ||
+          !!task?.completedTasks?.length
+        }
         onPress={() => handleCompleteTask(task.id)}
         style={({ pressed }) => [
           styles.doneButton,
           {
-            backgroundColor: accent.danger,
+            backgroundColor: !task?.completedTasks?.length
+              ? accent.danger
+              : accent.muted,
             opacity: completeTaskMutation.isPending ? 0.5 : pressed ? 0.8 : 1,
           },
         ]}>
-        <Text style={styles.doneButtonText}>
+        <Text
+          style={
+            !task?.completedTasks?.length
+              ? styles.doneButtonText
+              : styles.disabledButtonText
+          }>
           {completeTaskMutation.isPending ? "Sparar…" : "✓ Markera som klar"}
         </Text>
         <View style={styles.doneBadge}>
-          <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
+          <Text
+            style={
+              !task?.completedTasks.length
+                ? styles.doneBadgeText
+                : styles.doneBadgeText
+            }>
+            +{task.difficultyLevel}p
+          </Text>
         </View>
       </Pressable>
       {completeTaskMutation.isError && (
@@ -486,6 +515,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   doneButtonText: { color: "#FFFFFF", fontSize: 17, fontWeight: "600" },
+  disabledButtonText: { color: "#363636", fontSize: 17, fontWeight: "600" },
   doneBadge: {
     backgroundColor: "rgba(255,255,255,0.25)",
     borderRadius: 10,
@@ -493,6 +523,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   doneBadgeText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
+  doneBadgeText: { color: "#363636", fontSize: 13, fontWeight: "700" },
   sectionTitle: { fontSize: 18, fontWeight: "600" },
   iconRow: { flexDirection: "row", gap: 16 },
   iconText: { fontSize: 18 },
