@@ -10,6 +10,8 @@ import {
   View,
   Alert
 } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
+import PausedInfoModal from "@/components/PausedInfoModal";
 
 import Avatar from "@/components/Avatar";
 import DeleteTaskModal from "@/components/DeleteTaskModal";
@@ -93,6 +95,7 @@ export default function TaskById() {
   const [deleteStep, setDeleteStep] = useState<"closed" | "choose" | "confirm">(
     "closed",
   );
+  const [showPausedInfo, setShowPausedInfo] = useState(false);
 
   const { colors, scheme } = useTheme();
   const accent = accents[scheme];
@@ -167,6 +170,11 @@ export default function TaskById() {
   const isOwner =
     householdQuery.data?.members.some(
       (member) => member.isMe && member.isAdmin,
+    ) ?? false;
+
+  const isPaused =
+    householdQuery.data?.members.some(
+      (member) => member.isMe && member.isPaused,
     ) ?? false;
 
   const assignmentsKey = taskAssignmentsQueryOptions(householdId).queryKey;
@@ -409,7 +417,24 @@ export default function TaskById() {
           ))}
       </View>
 
-      {!task?.completedTasks?.length && (
+      {isPaused ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Du är pausad, visa mer information"
+          onPress={() => setShowPausedInfo(true)}
+          style={({ pressed }) => [
+            styles.doneButton,
+            {
+              backgroundColor: colors.warning,
+              opacity: pressed ? 0.8 : 1,
+            },
+          ]}>
+          <Feather name="pause-circle" size={20} color={colors.warningText} />
+          <Text style={[styles.doneButtonText, { color: colors.warningText }]}>
+            Du är pausad
+          </Text>
+        </Pressable>
+      ) : !task?.completedTasks?.length ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
@@ -432,7 +457,7 @@ export default function TaskById() {
             <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
           </View>
         </Pressable>
-      )}
+      ) : null}
 
       {completeTaskMutation.isError && (
         <Text style={{ color: accent.dangerText }}>
@@ -494,6 +519,9 @@ export default function TaskById() {
           onConfirmDelete={() => deleteMutation.mutate(task.id)}
           onCancel={() => setDeleteStep("closed")}
         />
+      )}
+      {showPausedInfo && (
+        <PausedInfoModal onClose={() => setShowPausedInfo(false)} />
       )}
     </ScrollView>
   );

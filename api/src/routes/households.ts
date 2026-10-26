@@ -61,12 +61,20 @@ const app = new Hono()
         nickname: true,
         avatar: true,
         isAdmin: true,
+        pauses: {
+          where: { endDate: null, deletedAt: null },
+          select: { id: true },
+        },
+
         household: { select: { id: true, name: true, accessCode: true } },
       },
     });
 
     return c.json(
-      members.map(({ household, ...member }) => ({ ...household, member })),
+      members.map(({ household, pauses, ...member }) => ({
+        ...household,
+        member: { ...member, isPaused: pauses.length > 0 },
+      })),
       200,
     );
   })
@@ -258,7 +266,10 @@ const app = new Hono()
             where: { id: requestId, householdId },
           });
           if (!request) {
-            return { status: 404 as const, error: "Förfrågan finns inte kvar." };
+            return {
+              status: 404 as const,
+              error: "Förfrågan finns inte kvar.",
+            };
           }
 
           const competingRequest = await tx.joinRequest.findFirst({
@@ -284,7 +295,8 @@ const app = new Hono()
           if (avatarTaken) {
             return {
               status: 409 as const,
-              error: "En medlem använder redan den här avataren. Förfrågan kan inte godkännas.",
+              error:
+                "En medlem använder redan den här avataren. Förfrågan kan inte godkännas.",
             };
           }
 
@@ -302,7 +314,9 @@ const app = new Hono()
           }
 
           // Deleting and granting membership must either both succeed or roll back.
-          await tx.joinRequest.delete({ where: { id: requestId, householdId } });
+          await tx.joinRequest.delete({
+            where: { id: requestId, householdId },
+          });
           const data = {
             nickname: request.nickname,
             avatar: request.avatar,
@@ -328,7 +342,10 @@ const app = new Hono()
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
           if (error.code === "P2002") {
             return c.json(
-              { error: "Avataren eller medlemskapet används redan. Uppdatera listan och försök igen." },
+              {
+                error:
+                  "Avataren eller medlemskapet används redan. Uppdatera listan och försök igen.",
+              },
               409,
             );
           }
@@ -337,7 +354,10 @@ const app = new Hono()
           }
           if (error.code === "P2034") {
             return c.json(
-              { error: "Förfrågan ändrades samtidigt. Uppdatera listan och försök igen." },
+              {
+                error:
+                  "Förfrågan ändrades samtidigt. Uppdatera listan och försök igen.",
+              },
               409,
             );
           }
