@@ -11,10 +11,25 @@ import {
   View,
 } from "react-native";
 
+import ImageSourceChoice from "@/components/ImageSourceChoice";
+import SwipeToDelete from "@/components/SwipeToDelete";
+import TaskImageRow from "@/components/TaskImageRow";
 import TaskMemberPicker from "@/components/TaskMemberPicker";
+import VoiceNoteRecorder, {
+  VOICE_NOTE_MIME_TYPE,
+} from "@/components/VoiceNoteRecorder";
+import VoiceNoteRow from "@/components/VoiceNoteRow";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { assignTask } from "@/lib/api/task-assignments";
-import { createTask, updateTask } from "@/lib/api/tasks";
+import {
+  createTask,
+  deleteTaskMedia,
+  taskMediaUrl,
+  updateTask,
+  uploadTaskMedia,
+} from "@/lib/api/tasks";
+import { type ImageSource, pickTaskImage } from "@/lib/pick-task-image";
+import { authHeadersQueryOptions } from "@/options/auth";
 import { householdQueryOptions } from "@/options/households";
 import {
   taskAssignmentsQueryOptions,
@@ -22,6 +37,7 @@ import {
   tasksQueryOptions,
 } from "@/options/tasks";
 import { useTheme } from "@/theme";
+import type { TaskMediaKind } from "@shared/schemas/task-media-schema";
 import type { CreateTaskBody } from "@shared/schemas/task-schema";
 import { createTaskBodySchema } from "@shared/schemas/task-schema";
 
@@ -40,6 +56,14 @@ const initialTask: CreateTaskBody = {
   frequency: 7,
   difficultyLevel: 2,
 };
+
+// Picked or recorded on the phone; uploaded when the task is saved
+type PendingMedia = {
+  image?: { uri: string; mimeType: string };
+  audio?: { uri: string; mimeType: string; durationMillis: number };
+};
+
+const mediaKinds: readonly TaskMediaKind[] = ["image", "audio"];
 
 function close() {
   if (router.canGoBack()) router.back();
@@ -82,14 +106,71 @@ export default function CreateTask() {
   const [selectedMemberIds, setSelectedMemberIds] = useState<
     ReadonlySet<number>
   >(new Set());
-  // Set when the task was created but some members could not be assigned,
-  // so saving again retries only those instead of creating a duplicate task
+  // Set when the task was saved but some members could not be assigned or
+  // some media changes failed, so saving again retries only those instead of
+  // creating a duplicate task
   const [partialSave, setPartialSave] = useState<{
     taskId: number;
     assignedMemberIds: ReadonlySet<number>;
+    savedMedia: ReadonlySet<TaskMediaKind>;
     error: string;
   } | null>(null);
   const isLocked = partialSave !== null;
+
+  const [media, setMedia] = useState<PendingMedia>({});
+  // When editing: existing media the user swiped away, deleted on save
+  const [removedMedia, setRemovedMedia] = useState<ReadonlySet<TaskMediaKind>>(
+    new Set(),
+  );
+  const [isChoosingImage, setIsChoosingImage] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaError, setMediaError] = useState<string | null>(null);
+  const { data: authHeaders } = useQuery({
+    ...authHeadersQueryOptions,
+    enabled: isEditing,
+  });
+
+  // The task's saved file, unless it has been swiped away in this form
+  const existingMedia = (kind: TaskMediaKind) =>
+    isEditing && !removedMedia.has(kind)
+      ? taskById?.media.find((item) => item.kind === kind)
+      : undefined;
+  const existingImage = existingMedia("image");
+  const existingAudio = existingMedia("audio");
+
+  const keepMedia = (kind: TaskMediaKind) =>
+    setRemovedMedia((prev) => {
+      const next = new Set(prev);
+      next.delete(kind);
+      return next;
+    });
+
+  const pickImage = async (source: ImageSource) => {
+    setIsChoosingImage(false);
+    setMediaError(null);
+    const result = await pickTaskImage(source);
+    if (result.status === "picked") {
+      setMedia((prev) => ({
+        ...prev,
+        image: { uri: result.uri, mimeType: result.mimeType },
+      }));
+      keepMedia("image");
+    } else if (result.status === "error") {
+      setMediaError(result.message);
+    }
+  };
+
+  const startRecording = () => {
+    setIsChoosingImage(false);
+    setMediaError(null);
+    setIsRecording(true);
+  };
+
+  // Removes the new file and, when editing, marks the saved one for deletion
+  const removeMedia = (kind: TaskMediaKind) => {
+    setMedia((prev) => ({ ...prev, [kind]: undefined }));
+    if (isEditing) setRemovedMedia((prev) => new Set(prev).add(kind));
+  };
 
   const toggleMember = (memberId: number) =>
     setSelectedMemberIds((prev) => {
@@ -102,35 +183,76 @@ export default function CreateTask() {
   const saveTaskMutation = useMutation({
     mutationFn: async (body: CreateTaskBody) => {
       if (!householdId) throw new Error("Inget aktivt hushåll");
+
+      let taskId: number;
+      const assignedMemberIds = new Set(partialSave?.assignedMemberIds);
+      let assignments: PromiseSettledResult<unknown>[] = [];
       if (isEditing) {
-        const saved = await updateTask(householdId, Number(id), body);
-        return {
-          taskId: saved.id,
-          assignedMemberIds: new Set<number>(),
-          error: undefined,
-        };
+        taskId = Number(id);
+        // A retry only redoes the media changes that failed
+        if (!partialSave) await updateTask(householdId, taskId, body);
+      } else {
+        taskId =
+          partialSave?.taskId ?? (await createTask(householdId, body)).id;
+        const memberIds = [...selectedMemberIds].filter(
+          (memberId) => !assignedMemberIds.has(memberId),
+        );
+        assignments = await Promise.allSettled(
+          memberIds.map((memberId) =>
+            assignTask(householdId, { taskId, memberId }),
+          ),
+        );
+        assignments.forEach((result, index) => {
+          if (result.status === "fulfilled")
+            assignedMemberIds.add(memberIds[index]);
+        });
       }
 
-      const taskId =
-        partialSave?.taskId ?? (await createTask(householdId, body)).id;
-      const assignedMemberIds = new Set(partialSave?.assignedMemberIds);
-      const memberIds = [...selectedMemberIds].filter(
-        (memberId) => !assignedMemberIds.has(memberId),
-      );
-      const results = await Promise.allSettled(
-        memberIds.map((memberId) =>
-          assignTask(householdId, { taskId, memberId }),
-        ),
-      );
-      results.forEach((result, index) => {
-        if (result.status === "fulfilled")
-          assignedMemberIds.add(memberIds[index]);
+      // New files are uploaded (replacing a saved one); swiped-away saved
+      // files are deleted
+      const savedMedia = new Set(partialSave?.savedMedia);
+      const mediaChanges = mediaKinds.flatMap<{
+        kind: TaskMediaKind;
+        run: () => Promise<unknown>;
+      }>((kind) => {
+        if (savedMedia.has(kind)) return [];
+        const file = media[kind];
+        if (file) {
+          return [
+            {
+              kind,
+              run: () =>
+                uploadTaskMedia(
+                  householdId,
+                  taskId,
+                  kind,
+                  file.uri,
+                  file.mimeType,
+                ),
+            },
+          ];
+        }
+        const hasSavedFile = taskById?.media.some((item) => item.kind === kind);
+        return removedMedia.has(kind) && hasSavedFile
+          ? [{ kind, run: () => deleteTaskMedia(householdId, taskId, kind) }]
+          : [];
       });
-      const failure = results.find((result) => result.status === "rejected");
+      const mediaResults = await Promise.allSettled(
+        mediaChanges.map((change) => change.run()),
+      );
+      mediaResults.forEach((result, index) => {
+        if (result.status === "fulfilled")
+          savedMedia.add(mediaChanges[index].kind);
+      });
+
+      const failure = [...assignments, ...mediaResults].find(
+        (result) => result.status === "rejected",
+      );
 
       return {
         taskId,
         assignedMemberIds,
+        savedMedia,
         error: failure
           ? failure.reason instanceof Error
             ? failure.reason.message
@@ -138,7 +260,10 @@ export default function CreateTask() {
           : undefined,
       };
     },
-    onSuccess: async ({ taskId, assignedMemberIds, error }, body) => {
+    onSuccess: async (
+      { taskId, assignedMemberIds, savedMedia, error },
+      body,
+    ) => {
       // Also covers the single task, whose key starts with the list's key
       await Promise.all([
         queryClient.invalidateQueries({
@@ -149,12 +274,16 @@ export default function CreateTask() {
         }),
       ]);
       if (error) {
-        setPartialSave({ taskId, assignedMemberIds, error });
+        setPartialSave({ taskId, assignedMemberIds, savedMedia, error });
         return;
       }
 
       setTask(initialTask);
       setSelectedMemberIds(new Set());
+      setMedia({});
+      setRemovedMedia(new Set());
+      setIsChoosingImage(false);
+      setMediaError(null);
       setPartialSave(null);
       if (router.canGoBack()) {
         router.push("/");
@@ -173,7 +302,8 @@ export default function CreateTask() {
   const canSave =
     !!householdId &&
     createTaskBodySchema.safeParse(task).success &&
-    !saveTaskMutation.isPending;
+    !saveTaskMutation.isPending &&
+    !isRecording;
 
   const handleSave = () => {
     const result = createTaskBodySchema.safeParse(task);
@@ -228,28 +358,140 @@ export default function CreateTask() {
         />
       </View>
 
-      {/* Not functional yet: attachments are not part of the task model. */}
+      {/* Changes here are saved together with the rest of the form */}
       <View style={styles.section}>
         <Text style={[labelStyle, styles.caps]}>
           Hjälpmedel & instruktioner
         </Text>
         <View style={styles.row}>
-          {["📷  Lägg till bild", "🎙  Spela in röst"].map((label) => (
-            <Pressable
-              key={label}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: true }}
-              disabled
-              style={[
-                styles.aidButton,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}>
-              <Text style={[styles.aidText, { color: colors.text }]}>
-                {label}
-              </Text>
-            </Pressable>
-          ))}
+          {[
+            {
+              label:
+                media.image || existingImage
+                  ? "📷  Byt bild"
+                  : "📷  Lägg till bild",
+              expanded: isChoosingImage,
+              onPress: () => setIsChoosingImage((prev) => !prev),
+            },
+            {
+              label:
+                media.audio || existingAudio
+                  ? "🎙  Spela in igen"
+                  : "🎙  Spela in röst",
+              expanded: undefined,
+              onPress: startRecording,
+            },
+          ].map(({ label, expanded, onPress }) => {
+            const disabled = isLocked || isRecording;
+            return (
+              <Pressable
+                key={label}
+                accessibilityRole="button"
+                accessibilityState={{ disabled, expanded }}
+                disabled={disabled}
+                onPress={onPress}
+                style={[
+                  styles.aidButton,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                    opacity: disabled ? 0.5 : 1,
+                  },
+                ]}>
+                <Text style={[styles.aidText, { color: colors.text }]}>
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
+
+        {isChoosingImage && (
+          <ImageSourceChoice disabled={isLocked} onPick={pickImage} />
+        )}
+
+        {isRecording && (
+          <VoiceNoteRecorder
+            onRecorded={(uri, durationMillis) => {
+              setIsRecording(false);
+              setMedia((prev) => ({
+                ...prev,
+                audio: {
+                  uri,
+                  mimeType: VOICE_NOTE_MIME_TYPE,
+                  durationMillis,
+                },
+              }));
+              keepMedia("audio");
+            }}
+            onError={(message) => {
+              setIsRecording(false);
+              setMediaError(message);
+            }}
+            onCancel={() => setIsRecording(false)}
+          />
+        )}
+
+        {/* A new file is shown instead of the task's saved one */}
+        {media.image ? (
+          <SwipeToDelete
+            label="Ta bort bilden"
+            disabled={isLocked}
+            onDelete={() => removeMedia("image")}>
+            <TaskImageRow source={media.image} />
+          </SwipeToDelete>
+        ) : (
+          existingImage &&
+          householdId &&
+          authHeaders && (
+            <SwipeToDelete
+              label="Ta bort bilden"
+              disabled={isLocked}
+              onDelete={() => removeMedia("image")}>
+              <TaskImageRow
+                source={{
+                  uri: taskMediaUrl(householdId, Number(id), existingImage),
+                  headers: authHeaders,
+                }}
+              />
+            </SwipeToDelete>
+          )
+        )}
+
+        {!isRecording &&
+          (media.audio ? (
+            <SwipeToDelete
+              label="Ta bort röstmemot"
+              disabled={isLocked}
+              onDelete={() => removeMedia("audio")}>
+              <VoiceNoteRow
+                source={{ uri: media.audio.uri }}
+                durationMillis={media.audio.durationMillis}
+              />
+            </SwipeToDelete>
+          ) : (
+            existingAudio &&
+            householdId &&
+            authHeaders && (
+              <SwipeToDelete
+                label="Ta bort röstmemot"
+                disabled={isLocked}
+                onDelete={() => removeMedia("audio")}>
+                <VoiceNoteRow
+                  source={{
+                    uri: taskMediaUrl(householdId, Number(id), existingAudio),
+                    headers: authHeaders,
+                  }}
+                />
+              </SwipeToDelete>
+            )
+          ))}
+
+        {mediaError && (
+          <Text accessibilityRole="alert" style={{ color: colors.text }}>
+            {mediaError}
+          </Text>
+        )}
       </View>
 
       <View style={panelStyle}>
@@ -322,8 +564,8 @@ export default function CreateTask() {
 
       {partialSave && (
         <Text accessibilityRole="alert" style={{ color: colors.text }}>
-          Sysslan skapades, men tilldelningen misslyckades: {partialSave.error}.
-          Tryck på Försök igen.
+          {isEditing ? "Sysslan sparades" : "Sysslan skapades"}, men något
+          misslyckades: {partialSave.error}. Tryck på Försök igen.
         </Text>
       )}
 
@@ -517,7 +759,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth,
-    opacity: 0.5,
   },
   aidText: {
     fontSize: 14,
