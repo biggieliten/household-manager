@@ -1,5 +1,6 @@
 import z from "zod";
 import { responseMemberSchema } from "./member-schema.ts";
+import { responseTaskMediaSchema } from "./task-media-schema.ts";
 
 export const createTaskSchema = z.object({
   name: z.string().trim().min(2),
@@ -13,6 +14,9 @@ export const responseTaskSchema = createTaskSchema.extend({
   id: z.int(),
   isArchived: z.boolean(),
   createdAt: z.coerce.date(),
+  // Which of the image and voice note the task has; the files themselves
+  // are fetched from /tasks/:taskId/media/:kind
+  media: z.array(responseTaskMediaSchema.pick({ kind: true, updatedAt: true })),
 });
 
 export const responseTaskListItemSchema = responseTaskSchema.extend({

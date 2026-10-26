@@ -14,9 +14,17 @@ import Avatar from "@/components/Avatar";
 import DeleteTaskModal from "@/components/DeleteTaskModal";
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
+import TaskImageRow from "@/components/TaskImageRow";
+import VoiceNoteRow from "@/components/VoiceNoteRow";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { assignTask, removeTaskAssignment } from "@/lib/api/task-assignments";
-import { archiveTask, completeTask, deleteTask } from "@/lib/api/tasks";
+import {
+  archiveTask,
+  completeTask,
+  deleteTask,
+  taskMediaUrl,
+} from "@/lib/api/tasks";
+import { authHeadersQueryOptions } from "@/options/auth";
 import { householdQueryOptions } from "@/options/households";
 import {
   taskAssignmentsQueryOptions,
@@ -25,6 +33,8 @@ import {
 import { useTheme } from "@/theme";
 import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
 import { useState } from "react";
+import { Alert } from "react-native";
+import { toast } from "sonner-native";
 
 const accents = {
   light: {
@@ -92,6 +102,7 @@ export default function TaskById() {
     isPending,
     refetch,
   } = useQuery(tasksQueryOptions(householdId));
+
   const task = tasks?.find((task) => task.id === Number(id));
 
   const archiveMutation = useMutation({
@@ -100,7 +111,8 @@ export default function TaskById() {
       await queryClient.invalidateQueries({
         queryKey: tasksQueryOptions(householdId).queryKey,
       });
-      router.push("/");
+      toast.success(`${task?.name} arkiverad`);
+      setTimeout(() => router.back(), 100);
     },
     onError: (error) => {
       console.error(error);
@@ -108,6 +120,18 @@ export default function TaskById() {
   });
 
   const handleArchive = () => {
+    Alert.alert(
+      `Akrivera ${task?.name}`,
+      "Är du säker på att du vill arkivera sysslan?",
+      [
+        { text: "Avbryt", style: "cancel" },
+        { text: "Arkivera", style: "destructive", onPress: () => archive() },
+      ],
+      { cancelable: true },
+    );
+  };
+
+  const archive = () => {
     if (task) {
       archiveMutation.mutate(task.id);
     }
@@ -190,6 +214,9 @@ export default function TaskById() {
     },
   });
 
+  // Media is only shown here; it is changed in the edit task view
+  const { data: authHeaders } = useQuery(authHeadersQueryOptions);
+
   const history = task?.completedTasks
     .filter(
       (completion, index, all) =>
@@ -247,6 +274,8 @@ export default function TaskById() {
   const totalThisYear = task.completedTasks.filter(
     (ct) => ct.completedAt.getUTCFullYear() === new Date().getUTCFullYear(),
   ).length;
+  const image = task.media.find((media) => media.kind === "image");
+  const audio = task.media.find((media) => media.kind === "audio");
 
   return (
     <ScrollView
@@ -309,23 +338,26 @@ export default function TaskById() {
           </Text>
         </View>
 
-        <View style={[styles.tile, { backgroundColor: accent.tile }]}>
-          <View
-            style={[styles.playButton, { backgroundColor: colors.background }]}>
-            <Text style={[styles.playIcon, { color: colors.text }]}>▶</Text>
-          </View>
-          <View style={styles.tileContent}>
-            <Text style={[styles.tileTitle, { color: colors.text }]}>
-              Röstmemo: Tröskeln
-            </Text>
-            <Text style={[styles.tileTitle, { color: colors.text }]}>0:24</Text>
-          </View>
-        </View>
+        {householdId && authHeaders && audio && (
+          <VoiceNoteRow
+            source={{
+              uri: taskMediaUrl(householdId, task.id, audio),
+              headers: authHeaders,
+            }}
+          />
+        )}
+
+        {householdId && authHeaders && image && (
+          <TaskImageRow
+            source={{
+              uri: taskMediaUrl(householdId, task.id, image),
+              headers: authHeaders,
+            }}
+            openable
+          />
+        )}
 
         <View style={[styles.tile, { backgroundColor: accent.tile }]}>
-          <View style={[styles.thumbnail, { backgroundColor: accent.chip }]}>
-            <Text style={styles.thumbnailEmoji}>🛋️</Text>
-          </View>
           <View style={styles.tileContent}>
             <Text style={[styles.tileTitle, { color: colors.text }]}>
               Beskrivning
@@ -334,7 +366,6 @@ export default function TaskById() {
               {task.description}
             </Text>
           </View>
-          <Text style={[styles.iconText, { color: colors.text }]}>⤢</Text>
         </View>
       </View>
 
@@ -506,7 +537,6 @@ const styles = StyleSheet.create({
   doneBadgeText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
   sectionTitle: { fontSize: 18, fontWeight: "600" },
   iconRow: { flexDirection: "row", gap: 16 },
-  iconText: { fontSize: 18 },
   tile: {
     flexDirection: "row",
     alignItems: "center",
@@ -514,22 +544,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 12,
   },
-  playButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  playIcon: { fontSize: 14 },
-  thumbnail: {
-    width: 52,
-    height: 52,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  thumbnailEmoji: { fontSize: 26 },
   tileContent: { flex: 1, gap: 2 },
   tileTitle: { fontSize: 15, fontWeight: "600" },
   tileBody: { fontSize: 15 },

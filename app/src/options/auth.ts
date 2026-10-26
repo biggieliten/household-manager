@@ -1,6 +1,14 @@
-import { mutationOptions } from "@tanstack/react-query";
+import { mutationOptions, queryOptions } from "@tanstack/react-query";
 
+import { getAuthHeaders } from "@/lib/api/client";
 import { authClient } from "@/lib/auth-client";
+
+// The cookie for expo-image / expo-audio, which load task media straight from
+// the API; cleared with the rest of the cache on sign-out
+export const authHeadersQueryOptions = queryOptions({
+  queryKey: ["auth", "headers"],
+  queryFn: getAuthHeaders,
+});
 
 export const signOutMutationOptions = mutationOptions({
   mutationKey: ["sign-out"],

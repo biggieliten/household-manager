@@ -11,6 +11,10 @@ export const colors = {
     card: "#FFFFFF",
     // Small pills and avatar circles
     chip: "#ECEBFD",
+    // Destructive actions, e.g. swipe-to-delete
+    danger: "#A63A3A",
+    // Confirmations, e.g. success toasts
+    success: "#2E7D32",
   },
   dark: {
     background: "#0B0B0D",
@@ -22,6 +26,8 @@ export const colors = {
     screen: "#0B0B0D",
     card: "#1C1C1E",
     chip: "#33354A",
+    danger: "#B04646",
+    success: "#3D8B40",
   },
 } as const;
 

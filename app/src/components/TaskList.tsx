@@ -20,7 +20,7 @@ export default function TaskList({
   assignments,
 }: Props): React.JSX.Element {
   const { colors } = useTheme();
-  const [onlyMine, setOnlyMine] = useState(false);
+  const [onlyMine, setOnlyMine] = useState(true);
   const visibleTasks = onlyMine
     ? tasks.filter((task) =>
         assignments.some(
