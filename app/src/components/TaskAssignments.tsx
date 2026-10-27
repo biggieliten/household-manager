@@ -58,7 +58,9 @@ export default function TaskAssignments({
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       {isPending && (
-        <Text accessibilityLiveRegion="polite" style={{ color: colors.textMuted }}>
+        <Text
+          accessibilityLiveRegion="polite"
+          style={{ color: colors.textMuted }}>
           Sparar…
         </Text>
       )}
@@ -67,13 +69,12 @@ export default function TaskAssignments({
           {error}
         </Text>
       )}
-      <Text accessibilityRole="header" style={[styles.heading, { color: colors.text }]}>
+      <Text
+        accessibilityRole="header"
+        style={[styles.heading, { color: colors.text }]}>
         Tilldelade medlemmar
       </Text>
       <View style={styles.avatarRow}>
-        {taskAssignments.length === 0 && (
-          <Text style={{ color: colors.textMuted }}>Inga tilldelningar ännu.</Text>
-        )}
         {taskAssignments.map(({ memberId, isManual, groups }) => {
           const member = membersById.get(memberId);
           const label = [
@@ -81,7 +82,9 @@ export default function TaskAssignments({
             member?.isPaused ? "pausad" : "",
             isManual ? "manuellt tilldelad" : "",
             ...groups.map((group) => group.name),
-          ].filter(Boolean).join(", ");
+          ]
+            .filter(Boolean)
+            .join(", ");
           return (
             <Pressable
               key={memberId}
@@ -89,9 +92,11 @@ export default function TaskAssignments({
               accessibilityLabel={label}
               accessibilityHint="Visar var tilldelningen kommer ifrån"
               accessibilityState={{ expanded: selectedMemberId === memberId }}
-              onPress={() => setSelectedMemberId((previous) =>
-                previous === memberId ? null : memberId,
-              )}
+              onPress={() =>
+                setSelectedMemberId((previous) =>
+                  previous === memberId ? null : memberId,
+                )
+              }
               style={({ pressed }) => [
                 styles.assignedMember,
                 (member?.isPaused || pressed) && styles.paused,
@@ -101,14 +106,21 @@ export default function TaskAssignments({
               ) : (
                 <Text style={{ color: colors.text }}>?</Text>
               )}
-              <TaskAssignmentBadges isManual={isManual} hasGroups={groups.length > 0} />
+              <TaskAssignmentBadges
+                isManual={isManual}
+                hasGroups={groups.length > 0}
+              />
             </Pressable>
           );
         })}
         {isOwner && onAssign && onRemove && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={memberPickerOpen ? "Stäng medlemsval" : "Ändra tilldelade medlemmar"}
+            accessibilityLabel={
+              memberPickerOpen
+                ? "Stäng medlemsval"
+                : "Ändra tilldelade medlemmar"
+            }
             accessibilityState={{ expanded: memberPickerOpen }}
             onPress={() => setMemberPickerOpen((open) => !open)}
             style={[
@@ -127,7 +139,8 @@ export default function TaskAssignments({
       {selectedAssignment && (
         <View style={[styles.details, { backgroundColor: colors.background }]}>
           <Text style={{ color: colors.text }}>
-            {selectedMember?.nickname ?? `Medlem #${selectedAssignment.memberId}`}
+            {selectedMember?.nickname ??
+              `Medlem #${selectedAssignment.memberId}`}
             {selectedMember?.isPaused ? " · Pausad" : ""}
           </Text>
           {selectedAssignment.isManual && (

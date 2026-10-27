@@ -9,6 +9,10 @@ import {
   Text,
   View,
 } from "react-native";
+import AvatarModal from "@/components/AvatarModal";
+import { updateMyAvatar } from "@/lib/api/households";
+import type { Avatar as AvatarType } from "@shared/schemas/member-schema";
+
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import ErrorView from "@/components/ErrorView";
@@ -99,7 +103,9 @@ function HouseholdContent() {
     ]),
   );
   const [openGroupMenuId, setOpenGroupMenuId] = useState<number | null>(null);
-  const [deletingGroup, setDeletingGroup] = useState<GroupDeletion | null>(null);
+  const [deletingGroup, setDeletingGroup] = useState<GroupDeletion | null>(
+    null,
+  );
 
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [confirmPromoteId, setConfirmPromoteId] = useState<number | null>(null);
@@ -112,6 +118,7 @@ function HouseholdContent() {
   const [editingHouseholdName, setEditingHouseholdName] =
     useState<HouseholdNameEdit | null>(null);
   const [copied, setCopied] = useState(false);
+  const [editingAvatar, setEditingAvatar] = useState(false);
 
   const router = useRouter();
 
@@ -160,6 +167,12 @@ function HouseholdContent() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  const avatarMutation = useMutation({
+    mutationFn: (avatar: AvatarType) =>
+      updateMyAvatar(requireHouseholdId(), avatar),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["households"] }),
+  });
 
   const renameMutation = useMutation(updateMyNicknameMutationOptions);
   const updateHouseholdMutation = useMutation(updateHouseholdMutationOptions);
@@ -327,7 +340,8 @@ function HouseholdContent() {
                 requestsQuery.data.map((request) => {
                   const competingRequest = requestsQuery.data.some(
                     (other) =>
-                      other.id !== request.id && other.avatar === request.avatar,
+                      other.id !== request.id &&
+                      other.avatar === request.avatar,
                   );
                   const avatarTaken = members.some(
                     (member) => member.avatar === request.avatar,
@@ -338,23 +352,27 @@ function HouseholdContent() {
                       ? "En medlem använder redan den här avataren. Förfrågan kan inte godkännas."
                       : null;
                   const acceptError =
-                    acceptRequestMutation.variables?.householdId === householdId &&
+                    acceptRequestMutation.variables?.householdId ===
+                      householdId &&
                     acceptRequestMutation.variables?.requestId === request.id
                       ? acceptRequestMutation.error
                       : null;
                   const rejectError =
-                    rejectRequestMutation.variables?.householdId === householdId &&
+                    rejectRequestMutation.variables?.householdId ===
+                      householdId &&
                     rejectRequestMutation.variables?.requestId === request.id
                       ? rejectRequestMutation.error
                       : null;
                   const actionError = acceptError ?? rejectError;
                   const accepting =
                     acceptRequestMutation.isPending &&
-                    acceptRequestMutation.variables.householdId === householdId &&
+                    acceptRequestMutation.variables.householdId ===
+                      householdId &&
                     acceptRequestMutation.variables.requestId === request.id;
                   const rejecting =
                     rejectRequestMutation.isPending &&
-                    rejectRequestMutation.variables.householdId === householdId &&
+                    rejectRequestMutation.variables.householdId ===
+                      householdId &&
                     rejectRequestMutation.variables.requestId === request.id;
 
                   return (
@@ -409,7 +427,8 @@ function HouseholdContent() {
                             { backgroundColor: colors.surface },
                             isHandlingRequest && styles.paused,
                           ]}>
-                          <Text style={[styles.badgeText, { color: colors.text }]}>
+                          <Text
+                            style={[styles.badgeText, { color: colors.text }]}>
                             {rejecting ? "Nekar…" : "Neka"}
                           </Text>
                         </Pressable>
@@ -534,6 +553,10 @@ function HouseholdContent() {
                                   });
                                 },
                               },
+                              {
+                                label: "Byt avatar",
+                                onPress: () => setEditingAvatar(true),
+                              },
                             ]
                           : member.isPaused
                             ? [
@@ -655,7 +678,9 @@ function HouseholdContent() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Sysslegrupper
             </Text>
-            {groupsQuery.isPending && <ActivityIndicator color={colors.textMuted} />}
+            {groupsQuery.isPending && (
+              <ActivityIndicator color={colors.textMuted} />
+            )}
             {groupsQuery.error && (
               <ErrorView
                 error={groupsQuery.error}
@@ -663,7 +688,9 @@ function HouseholdContent() {
               />
             )}
             {groupsQuery.data?.length === 0 && (
-              <Text style={{ color: colors.textMuted }}>Inga sysslegrupper ännu.</Text>
+              <Text style={{ color: colors.textMuted }}>
+                Inga sysslegrupper ännu.
+              </Text>
             )}
             {groupsQuery.data?.map((group) => (
               <View
@@ -683,10 +710,12 @@ function HouseholdContent() {
                       openGroupMenuId === group.id ? null : group.id,
                     );
                   }}
-                  onEdit={() => router.push({
-                    pathname: "/create-task-group",
-                    params: { id: String(group.id) },
-                  })}
+                  onEdit={() =>
+                    router.push({
+                      pathname: "/create-task-group",
+                      params: { id: String(group.id) },
+                    })
+                  }
                   onDelete={() => {
                     if (deleteGroupMutation.isPending) return;
                     deleteGroupMutation.reset();
@@ -760,25 +789,27 @@ function HouseholdContent() {
             )}
           </View>
         </Pressable>
-        {isAdmin && deletingGroup && deletingGroup.householdId === householdId && (
-          <DeleteTaskGroupModal
-            groupName={deletingGroup.groupName}
-            isPending={deleteGroupMutation.isPending}
-            error={deleteGroupMutation.error?.message}
-            onConfirm={() => {
-              if (!deleteGroupMutation.isPending) {
-                deleteGroupMutation.mutate(
-                  {
-                    householdId: deletingGroup.householdId,
-                    groupId: deletingGroup.groupId,
-                  },
-                  { onSuccess: () => setDeletingGroup(null) },
-                );
-              }
-            }}
-            onCancel={() => setDeletingGroup(null)}
-          />
-        )}
+        {isAdmin &&
+          deletingGroup &&
+          deletingGroup.householdId === householdId && (
+            <DeleteTaskGroupModal
+              groupName={deletingGroup.groupName}
+              isPending={deleteGroupMutation.isPending}
+              error={deleteGroupMutation.error?.message}
+              onConfirm={() => {
+                if (!deleteGroupMutation.isPending) {
+                  deleteGroupMutation.mutate(
+                    {
+                      householdId: deletingGroup.householdId,
+                      groupId: deletingGroup.groupId,
+                    },
+                    { onSuccess: () => setDeletingGroup(null) },
+                  );
+                }
+              }}
+              onCancel={() => setDeletingGroup(null)}
+            />
+          )}
         {isAdmin &&
           editingHouseholdName &&
           editingHouseholdName.householdId === householdId && (
@@ -814,6 +845,16 @@ function HouseholdContent() {
               )
             }
             onCancel={() => setEditingNickname(null)}
+          />
+        )}
+        {editingAvatar && (
+          <AvatarModal
+            value={members.find((member) => member.isMe)?.avatar ?? null}
+            taken={others.map((member) => member.avatar)}
+            isPending={avatarMutation.isPending}
+            error={avatarMutation.error?.message}
+            onChange={(avatar) => avatarMutation.mutate(avatar)}
+            onClose={() => setEditingAvatar(false)}
           />
         )}
       </ScrollView>
