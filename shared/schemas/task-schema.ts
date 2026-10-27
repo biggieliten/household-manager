@@ -4,7 +4,7 @@ import { responseTaskMediaSchema } from "./task-media-schema.ts";
 
 export const createTaskSchema = z.object({
   name: z.string().trim().min(2),
-  description: z.string().trim().min(2),
+  description: z.string().trim().nullable().optional(),
   frequency: z.int().nonnegative(),
   difficultyLevel: z.int().min(1),
 });
@@ -12,6 +12,7 @@ export const createTaskSchema = z.object({
 export const responseTaskSchema = createTaskSchema.extend({
   id: z.int(),
   householdId: z.int().nonnegative(),
+  description: z.string().nullable(),
   isArchived: z.boolean(),
   createdAt: z.coerce.date(),
   // Which of the image and voice note the task has; the files themselves
