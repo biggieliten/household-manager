@@ -11,7 +11,6 @@ export const activeRatio = (
   const end = Math.min(to.getTime(), now.getTime());
   if (end <= start) return 1;
 
-  // Clip pauses to the period and sort them so overlaps are only counted once
   const intervals = pauses
     .map((pause) => ({
       start: Math.max(pause.startDate.getTime(), start),
@@ -32,6 +31,6 @@ export const activeRatio = (
   return 1 - pausedTime / (end - start);
 };
 
-// points × period length / active time; raw points when never active
+// Points as if the member had been active the whole period
 export const normalizePoints = (points: number, ratio: number) =>
   ratio > 0 ? Math.round(points / ratio) : points;

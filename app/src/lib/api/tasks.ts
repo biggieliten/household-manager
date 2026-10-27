@@ -176,9 +176,8 @@ function apiErrorMessage(body: unknown): string | undefined {
     : undefined;
 }
 
-// fileUri is a local file from expo-image-picker or expo-audio. The upload is
-// sent as multipart/form-data with expo-file-system's native upload, because it
-// lets us set mimeType: Android guesses e.g. audio/mpeg for .m4a recordings
+// Uploads a local image or voice note to the task. The mimeType is set
+// explicitly because Android guesses e.g. audio/mpeg for .m4a recordings
 export async function uploadTaskMedia(
   householdId: number,
   taskId: number,
