@@ -34,14 +34,6 @@ const RED_OVERLAP = 0.3;
 // Where the dots sit in the static logo: one in the crossing, one on the right lobe
 const DOT_START = [Math.PI / 2, -0.28];
 
-const colors = {
-  red: "#9E3A2F",
-  teal: "#96C1B9",
-  orange: "#F49A3A",
-  // The ring stays white in dark mode too, like in the logo
-  ring: "#FFFFFF",
-};
-
 // Lemniscate of Bernoulli, stretched to the logo's proportions
 function loopPoint(t: number): { x: number; y: number } {
   "worklet";
@@ -80,6 +72,7 @@ function OrbitingDot({
   progress: SharedValue<number>;
   start: number;
 }): React.JSX.Element {
+  const { colors } = useTheme();
   const animatedProps = useAnimatedProps(() => {
     const { x, y } = loopPoint(start + progress.get() * 2 * Math.PI);
     return { cx: x, cy: y };
@@ -89,8 +82,8 @@ function OrbitingDot({
     <AnimatedCircle
       animatedProps={animatedProps}
       r={DOT_RADIUS}
-      fill={colors.orange}
-      stroke={colors.ring}
+      fill={colors.logoOrange}
+      stroke={colors.logoRing}
       strokeWidth={DOT_RING}
     />
   );
@@ -101,7 +94,7 @@ interface Props {
 }
 
 export default function AnimatedSplash({ onLayout }: Props): React.JSX.Element {
-  const { colors: theme } = useTheme();
+  const { colors } = useTheme();
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -119,13 +112,13 @@ export default function AnimatedSplash({ onLayout }: Props): React.JSX.Element {
       onLayout={onLayout}
       accessibilityRole="progressbar"
       accessibilityLabel="Laddar"
-      style={[styles.container, { backgroundColor: theme.background }]}>
+      style={[styles.container, { backgroundColor: colors.background }]}>
       <Svg viewBox="0 0 1212 918" style={styles.logo}>
         <G fill="none" strokeWidth={STROKE_WIDTH} strokeLinejoin="round">
-          <Path d={tealLobe} stroke={colors.teal} />
-          <Path d={redLobe} stroke={colors.red} />
-          <Path d={tealRoof} stroke={colors.teal} strokeLinecap="round" />
-          <Path d={redRoof} stroke={colors.red} strokeLinecap="round" />
+          <Path d={tealLobe} stroke={colors.logoTeal} />
+          <Path d={redLobe} stroke={colors.logoRed} />
+          <Path d={tealRoof} stroke={colors.logoTeal} strokeLinecap="round" />
+          <Path d={redRoof} stroke={colors.logoRed} strokeLinecap="round" />
         </G>
         {DOT_START.map((start) => (
           <OrbitingDot

@@ -176,7 +176,7 @@ function StatisticsContent({ period }: { period: StatisticsPeriod }) {
   }
 
   const { members, tasks, totalPoints } = data;
-  const memberColors = members.map((member) => avatars[member.avatar].color);
+  const memberColors = members.map((member) => colors[avatars[member.avatar].colorKey]);
   const totalChartData = toChartData(
     members,
     members.map((member) => member.points),

@@ -84,6 +84,7 @@ function FullScreenImage({
   source: Props["source"];
   onClose: () => void;
 }) {
+  const { colors } = useTheme();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
@@ -96,7 +97,7 @@ function FullScreenImage({
       <View
         accessibilityViewIsModal
         onAccessibilityEscape={onClose}
-        style={styles.viewer}>
+        style={{ ...styles.viewer, backgroundColor: colors.imageViewerBackground }}>
         <ScrollView
           minimumZoomScale={1}
           maximumZoomScale={4}
@@ -116,10 +117,10 @@ function FullScreenImage({
           accessibilityLabel="Stäng bilden"
           onPress={onClose}
           style={({ pressed }) => [
-            styles.closeButton,
+            { ...styles.closeButton, backgroundColor: colors.imageViewerControl },
             { top: insets.top + 8, opacity: pressed ? 0.6 : 1 },
           ]}>
-          <Feather name="x" size={22} color="#FFFFFF" />
+          <Feather name="x" size={22} color={colors.onPrimary} />
         </Pressable>
       </View>
     </Modal>
@@ -160,7 +161,6 @@ const styles = StyleSheet.create({
   },
   viewer: {
     flex: 1,
-    backgroundColor: "#000000",
   },
   closeButton: {
     position: "absolute",
@@ -170,6 +170,5 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
   },
 });

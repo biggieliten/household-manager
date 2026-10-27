@@ -434,11 +434,11 @@ function PrimaryButton({
         },
       ]}>
       {loading ? (
-        <ActivityIndicator color="#FFFFFF" />
+        <ActivityIndicator color={colors.onPrimary} />
       ) : (
         <>
-          <Feather name={icon} size={20} color="#FFFFFF" />
-          <Text style={styles.primaryButtonText}>{label}</Text>
+          <Feather name={icon} size={20} color={colors.onPrimary} />
+          <Text style={{ ...styles.primaryButtonText, color: colors.onPrimary }}>{label}</Text>
         </>
       )}
     </Pressable>
@@ -600,7 +600,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   primaryButtonText: {
-    color: "#FFFFFF",
     fontSize: 18,
     fontWeight: "600",
   },

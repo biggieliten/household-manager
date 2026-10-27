@@ -39,29 +39,6 @@ import type { MemberToTask } from "@shared/schemas/member-to-task-schema";
 import { useState } from "react";
 import { toast } from "sonner-native";
 
-const accents = {
-  light: {
-    tile: "#EEEDFC",
-    chip: "#E2E4FB",
-    categoryBg: "#D9F5E6",
-    categoryText: "#1E7A4C",
-    danger: "#A63A3A",
-    muted: "#5d5d5d",
-    mutedText: "#434242",
-    dangerText: "#C0504D",
-  },
-  dark: {
-    tile: "#26273A",
-    chip: "#33354A",
-    categoryBg: "#1E3B2E",
-    categoryText: "#7FD8A8",
-    muted: "#5d5d5d",
-    mutedText: "#434242",
-    danger: "#B04646",
-    dangerText: "#F08A85",
-  },
-} as const;
-
 function difficultyLabel(level: number): string {
   if (level <= 1) return "Lätt";
   if (level <= 3) return "Normal";
@@ -97,8 +74,7 @@ export default function TaskById() {
   );
   const [showPausedInfo, setShowPausedInfo] = useState(false);
 
-  const { colors, scheme } = useTheme();
-  const accent = accents[scheme];
+  const { colors } = useTheme();
   const householdId = useActiveHouseholdId();
   const {
     data: tasks,
@@ -334,7 +310,7 @@ export default function TaskById() {
 
         <View style={styles.statsRow}>
           <Text style={[styles.stat, { color: colors.textMuted }]}>
-            <Text style={{ color: accent.danger }}>⚡</Text>{" "}
+            <Text style={{ color: colors.danger }}>⚡</Text>{" "}
             {task.difficultyLevel} p ({difficultyLabel(task.difficultyLevel)})
           </Text>
           <Text style={[styles.stat, { color: colors.textMuted }]}>
@@ -369,7 +345,7 @@ export default function TaskById() {
           />
         )}
 
-        <View style={[styles.tile, { backgroundColor: accent.tile }]}>
+        <View style={[styles.tile, { backgroundColor: colors.taskTile }]}>
           <View style={styles.tileContent}>
             <Text style={[styles.tileTitle, { color: colors.text }]}>
               Beskrivning
@@ -434,7 +410,7 @@ export default function TaskById() {
             },
           ]}>
           <Feather name="pause-circle" size={20} color={colors.warningText} />
-          <Text style={[styles.doneButtonText, { color: colors.warningText }]}>
+          <Text style={[{ ...styles.doneButtonText, color: colors.onPrimary }, { color: colors.warningText }]}>
             Du är pausad
           </Text>
         </Pressable>
@@ -450,21 +426,21 @@ export default function TaskById() {
           style={({ pressed }) => [
             styles.doneButton,
             {
-              backgroundColor: accent.danger,
+              backgroundColor: colors.danger,
               opacity: completeTaskMutation.isPending ? 0.5 : pressed ? 0.8 : 1,
             },
           ]}>
-          <Text style={styles.doneButtonText}>
+          <Text style={{ ...styles.doneButtonText, color: colors.onPrimary }}>
             {completeTaskMutation.isPending ? "Sparar…" : "✓ Markera som klar"}
           </Text>
-          <View style={styles.doneBadge}>
-            <Text style={styles.doneBadgeText}>+{task.difficultyLevel}p</Text>
+          <View style={{ ...styles.doneBadge, backgroundColor: colors.badgeOverlay }}>
+            <Text style={{ ...styles.doneBadgeText, color: colors.onPrimary }}>+{task.difficultyLevel}p</Text>
           </View>
         </Pressable>
       ) : null}
 
       {completeTaskMutation.isError && (
-        <Text style={{ color: accent.dangerText }}>
+        <Text style={{ color: colors.taskDangerText }}>
           {completeTaskMutation.error.message}
         </Text>
       )}
@@ -486,7 +462,7 @@ export default function TaskById() {
             }
             style={({ pressed }) => [
               styles.editButton,
-              { backgroundColor: accent.chip, opacity: pressed ? 0.8 : 1 },
+              { backgroundColor: colors.taskChip, opacity: pressed ? 0.8 : 1 },
             ]}>
             <SymbolView
               name={{ ios: "pencil", android: "edit", web: "edit" }}
@@ -505,7 +481,7 @@ export default function TaskById() {
           accessibilityRole="button"
           onPress={() => setDeleteStep("choose")}
           style={styles.textButton}>
-          <Text style={[styles.deleteText, { color: accent.dangerText }]}>
+          <Text style={[styles.deleteText, { color: colors.taskDangerText }]}>
             Ta bort syssla
           </Text>
         </Pressable>
@@ -513,7 +489,7 @@ export default function TaskById() {
       {isOwner && deleteStep !== "closed" && (
         <DeleteTaskModal
           step={deleteStep}
-          dangerColor={accent.danger}
+          dangerColor={colors.danger}
           isPending={deleteMutation.isPending || archiveMutation.isPending}
           error={
             deleteMutation.error?.message ?? archiveMutation.error?.message
@@ -559,14 +535,13 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     marginTop: 4,
   },
-  doneButtonText: { color: "#FFFFFF", fontSize: 17, fontWeight: "600" },
+  doneButtonText: {  fontSize: 17, fontWeight: "600" },
   doneBadge: {
-    backgroundColor: "rgba(255,255,255,0.25)",
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  doneBadgeText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
+  doneBadgeText: {  fontSize: 13, fontWeight: "700" },
   sectionTitle: { fontSize: 18, fontWeight: "600" },
   iconRow: { flexDirection: "row", gap: 16 },
   tile: {

@@ -56,9 +56,9 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
       ? "Försenad"
       : "Inte gjord idag";
   const statusBackground = doneToday
-    ? "#51FAC1"
+    ? colors.taskCompleted
     : overdue
-      ? "#FFDDDA"
+      ? colors.taskOverdueSurface
       : colors.chip;
 
   return (
@@ -96,12 +96,12 @@ export default function TaskCard({ task, today }: Props): React.JSX.Element {
           <View
             style={[
               styles.daysBadge,
-              { backgroundColor: overdue ? "#FF6B6B" : statusBackground },
+              { backgroundColor: overdue ? colors.taskOverdue : statusBackground },
             ]}>
             <Text
               style={[
                 styles.daysText,
-                { color: overdue ? "#6D0010" : colors.text },
+                { color: overdue ? colors.onTaskOverdue : colors.text },
               ]}>
               {elapsed === null ? "Inte gjord än" : `${elapsed} d`}
             </Text>

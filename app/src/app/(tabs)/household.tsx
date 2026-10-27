@@ -454,8 +454,7 @@ function HouseholdContent() {
                             (isHandlingRequest || !!conflictMessage) &&
                               styles.paused,
                           ]}>
-                          <Text
-                            style={[styles.badgeText, { color: "#FFFFFF" }]}>
+                          <Text style={[styles.badgeText, { color: colors.onPrimary }]}>
                             {accepting ? "Godkänner…" : "Godkänn"}
                           </Text>
                         </Pressable>
@@ -621,14 +620,20 @@ function HouseholdContent() {
                 accessibilityRole="button"
                 onPress={() => router.push("/create-household")}
                 hitSlop={8}
-                style={styles.addButton}>
+                style={({ pressed }) => [
+                  styles.addButton,
+                  {
+                    backgroundColor: colors.primary,
+                    opacity: pressed ? 0.75 : 1,
+                  },
+                ]}>
                 <SymbolView
                   name={{ ios: "plus", android: "add", web: "add" }}
                   size={14}
-                  tintColor={colors.primary}
-                  fallback={<Text style={{ color: colors.primary }}>+</Text>}
+                  tintColor={colors.onPrimary}
+                  fallback={<Text style={{ color: colors.onPrimary }}>+</Text>}
                 />
-                <Text style={[styles.addButtonText, { color: colors.primary }]}>
+                <Text style={[styles.addButtonText, { color: colors.onPrimary }]}>
                   Nytt hushåll
                 </Text>
               </Pressable>
@@ -951,6 +956,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   addButton: {
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 44,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,

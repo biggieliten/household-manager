@@ -36,7 +36,7 @@ export function ThemePicker() {
             <Text
               style={[
                 styles.label,
-                { color: selected ? "#FFFFFF" : colors.text },
+                { color: selected ? colors.onPrimary : colors.text },
               ]}
             >
               {label}
