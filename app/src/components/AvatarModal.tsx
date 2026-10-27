@@ -39,7 +39,7 @@ export default function AvatarModal({
       transparent
       animationType="fade"
       onRequestClose={handleCancel}>
-      <View style={styles.overlay}>
+      <View style={{ ...styles.overlay, backgroundColor: colors.overlay }}>
         <ScrollView
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled">
@@ -83,7 +83,6 @@ export default function AvatarModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   content: {
     flexGrow: 1,
