@@ -1,3 +1,4 @@
+import { useTheme } from "@/theme";
 import Feather from "@expo/vector-icons/Feather";
 import { Image } from "expo-image";
 import { useState } from "react";
@@ -16,7 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { fonts, useAuthColors } from "@/components/auth/authColors";
+import { fonts } from "@/components/auth/authColors";
 import { GithubSignInButton } from "@/components/GithubSignInButton";
 import { authClient } from "@/lib/auth-client";
 
@@ -28,7 +29,7 @@ type Mode = "signIn" | "signUp";
 const MIN_PASSWORD_LENGTH = 8;
 
 export default function SignIn() {
-  const colors = useAuthColors();
+  const { colors } = useTheme();
   const [mode, setMode] = useState<Mode>("signIn");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -88,7 +89,7 @@ export default function SignIn() {
 
   return (
     <SafeAreaView
-      style={[styles.screen, { backgroundColor: colors.background }]}>
+      style={[styles.screen, { backgroundColor: colors.authBackground }]}>
       <KeyboardAvoidingView
         style={styles.screen}
         behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -102,15 +103,15 @@ export default function SignIn() {
               accessibilityLabel='Hushållet logotyp'
               style={styles.logo}
             />
-            <Text style={[styles.appName, { color: colors.text }]}>
+            <Text style={[styles.appName, { color: colors.authText }]}>
               Hushållet
             </Text>
           </View>
 
-          <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <View style={[styles.card, { backgroundColor: colors.authCard }]}>
             <View
               accessibilityRole='tablist'
-              style={[styles.segment, { backgroundColor: colors.segment }]}>
+              style={[styles.segment, { backgroundColor: colors.authSegment }]}>
               <SegmentButton
                 icon='log-in'
                 label='Logga in'
@@ -184,7 +185,7 @@ export default function SignIn() {
                   <Feather
                     name={showPassword ? "eye-off" : "eye"}
                     size={22}
-                    color={colors.text}
+                    color={colors.authText}
                   />
                 </Pressable>
               }
@@ -204,13 +205,13 @@ export default function SignIn() {
                           backgroundColor: colors.primary,
                           borderColor: colors.primary,
                         }
-                      : { borderColor: colors.textMuted },
+                      : { borderColor: colors.authTextMuted },
                   ]}>
                   {rememberMe && (
                     <Feather name='check' size={16} color={colors.onPrimary} />
                   )}
                 </View>
-                <Text style={[styles.checkboxLabel, { color: colors.text }]}>
+                <Text style={[styles.checkboxLabel, { color: colors.authText }]}>
                   Kom ihåg mig på denna enhet
                 </Text>
               </Pressable>
@@ -257,13 +258,13 @@ export default function SignIn() {
 
             <View style={styles.divider}>
               <View
-                style={[styles.line, { backgroundColor: colors.divider }]}
+                style={[styles.line, { backgroundColor: colors.authDivider }]}
               />
-              <Text style={[styles.dividerText, { color: colors.text }]}>
+              <Text style={[styles.dividerText, { color: colors.authText }]}>
                 eller fortsätt med
               </Text>
               <View
-                style={[styles.line, { backgroundColor: colors.divider }]}
+                style={[styles.line, { backgroundColor: colors.authDivider }]}
               />
             </View>
 
@@ -286,7 +287,7 @@ function SegmentButton({
   selected: boolean;
   onPress: () => void;
 }) {
-  const colors = useAuthColors();
+  const { colors } = useTheme();
 
   return (
     <Pressable
@@ -296,19 +297,19 @@ function SegmentButton({
       style={[
         styles.segmentButton,
         selected && [
-          styles.segmentButtonActive,
-          { backgroundColor: colors.segmentActive },
+          { ...styles.segmentButtonActive, shadowColor: colors.shadow },
+          { backgroundColor: colors.authSegmentActive },
         ],
       ]}>
       <Feather
         name={icon}
         size={18}
-        color={selected ? colors.text : colors.textMuted}
+        color={selected ? colors.authText : colors.authTextMuted}
       />
       <Text
         style={[
           styles.segmentText,
-          { color: selected ? colors.text : colors.textMuted },
+          { color: selected ? colors.authText : colors.authTextMuted },
         ]}>
         {label}
       </Text>
@@ -328,19 +329,19 @@ function Field({
   labelAction?: React.ReactNode;
   trailing?: React.ReactNode;
 }) {
-  const colors = useAuthColors();
+  const { colors } = useTheme();
 
   return (
     <View style={styles.field}>
       <View style={styles.labelRow}>
-        <Feather name={icon} size={16} color={colors.text} />
-        <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+        <Feather name={icon} size={16} color={colors.authText} />
+        <Text style={[styles.label, { color: colors.authText }]}>{label}</Text>
         {labelAction && <View style={styles.labelAction}>{labelAction}</View>}
       </View>
-      <View style={[styles.inputWrap, { backgroundColor: colors.field }]}>
+      <View style={[styles.inputWrap, { backgroundColor: colors.authField }]}>
         <TextInput
-          placeholderTextColor={colors.placeholder}
-          style={[styles.input, { color: colors.text }]}
+          placeholderTextColor={colors.authPlaceholder}
+          style={[styles.input, { color: colors.authText }]}
           {...inputProps}
           accessibilityLabel={label}
         />
@@ -395,7 +396,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   segmentButtonActive: {
-    shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },

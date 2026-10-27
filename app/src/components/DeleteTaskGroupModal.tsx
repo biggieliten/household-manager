@@ -37,7 +37,7 @@ export default function DeleteTaskGroupModal({
       animationType="fade"
       onRequestClose={handleCancel}>
       <ScrollView
-        style={styles.overlay}
+        style={{ ...styles.overlay, backgroundColor: colors.overlay }}
         contentContainerStyle={styles.content}>
         <View
           accessibilityViewIsModal
@@ -70,9 +70,9 @@ export default function DeleteTaskGroupModal({
               onPress={onConfirm}
               style={[styles.button, { backgroundColor: colors.primary }]}>
               {isPending ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={colors.onPrimary} />
               ) : (
-                <Text style={styles.confirmText}>Ta bort</Text>
+                <Text style={{ ...styles.confirmText, color: colors.onPrimary }}>Ta bort</Text>
               )}
             </Pressable>
           </View>
@@ -83,7 +83,7 @@ export default function DeleteTaskGroupModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.5)" },
+  overlay: { flex: 1 },
   content: { flexGrow: 1, justifyContent: "center", padding: 24 },
   card: {
     width: "100%",
@@ -102,5 +102,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  confirmText: { color: "#FFFFFF", fontWeight: "600" },
+  confirmText: { fontWeight: "600" },
 });

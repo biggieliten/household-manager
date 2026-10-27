@@ -255,7 +255,7 @@ export default function CreateTaskGroup() {
           styles.button,
           { backgroundColor: colors.primary, opacity: canSave ? 1 : 0.5 },
         ]}>
-        <Text style={styles.buttonText}>
+        <Text style={{ ...styles.buttonText, color: colors.onPrimary }}>
           {saveMutation.isPending ? "Sparar…" : "Spara grupp"}
         </Text>
       </Pressable>
@@ -296,5 +296,5 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   button: { padding: 14, borderRadius: 10, alignItems: "center" },
-  buttonText: { color: "#FFFFFF", fontWeight: "600" },
+  buttonText: { fontWeight: "600" },
 });

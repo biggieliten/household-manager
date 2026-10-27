@@ -52,7 +52,9 @@ export default function TaskList({
               accessibilityLabel="Mina sysslor"
               value={onlyMine}
               onValueChange={setOnlyMine}
-              trackColor={{ true: colors.primary }}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.onPrimary}
+              ios_backgroundColor={colors.border}
             />
           </View>
         </View>

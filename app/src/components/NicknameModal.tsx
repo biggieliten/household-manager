@@ -50,7 +50,7 @@ export default function NicknameModal({
       animationType="fade"
       onRequestClose={handleCancel}>
       <KeyboardAvoidingView
-        style={styles.overlay}
+        style={{ ...styles.overlay, backgroundColor: colors.overlay }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
           contentContainerStyle={styles.content}
@@ -109,9 +109,9 @@ export default function NicknameModal({
                   },
                 ]}>
                 {isPending ? (
-                  <ActivityIndicator color="#FFFFFF" />
+                  <ActivityIndicator color={colors.onPrimary} />
                 ) : (
-                  <Text style={styles.saveText}>Spara</Text>
+                  <Text style={{ ...styles.saveText, color: colors.onPrimary }}>Spara</Text>
                 )}
               </Pressable>
             </View>
@@ -125,7 +125,6 @@ export default function NicknameModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   content: {
     flexGrow: 1,
@@ -163,7 +162,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   saveText: {
-    color: "#FFFFFF",
     fontWeight: "600",
   },
 });

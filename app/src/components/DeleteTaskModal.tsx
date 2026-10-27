@@ -42,7 +42,7 @@ export default function DeleteTaskModal({
       transparent
       animationType="fade"
       onRequestClose={handleCancel}>
-      <ScrollView style={styles.overlay} contentContainerStyle={styles.content}>
+      <ScrollView style={{ ...styles.overlay, backgroundColor: colors.overlay }} contentContainerStyle={styles.content}>
         <View
           accessibilityViewIsModal
           onAccessibilityEscape={handleCancel}
@@ -70,10 +70,10 @@ export default function DeleteTaskModal({
                 disabled={isPending}
                 onPress={onChooseDelete}
                 style={[styles.option, { backgroundColor: dangerColor }]}>
-                <Text style={[styles.optionTitle, styles.dangerText]}>
+                <Text style={[styles.optionTitle, { color: colors.onPrimary }]}>
                   Ta bort permanent
                 </Text>
-                <Text style={styles.dangerSubtext}>
+                <Text style={{ color: colors.onDangerMuted }}>
                   Sysslan och tillhörande statistik raderas.
                 </Text>
               </Pressable>
@@ -109,9 +109,9 @@ export default function DeleteTaskModal({
                   onPress={onConfirmDelete}
                   style={[styles.button, { backgroundColor: dangerColor }]}>
                   {isPending ? (
-                    <ActivityIndicator color="#FFFFFF" />
+                    <ActivityIndicator color={colors.onPrimary} />
                   ) : (
-                    <Text style={styles.confirmText}>Ja, ta bort</Text>
+                    <Text style={{ ...styles.confirmText, color: colors.onPrimary }}>Ja, ta bort</Text>
                   )}
                 </Pressable>
               </View>
@@ -130,7 +130,7 @@ export default function DeleteTaskModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.5)" },
+  overlay: { flex: 1 },
   content: { flexGrow: 1, justifyContent: "center", padding: 24 },
   card: {
     width: "100%",
@@ -143,8 +143,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: "700" },
   option: { borderRadius: 12, padding: 14, gap: 4 },
   optionTitle: { fontSize: 16, fontWeight: "600" },
-  dangerText: { color: "#FFFFFF" },
-  dangerSubtext: { color: "rgba(255, 255, 255, 0.85)" },
   cancel: { alignItems: "center", paddingVertical: 8 },
   buttons: { flexDirection: "row", gap: 12 },
   button: {
@@ -154,5 +152,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  confirmText: { color: "#FFFFFF", fontWeight: "600" },
+  confirmText: { fontWeight: "600" },
 });

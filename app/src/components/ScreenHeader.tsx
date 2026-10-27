@@ -1,4 +1,4 @@
-import Avatar from "@/components/Avatar";
+import { Ionicons } from "@expo/vector-icons";
 import HeaderLogo from "@/components/HeaderLogo";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { useTheme } from "@/theme";
@@ -17,7 +17,6 @@ export default function ScreenHeader(): React.JSX.Element {
   const { colors } = useTheme();
   const householdId = useActiveHouseholdId();
   const { data: household } = useQuery(householdQueryOptions(householdId));
-  const me = household?.members.find((member) => member.isMe);
   const households = useQuery(householdsQueryOptions);
   const [open, setOpen] = useState(false);
   const switchMutation = useMutation(switchHouseholdMutationOptions);
@@ -40,7 +39,7 @@ export default function ScreenHeader(): React.JSX.Element {
         {open && (
           <View
             style={[
-              styles.menu,
+              { ...styles.menu, shadowColor: colors.shadow },
               {
                 backgroundColor: colors.background,
                 borderColor: colors.border,
@@ -72,7 +71,11 @@ export default function ScreenHeader(): React.JSX.Element {
       </View>
       <Link href="/profile" asChild>
         <Pressable accessibilityRole="button" accessibilityLabel="Profil">
-          {me && <Avatar avatar={me.avatar} size={40} />}
+          <Ionicons
+            name="person-circle-outline"
+            size={32}
+            color={colors.text}
+          />
         </Pressable>
       </Link>
     </SafeAreaView>
@@ -110,7 +113,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingVertical: 4,
     elevation: 6,
-    shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },

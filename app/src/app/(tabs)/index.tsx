@@ -100,7 +100,7 @@ export default function Index() {
             styles.addButton,
             { backgroundColor: colors.primary },
           ])}>
-          <Text style={styles.addButtonText}>+</Text>
+          <Text style={{ ...styles.addButtonText, color: colors.onPrimary }}>+</Text>
         </Pressable>
       </Link>
       {showPausedInfo && (
@@ -123,7 +123,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   addButtonText: {
-    color: "#FFFFFF",
     fontSize: 32,
     lineHeight: 34,
   },

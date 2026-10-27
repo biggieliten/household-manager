@@ -1,13 +1,14 @@
+import { useTheme } from "@/theme";
 import Feather from "@expo/vector-icons/Feather";
 import * as WebBrowser from "expo-web-browser";
 import { useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
 
-import { fonts, useAuthColors } from "@/components/auth/authColors";
+import { fonts } from "@/components/auth/authColors";
 import { authClient } from "@/lib/auth-client";
 
 export function GithubSignInButton() {
-  const colors = useAuthColors();
+  const { colors } = useTheme();
   const inFlight = useRef(false);
   const [loading, setLoading] = useState(false);
 
@@ -52,14 +53,14 @@ export function GithubSignInButton() {
       onPress={signInGithub}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: colors.field, opacity: pressed ? 0.7 : 1 },
+        { backgroundColor: colors.authField, opacity: pressed ? 0.7 : 1 },
       ]}>
       {loading ? (
-        <ActivityIndicator color={colors.text} />
+        <ActivityIndicator color={colors.authText} />
       ) : (
         <>
-          <Feather name='github' size={20} color={colors.text} />
-          <Text style={[styles.text, { color: colors.text }]}>GitHub</Text>
+          <Feather name='github' size={20} color={colors.authText} />
+          <Text style={[styles.text, { color: colors.authText }]}>GitHub</Text>
         </>
       )}
     </Pressable>

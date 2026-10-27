@@ -30,7 +30,7 @@ export default function MemberMenu({ open, onToggle, items }: Props) {
       {open && (
         <View
           style={[
-            styles.menu,
+            { ...styles.menu, shadowColor: colors.shadow },
             { backgroundColor: colors.background, borderColor: colors.border },
           ]}>
           {items.map((item) => (
@@ -71,7 +71,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingVertical: 4,
     elevation: 6,
-    shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
