@@ -12,6 +12,8 @@ interface Props {
   memberId: number | undefined;
   assignments: MemberToTask[];
   isPaused: boolean;
+  refreshing: boolean;
+  onRefresh: () => void;
 }
 
 export default function TaskList({
@@ -20,6 +22,8 @@ export default function TaskList({
   memberId,
   assignments,
   isPaused,
+  refreshing,
+  onRefresh,
 }: Props): React.JSX.Element {
   const { colors } = useTheme();
   const [onlyMine, setOnlyMine] = useState(true);
@@ -35,6 +39,8 @@ export default function TaskList({
   return (
     <FlatList
       data={visibleTasks}
+      refreshing={refreshing}
+      onRefresh={onRefresh}
       keyExtractor={(task) => String(task.id)}
       renderItem={({ item }) => (
         <View style={isPaused && styles.pausedCard}>

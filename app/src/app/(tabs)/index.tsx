@@ -10,6 +10,7 @@ import ErrorView from "@/components/ErrorView";
 import LoadingView from "@/components/LoadingView";
 import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
+import usePullToRefresh from "@/hooks/use-pull-to-refresh";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { householdsQueryOptions } from "@/options/households";
 import {
@@ -41,6 +42,10 @@ export default function Index() {
   const memberId = member?.id;
   const isPaused = member?.isPaused ?? false;
   const isAdmin = member?.isAdmin ?? false;
+  const pullToRefresh = usePullToRefresh(() =>
+    Promise.all([refetch(), assignments.refetch(), households.refetch()]),
+  );
+
   const [showPausedInfo, setShowPausedInfo] = useState(false);
 
   return (
@@ -86,6 +91,8 @@ export default function Index() {
               memberId={memberId}
               assignments={assignments.data ?? []}
               isPaused={isPaused}
+              refreshing={pullToRefresh.refreshing}
+              onRefresh={pullToRefresh.onRefresh}
             />
           </>
         )
