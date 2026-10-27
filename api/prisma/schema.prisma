@@ -124,7 +124,7 @@ model Member {
 model Task {
     id              Int             @id @default(autoincrement())
     name            String
-    description     String
+    description     String?
     frequency       Int
     isArchived      Boolean         @default(false)
     difficultyLevel Int
