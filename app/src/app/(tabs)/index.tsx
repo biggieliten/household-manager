@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
-import { useState } from "react";
 import PausedInfoModal from "@/components/PausedInfoModal";
 
+import DateCarousel from "@/components/DateCarousel";
 import LoadingView from "@/components/LoadingView";
 import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
@@ -16,9 +17,14 @@ import {
 } from "@/options/tasks";
 import { useTheme } from "@/theme";
 
+function startOfToday(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
 export default function Index() {
   const { colors } = useTheme();
-  const today = new Date();
+  const [selectedDate, setSelectedDate] = useState(startOfToday);
   const householdId = useActiveHouseholdId();
   const {
     data: tasks,
@@ -77,13 +83,19 @@ export default function Index() {
         </View>
       ) : (
         tasks && (
-          <TaskList
-            tasks={tasks}
-            today={today}
-            memberId={memberId}
-            assignments={assignments.data ?? []}
-            isPaused={isPaused}
-          />
+          <>
+            <DateCarousel
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+            />
+            <TaskList
+              tasks={tasks}
+              today={selectedDate}
+              memberId={memberId}
+              assignments={assignments.data ?? []}
+              isPaused={isPaused}
+            />
+          </>
         )
       )}
 
