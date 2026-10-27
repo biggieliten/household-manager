@@ -264,6 +264,7 @@ household-manager/
         │   ├── Avatar.tsx
         │   ├── AvatarPicker.tsx
         │   ├── ConfirmBox.tsx
+        │   ├── DateCarousel.tsx
         │   ├── DeleteTaskGroupModal.tsx
         │   ├── GithubSignInButton.tsx
         │   ├── ImageSourceChoice.tsx
@@ -298,6 +299,7 @@ household-manager/
         │   │   └── tasks.ts
         │   ├── auth-client.ts
         │   ├── avatars.ts
+        │   ├── errors.ts
         │   ├── pick-task-image.ts
         │   ├── statistics-period.ts
         │   └── storage.ts
