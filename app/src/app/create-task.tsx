@@ -340,10 +340,6 @@ export default function CreateTask() {
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled">
-      {
-        /* */
-      }
-
       <View style={styles.section}>
         <Text style={labelStyle}>Titel</Text>
         <TextInput
@@ -528,7 +524,10 @@ export default function CreateTask() {
                     styles.badgeValue,
                     { backgroundColor: colors.primary },
                   ]}>
-                  <Text style={{ ...styles.selectedText, color: colors.onPrimary }}>{task.frequency}</Text>
+                  <Text
+                    style={{ ...styles.selectedText, color: colors.onPrimary }}>
+                    {task.frequency}
+                  </Text>
                 </View>
                 <Text style={[styles.badgeText, { color: colors.text }]}>
                   dag{task.frequency === 1 ? "" : "ar"}
@@ -647,7 +646,9 @@ function FrequencyPicker({
             <Text
               style={[
                 styles.circleText,
-                isSelected ? { ...styles.selectedText, color: colors.onPrimary } : { color: colors.text },
+                isSelected
+                  ? { ...styles.selectedText, color: colors.onPrimary }
+                  : { color: colors.text },
               ]}>
               {value}
             </Text>
@@ -692,14 +693,18 @@ function DifficultyPicker({
             <Text
               style={[
                 styles.tileValue,
-                isSelected ? { ...styles.selectedText, color: colors.onPrimary } : { color: colors.text },
+                isSelected
+                  ? { ...styles.selectedText, color: colors.onPrimary }
+                  : { color: colors.text },
               ]}>
               {value}
             </Text>
             <Text
               style={[
                 styles.tileLabel,
-                isSelected ? { ...styles.selectedText, color: colors.onPrimary } : { color: colors.textMuted },
+                isSelected
+                  ? { ...styles.selectedText, color: colors.onPrimary }
+                  : { color: colors.textMuted },
               ]}>
               {label}
             </Text>

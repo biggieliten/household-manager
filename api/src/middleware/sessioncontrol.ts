@@ -41,7 +41,6 @@ export const sessionControl = (requireAdmin = false) =>
     // Expose the member to the route handler as c.var.member.
     c.set("member", member);
 
-    // Continue to the route handler.
     await next();
   });
 
