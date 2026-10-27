@@ -17,6 +17,7 @@ import {
   responseTaskListItemSchema,
   responseTaskSchema,
 } from "@shared/schemas/task-schema";
+import { ApiError } from "@/lib/errors";
 import { File as FileSystemFile, UploadType } from "expo-file-system";
 import { getAuthHeaders, getClient } from "./client";
 
@@ -26,7 +27,8 @@ export async function fetchHouseholdTasks(
   const res = await getClient().api.v1.households[":householdId"].tasks.$get({
     param: { householdId: String(householdId) },
   });
-  if (!res.ok) throw new Error(`Kunde inte hämta sysslor (${res.status})`);
+  if (!res.ok)
+    throw new ApiError(`Kunde inte hämta sysslor (${res.status})`, res.status);
 
   return responseTaskListItemSchema.array().parse(await res.json());
 }

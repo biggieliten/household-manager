@@ -15,6 +15,7 @@ import PausedInfoModal from "@/components/PausedInfoModal";
 
 import Avatar from "@/components/Avatar";
 import DeleteTaskModal from "@/components/DeleteTaskModal";
+import ErrorView from "@/components/ErrorView";
 import LoadingView from "@/components/LoadingView";
 import TaskAssignments from "@/components/TaskAssignments";
 import TaskImageRow from "@/components/TaskImageRow";
@@ -254,13 +255,8 @@ export default function TaskById() {
 
   if (error) {
     return (
-      <View style={[styles.notFound, { backgroundColor: colors.screen }]}>
-        <Text style={[styles.notFoundText, { color: colors.textMuted }]}>
-          {error.message}
-        </Text>
-        <Pressable accessibilityRole="button" onPress={() => refetch()}>
-          <Text style={{ color: colors.primary }}>Försök igen</Text>
-        </Pressable>
+      <View style={{ flex: 1, backgroundColor: colors.screen }}>
+        <ErrorView error={error} retry={() => refetch()} />
       </View>
     );
   }
@@ -293,9 +289,13 @@ export default function TaskById() {
         <ActivityIndicator color={colors.textMuted} />
       )}
       {assignmentError && (
-        <Text accessibilityRole="alert" style={{ color: accent.dangerText }}>
-          {assignmentError.message}
-        </Text>
+        <ErrorView
+          error={assignmentError}
+          retry={() => {
+            void householdQuery.refetch();
+            void assignmentsQuery.refetch();
+          }}
+        />
       )}
       {householdQuery.data && assignmentsQuery.data && (
         <TaskAssignments
