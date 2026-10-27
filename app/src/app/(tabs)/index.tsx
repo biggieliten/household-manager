@@ -40,6 +40,7 @@ export default function Index() {
   )?.member;
   const memberId = member?.id;
   const isPaused = member?.isPaused ?? false;
+  const isAdmin = member?.isAdmin ?? false;
   const [showPausedInfo, setShowPausedInfo] = useState(false);
 
   return (
@@ -89,20 +90,21 @@ export default function Index() {
           </>
         )
       )}
-
-      <Link href="/create-task" asChild>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Skapa syssla"
-          style={StyleSheet.flatten([
-            styles.addButton,
-            { backgroundColor: colors.primary },
-          ])}>
-          <Text style={{ ...styles.addButtonText, color: colors.onPrimary }}>
-            +
-          </Text>
-        </Pressable>
-      </Link>
+      {isAdmin && (
+        <Link href="/create-task" asChild>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Skapa syssla"
+            style={StyleSheet.flatten([
+              styles.addButton,
+              { backgroundColor: colors.primary },
+            ])}>
+            <Text style={{ ...styles.addButtonText, color: colors.onPrimary }}>
+              +
+            </Text>
+          </Pressable>
+        </Link>
+      )}
       {showPausedInfo && (
         <PausedInfoModal onClose={() => setShowPausedInfo(false)} />
       )}
