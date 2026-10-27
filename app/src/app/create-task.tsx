@@ -211,8 +211,6 @@ export default function CreateTask() {
         });
       }
 
-      // New files are uploaded (replacing a saved one); swiped-away saved
-      // files are deleted
       const savedMedia = new Set(partialSave?.savedMedia);
       const mediaChanges = mediaKinds.flatMap<{
         kind: TaskMediaKind;
