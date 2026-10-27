@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 
+import ErrorView from "@/components/ErrorView";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import Avatar from "@/components/Avatar";
 import TaskGroupDatePicker from "@/components/TaskGroupDatePicker";
@@ -81,20 +82,14 @@ export default function CreateTaskGroup() {
   }
   if (error) {
     return (
-      <View style={styles.centered}>
-        <Text accessibilityRole="alert" style={{ color: colors.text }}>
-          {error.message}
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            void household.refetch();
-            void groups.refetch();
-            void tasks.refetch();
-          }}>
-          <Text style={{ color: colors.primary }}>Försök igen</Text>
-        </Pressable>
-      </View>
+      <ErrorView
+        error={error}
+        retry={() => {
+          void household.refetch();
+          void groups.refetch();
+          void tasks.refetch();
+        }}
+      />
     );
   }
   const isOwner = household.data?.members.some(

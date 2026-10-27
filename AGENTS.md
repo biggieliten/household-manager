@@ -299,6 +299,7 @@ household-manager/
         │   │   └── tasks.ts
         │   ├── auth-client.ts
         │   ├── avatars.ts
+        │   ├── errors.ts
         │   ├── pick-task-image.ts
         │   ├── statistics-period.ts
         │   └── storage.ts

@@ -1,3 +1,4 @@
+import { ApiError } from "@/lib/errors";
 import type { StatisticsPeriod } from "@/lib/statistics-period";
 
 import { getClient } from "./client";
@@ -12,7 +13,8 @@ export async function fetchHouseholdStatistics(
     param: { householdId: String(householdId) },
     query: { from: period.from.toISOString(), to: period.to.toISOString() },
   });
-  if (!res.ok) throw new Error(`Kunde inte hämta statistik (${res.status})`);
+  if (!res.ok)
+    throw new ApiError(`Kunde inte hämta statistik (${res.status})`, res.status);
 
   return res.json();
 }

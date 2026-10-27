@@ -3,13 +3,15 @@ import {
   type TaskGroup,
   type TaskGroupBody,
 } from "@shared/schemas/task-group-schema";
+import { ApiError } from "@/lib/errors";
 import { getClient } from "./client";
 
 export async function fetchTaskGroups(householdId: number): Promise<TaskGroup[]> {
   const res = await getClient().api.v1.households[":householdId"]["task-groups"].$get({
     param: { householdId: String(householdId) },
   });
-  if (!res.ok) throw new Error(`Kunde inte hämta sysslegrupper (${res.status})`);
+  if (!res.ok)
+    throw new ApiError(`Kunde inte hämta sysslegrupper (${res.status})`, res.status);
   return responseTaskGroupSchema.array().parse(await res.json());
 }
 

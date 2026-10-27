@@ -4,13 +4,15 @@ import {
   type MemberToTask,
   type TaskAssignment,
 } from "@shared/schemas/member-to-task-schema";
+import { ApiError } from "@/lib/errors";
 import { getClient } from "./client";
 
 export async function fetchTaskAssignments(householdId: number): Promise<TaskAssignment[]> {
   const res = await getClient().api.v1.households[":householdId"]["task-assignments"].$get({
     param: { householdId: String(householdId) },
   });
-  if (!res.ok) throw new Error(`Kunde inte hämta tilldelningar (${res.status})`);
+  if (!res.ok)
+    throw new ApiError(`Kunde inte hämta tilldelningar (${res.status})`, res.status);
   return responseTaskAssignmentSchema.array().parse(await res.json());
 }
 
