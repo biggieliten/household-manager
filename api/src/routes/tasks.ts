@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import z from "zod";
 import { householdIdParamSchema } from "../../../shared/schemas/household-schema.ts";
 import {
-  createTaskBodySchema,
+  createTaskSchema,
   updateTaskSchema,
 } from "../../../shared/schemas/task-schema.ts";
 import { mapDbError } from "../lib/db-errors.ts";
@@ -70,7 +70,7 @@ const app = new Hono()
     "/:householdId/tasks",
     sessionControl(),
     validate("param", householdIdParamSchema),
-    validate("json", createTaskBodySchema),
+    validate("json", createTaskSchema),
     async (c) => {
       const { householdId } = c.req.valid("param");
       const body = c.req.valid("json");
