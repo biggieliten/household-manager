@@ -68,7 +68,7 @@ const app = new Hono()
   )
   .post(
     "/:householdId/tasks",
-    sessionControl(),
+    sessionControl(true),
     validate("param", householdIdParamSchema),
     validate("json", createTaskSchema),
     async (c) => {
