@@ -5,6 +5,7 @@ import {
   createTaskBodySchema,
   updateTaskSchema,
 } from "../../../shared/schemas/task-schema.ts";
+import { mapDbError } from "../lib/db-errors.ts";
 import { db } from "../lib/prisma.ts";
 import { taskMediaSelect, withTaskMedia } from "../lib/task-media.ts";
 import { validate } from "../lib/validate.ts";
@@ -21,31 +22,30 @@ const app = new Hono()
     validate("param", householdIdParamSchema),
     async (c) => {
       const { householdId } = c.req.valid("param");
-      const household = await db.household.findUnique({
-        where: { id: householdId },
-        select: {
-          tasks: {
-            where: { isArchived: false, deletedAt: null },
-            orderBy: { id: "asc" },
-            include: {
-              ...taskMediaSelect,
-              completedTasks: {
-                where: { deletedAt: null },
-                orderBy: { completedAt: "desc" },
-                select: {
-                  completedAt: true,
-                  member: {
-                    select: { id: true, nickname: true, avatar: true },
+      const household = await db.household
+        .findUniqueOrThrow({
+          where: { id: householdId },
+          select: {
+            tasks: {
+              where: { isArchived: false, deletedAt: null },
+              orderBy: { id: "asc" },
+              include: {
+                ...taskMediaSelect,
+                completedTasks: {
+                  where: { deletedAt: null },
+                  orderBy: { completedAt: "desc" },
+                  select: {
+                    completedAt: true,
+                    member: {
+                      select: { id: true, nickname: true, avatar: true },
+                    },
                   },
                 },
               },
             },
           },
-        },
-      });
-      if (!household) {
-        return c.json({ error: "Household not found" }, 404);
-      }
+        })
+        .catch(mapDbError({ P2025: "Household not found" }));
 
       return c.json(household.tasks.map(withTaskMedia), 200);
     },
@@ -56,13 +56,12 @@ const app = new Hono()
     validate("param", taskIdParamSchema),
     async (c) => {
       const { householdId, taskId } = c.req.valid("param");
-      const task = await db.task.findFirst({
-        where: { id: taskId, householdId, deletedAt: null },
-        include: taskMediaSelect,
-      });
-      if (!task) {
-        return c.json({ error: "Task not found" }, 404);
-      }
+      const task = await db.task
+        .findFirstOrThrow({
+          where: { id: taskId, householdId, deletedAt: null },
+          include: taskMediaSelect,
+        })
+        .catch(mapDbError({ P2025: "Task not found" }));
 
       return c.json(withTaskMedia(task), 200);
     },
@@ -75,13 +74,6 @@ const app = new Hono()
     async (c) => {
       const { householdId } = c.req.valid("param");
       const body = c.req.valid("json");
-
-      const household = await db.household.findUnique({
-        where: { id: householdId },
-      });
-      if (!household) {
-        return c.json({ error: "Household not found" }, 404);
-      }
 
       const task = await db.task.create({
         data: { ...body, householdId },
@@ -98,18 +90,13 @@ const app = new Hono()
     async (c) => {
       const { householdId, taskId } = c.req.valid("param");
 
-      const existing = await db.task.findFirst({
-        where: { id: taskId, householdId, deletedAt: null },
-      });
-      if (!existing) {
-        return c.json({ error: "Task not found" }, 404);
-      }
-
-      const task = await db.task.update({
-        where: { id: taskId },
-        data: { isArchived: true },
-        include: taskMediaSelect,
-      });
+      const task = await db.task
+        .update({
+          where: { id: taskId, householdId, deletedAt: null },
+          data: { isArchived: true },
+          include: taskMediaSelect,
+        })
+        .catch(mapDbError({ P2025: "Task not found" }));
 
       return c.json(withTaskMedia(task), 200);
     },
@@ -123,18 +110,13 @@ const app = new Hono()
       const { householdId, taskId } = c.req.valid("param");
       const body = c.req.valid("json");
 
-      const existing = await db.task.findFirst({
-        where: { id: taskId, householdId, deletedAt: null },
-      });
-      if (!existing) {
-        return c.json({ error: "Task not found" }, 404);
-      }
-
-      const task = await db.task.update({
-        where: { id: taskId },
-        data: body,
-        include: taskMediaSelect,
-      });
+      const task = await db.task
+        .update({
+          where: { id: taskId, householdId, deletedAt: null },
+          data: body,
+          include: taskMediaSelect,
+        })
+        .catch(mapDbError({ P2025: "Task not found" }));
 
       return c.json(withTaskMedia(task), 200);
     },
@@ -146,14 +128,9 @@ const app = new Hono()
     async (c) => {
       const { householdId, taskId } = c.req.valid("param");
 
-      const existing = await db.task.findFirst({
-        where: { id: taskId, householdId, deletedAt: null },
-      });
-      if (!existing) {
-        return c.json({ error: "Task not found" }, 404);
-      }
-
-      await db.task.delete({ where: { id: taskId } });
+      await db.task
+        .delete({ where: { id: taskId, householdId, deletedAt: null } })
+        .catch(mapDbError({ P2025: "Task not found" }));
 
       return c.body(null, 204);
     },
