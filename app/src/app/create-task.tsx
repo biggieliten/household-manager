@@ -278,7 +278,6 @@ export default function CreateTask() {
       ]);
       if (error) {
         setPartialSave({ taskId, assignedMemberIds, savedMedia, error });
-        
         toast.error(
           `Syssla ${body.name} skapad men tilldelningen misslyckades: ${error}`,
         );
@@ -529,7 +528,7 @@ export default function CreateTask() {
                     styles.badgeValue,
                     { backgroundColor: colors.primary },
                   ]}>
-                  <Text style={styles.selectedText}>{task.frequency}</Text>
+                  <Text style={{ ...styles.selectedText, color: colors.onPrimary }}>{task.frequency}</Text>
                 </View>
                 <Text style={[styles.badgeText, { color: colors.text }]}>
                   dag{task.frequency === 1 ? "" : "ar"}
@@ -594,7 +593,7 @@ export default function CreateTask() {
             styles.button,
             { backgroundColor: colors.primary, opacity: canSave ? 1 : 0.5 },
           ]}>
-          <Text style={styles.buttonText}>
+          <Text style={{ ...styles.buttonText, color: colors.onPrimary }}>
             {isLocked ? "Försök igen" : "Spara syssla"}
           </Text>
         </Pressable>
@@ -648,7 +647,7 @@ function FrequencyPicker({
             <Text
               style={[
                 styles.circleText,
-                isSelected ? styles.selectedText : { color: colors.text },
+                isSelected ? { ...styles.selectedText, color: colors.onPrimary } : { color: colors.text },
               ]}>
               {value}
             </Text>
@@ -693,14 +692,14 @@ function DifficultyPicker({
             <Text
               style={[
                 styles.tileValue,
-                isSelected ? styles.selectedText : { color: colors.text },
+                isSelected ? { ...styles.selectedText, color: colors.onPrimary } : { color: colors.text },
               ]}>
               {value}
             </Text>
             <Text
               style={[
                 styles.tileLabel,
-                isSelected ? styles.selectedText : { color: colors.textMuted },
+                isSelected ? { ...styles.selectedText, color: colors.onPrimary } : { color: colors.textMuted },
               ]}>
               {label}
             </Text>
@@ -833,7 +832,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   selectedText: {
-    color: "#FFFFFF",
     fontWeight: "700",
   },
   tile: {
@@ -861,7 +859,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   buttonText: {
-    color: "#FFFFFF",
     fontSize: 17,
     fontWeight: "600",
   },

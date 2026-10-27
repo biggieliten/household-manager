@@ -65,7 +65,7 @@ export default function SwipeToDelete({
             styles.fallbackAction,
             { backgroundColor: colors.danger, opacity: disabled ? 0.5 : 1 },
           ]}>
-          <Text style={styles.actionText}>Ta bort</Text>
+          <Text style={{ ...styles.actionText, color: colors.onPrimary }}>Ta bort</Text>
         </Pressable>
       </View>
     );
@@ -87,7 +87,7 @@ export default function SwipeToDelete({
             onDelete();
           }}
           style={[styles.action, { backgroundColor: colors.danger }]}>
-          <Text style={styles.actionText}>Ta bort</Text>
+          <Text style={{ ...styles.actionText, color: colors.onPrimary }}>Ta bort</Text>
         </Pressable>
       )}>
       {children}
@@ -117,7 +117,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   actionText: {
-    color: "#FFFFFF",
     fontSize: 15,
     fontWeight: "600",
   },

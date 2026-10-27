@@ -12,7 +12,7 @@ export default function PausedInfoModal({ onClose }: Props) {
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+      <View style={{ ...styles.overlay, backgroundColor: colors.overlay }}>
         <View
           accessibilityViewIsModal
           onAccessibilityEscape={onClose}
@@ -31,7 +31,7 @@ export default function PausedInfoModal({ onClose }: Props) {
             accessibilityRole="button"
             onPress={onClose}
             style={[styles.button, { backgroundColor: colors.primary }]}>
-            <Text style={styles.buttonText}>OK</Text>
+            <Text style={{ ...styles.buttonText, color: colors.onPrimary }}>OK</Text>
           </Pressable>
         </View>
       </View>
@@ -44,7 +44,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     padding: 24,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   card: {
     width: "100%",
@@ -62,5 +61,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  buttonText: { color: "#FFFFFF", fontWeight: "600" },
+  buttonText: { fontWeight: "600" },
 });

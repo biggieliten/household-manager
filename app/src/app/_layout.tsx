@@ -96,7 +96,6 @@ function RootStack() {
             name="create-task"
             options={({ route }) => {
               const params = route.params as { id?: string | number } | undefined;
-  
               return {
                 presentation: "modal",
                 title: params?.id ? "Redigera syssla" : "Lägg till syssla",
@@ -117,7 +116,6 @@ function RootStack() {
             name="[id]"
             options={({ route }) => {
               const params = route.params as { name?: string } | undefined;
-  
               return {
                 title: params?.name ?? "Syssla",
                 headerRight: undefined,
@@ -131,7 +129,6 @@ function RootStack() {
             options={{ title: "Skapa hushåll" }}
           />
         </Stack.Protected>
-  
         <Stack.Protected guard={!isSignedIn}>
           <Stack.Screen name="sign-in" options={{ headerShown: false }} />
         </Stack.Protected>
@@ -141,12 +138,12 @@ function RootStack() {
         duration={5000}
         offset={20}
         icons={{
-          success: <Feather name="check" size={16} color="#FFFFFF" />,
-          error: <Feather name="x" size={16} color="#FFFFFF" />,
+          success: <Feather name="check" size={16} color={colors.onPrimary} />,
+          error: <Feather name="x" size={16} color={colors.onPrimary} />,
         }}
         toastOptions={{
-          style: styles.toast,
-          titleStyle: styles.toastTitle,
+          style: { ...styles.toast, shadowColor: colors.shadow },
+          titleStyle: { ...styles.toastTitle, color: colors.onPrimary },
           success: { backgroundColor: colors.success },
           error: { backgroundColor: colors.danger },
         }}
@@ -161,13 +158,11 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     elevation: 5,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
   toastTitle: {
-    color: "#FFFFFF",
     fontSize: 16,
   },
 });

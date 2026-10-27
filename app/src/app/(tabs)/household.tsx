@@ -435,7 +435,7 @@ function HouseholdContent() {
                             (isHandlingRequest || !!conflictMessage) &&
                               styles.paused,
                           ]}>
-                          <Text style={[styles.badgeText, { color: "#FFFFFF" }]}>
+                          <Text style={[styles.badgeText, { color: colors.onPrimary }]}>
                             {accepting ? "Godkänner…" : "Godkänn"}
                           </Text>
                         </Pressable>

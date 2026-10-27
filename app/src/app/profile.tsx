@@ -69,7 +69,7 @@ export default function Profile() {
           styles.signOut,
           { backgroundColor: colors.surface, borderColor: colors.border },
         ]}>
-        <Text style={[styles.signOutText, { color: "#D32F2F" }]}>Logga ut</Text>
+        <Text style={[styles.signOutText, { color: colors.signOut }]}>Logga ut</Text>
       </Pressable>
 
       {signOutMutation.error && (

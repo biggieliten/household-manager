@@ -121,7 +121,7 @@ export default function VoiceNoteRecorder({
         disabled={!state.isRecording}
         onPress={stop}
         style={[styles.stopButton, { backgroundColor: colors.primary }]}>
-        <Text style={styles.stopText}>Stoppa</Text>
+        <Text style={{ ...styles.stopText, color: colors.onPrimary }}>Stoppa</Text>
       </Pressable>
     </View>
   );
@@ -155,7 +155,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   stopText: {
-    color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "600",
   },

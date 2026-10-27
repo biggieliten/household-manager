@@ -265,6 +265,7 @@ household-manager/
         │   ├── AvatarPicker.tsx
         │   ├── ConfirmBox.tsx
         │   ├── DateCarousel.tsx
+        │   ├── ErrorView.tsx
         │   ├── DeleteTaskGroupModal.tsx
         │   ├── GithubSignInButton.tsx
         │   ├── ImageSourceChoice.tsx
