@@ -1,4 +1,4 @@
-import { SymbolView } from "expo-symbols";
+import { Ionicons } from "@expo/vector-icons";
 import HeaderLogo from "@/components/HeaderLogo";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
 import { useTheme } from "@/theme";
@@ -71,14 +71,10 @@ export default function ScreenHeader(): React.JSX.Element {
       </View>
       <Link href="/profile" asChild>
         <Pressable accessibilityRole="button" accessibilityLabel="Profil">
-          <SymbolView
-            name={{
-              ios: "person.circle",
-              android: "account_circle",
-              web: "account_circle",
-            }}
+          <Ionicons
+            name="person-circle-outline"
             size={32}
-            tintColor={colors.text}
+            color={colors.text}
           />
         </Pressable>
       </Link>
