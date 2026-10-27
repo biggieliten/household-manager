@@ -9,6 +9,10 @@ import {
   Text,
   View,
 } from "react-native";
+import AvatarModal from "@/components/AvatarModal";
+import { updateMyAvatar } from "@/lib/api/households";
+import type { Avatar as AvatarType } from "@shared/schemas/member-schema";
+
 import { useState } from "react";
 import { useRouter } from "expo-router";
 import ErrorView from "@/components/ErrorView";
@@ -163,6 +167,12 @@ function HouseholdContent() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+  const avatarMutation = useMutation({
+    mutationFn: (avatar: AvatarType) =>
+      updateMyAvatar(requireHouseholdId(), avatar),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["households"] }),
+  });
 
   const renameMutation = useMutation(updateMyNicknameMutationOptions);
   const updateHouseholdMutation = useMutation(updateHouseholdMutationOptions);
@@ -830,6 +840,16 @@ function HouseholdContent() {
               )
             }
             onCancel={() => setEditingNickname(null)}
+          />
+        )}
+        {editingAvatar && (
+          <AvatarModal
+            value={members.find((member) => member.isMe)?.avatar ?? null}
+            taken={others.map((member) => member.avatar)}
+            isPending={avatarMutation.isPending}
+            error={avatarMutation.error?.message}
+            onChange={(avatar) => avatarMutation.mutate(avatar)}
+            onClose={() => setEditingAvatar(false)}
           />
         )}
       </ScrollView>
