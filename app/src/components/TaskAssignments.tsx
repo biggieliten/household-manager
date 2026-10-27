@@ -111,8 +111,14 @@ export default function TaskAssignments({
             accessibilityLabel={memberPickerOpen ? "Stäng medlemsval" : "Ändra tilldelade medlemmar"}
             accessibilityState={{ expanded: memberPickerOpen }}
             onPress={() => setMemberPickerOpen((open) => !open)}
-            style={[styles.action, { borderColor: colors.border }]}>
-            <Text style={[styles.toggle, { color: colors.primary }]}>
+            style={[
+              styles.action,
+              {
+                backgroundColor: colors.primary,
+                borderColor: colors.primary,
+              },
+            ]}>
+            <Text style={[styles.toggle, { color: colors.background }]}>
               {memberPickerOpen ? "−" : "+"}
             </Text>
           </Pressable>
