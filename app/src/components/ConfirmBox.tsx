@@ -20,7 +20,7 @@ export default function ConfirmBox({
   return (
     <View
       style={[
-        styles.box,
+        { ...styles.box, shadowColor: colors.shadow },
         { backgroundColor: colors.background, borderColor: colors.border },
       ]}>
       <Text style={[styles.message, { color: colors.text }]}>{message}</Text>
@@ -37,7 +37,7 @@ export default function ConfirmBox({
           accessibilityRole="button"
           onPress={onConfirm}
           style={[styles.button, { backgroundColor: colors.primary }]}>
-          <Text style={[styles.buttonText, { color: "#FFFFFF" }]}>
+          <Text style={[styles.buttonText, { color: colors.onPrimary }]}>
             {confirmLabel}
           </Text>
         </Pressable>
@@ -53,7 +53,6 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 12,
     elevation: 4,
-    shadowColor: "#000",
     shadowOpacity: 0.12,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },

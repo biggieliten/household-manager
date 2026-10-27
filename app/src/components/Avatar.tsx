@@ -1,3 +1,4 @@
+import { useTheme } from "@/theme";
 import { StyleSheet, Text, View } from "react-native";
 
 import { avatars } from "@/lib/avatars";
@@ -12,6 +13,7 @@ export default function Avatar({
   avatar: AvatarType;
   size?: number;
 }): React.JSX.Element {
+  const { colors } = useTheme();
   return (
     <View
       style={[
@@ -20,7 +22,7 @@ export default function Avatar({
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: avatars[avatar].color,
+          backgroundColor: colors[avatars[avatar].colorKey],
         },
       ]}>
       <Text style={{ fontSize: size * 0.6 }}>{avatars[avatar].emoji}</Text>

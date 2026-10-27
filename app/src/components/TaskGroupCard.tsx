@@ -56,7 +56,7 @@ export default function TaskGroupCard({
               accessibilityLabel={accessibilityLabel}
               style={[
                 styles.participant,
-                { borderColor: isResponsible ? colors.primary : "transparent" },
+                { borderColor: isResponsible ? colors.primary : colors.transparent },
                 member.isPaused && styles.paused,
               ]}>
               <Avatar avatar={member.avatar} size={26} />

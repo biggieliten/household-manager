@@ -140,7 +140,7 @@ export default function DateCarousel({
                 const day = addDays(monday, offset);
                 const selected = isSameDay(day, selectedDate);
                 const future = day > today;
-                const textColor = selected ? "#FFFFFF" : colors.text;
+                const textColor = selected ? colors.onPrimary : colors.text;
                 return (
                   <Pressable
                     key={offset}

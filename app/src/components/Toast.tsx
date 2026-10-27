@@ -15,7 +15,7 @@ export default function Toast({ message, onClose }: Props) {
     <View
       accessibilityLiveRegion="polite"
       style={[
-        styles.toast,
+        { ...styles.toast, shadowColor: colors.shadow },
         { backgroundColor: colors.background, borderColor: colors.border },
       ]}>
       <Text style={[styles.message, { color: colors.text }]}>{message}</Text>
@@ -43,7 +43,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 14,
     elevation: 6,
-    shadowColor: "#000",
     shadowOpacity: 0.15,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
