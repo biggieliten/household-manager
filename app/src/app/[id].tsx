@@ -8,7 +8,7 @@ import {
   StyleSheet,
   Text,
   View,
-  Alert
+  Alert,
 } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
 import PausedInfoModal from "@/components/PausedInfoModal";
@@ -275,6 +275,10 @@ export default function TaskById() {
   const lastDone = latestCompletion
     ? daysAgoLabel(daysSince(latestCompletion.completedAt, new Date()))
     : "Aldrig gjord";
+  const doneToday = latestCompletion
+    ? daysSince(latestCompletion.completedAt, new Date()) === 0
+    : false;
+
   const totalThisYear = task.completedTasks.filter(
     (ct) => ct.completedAt.getUTCFullYear() === new Date().getUTCFullYear(),
   ).length;
@@ -434,7 +438,7 @@ export default function TaskById() {
             Du är pausad
           </Text>
         </Pressable>
-      ) : !task?.completedTasks?.length ? (
+      ) : !doneToday ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Markera som klar, ${task.difficultyLevel} poäng`}
