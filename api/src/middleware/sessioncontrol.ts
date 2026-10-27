@@ -38,10 +38,8 @@ export const sessionControl = (requireAdmin = false) =>
       return c.json({ error: "Forbidden" }, 403);
     }
 
-    // Expose the member to the route handler as c.var.member.
     c.set("member", member);
 
-    // Continue to the route handler.
     await next();
   });
 

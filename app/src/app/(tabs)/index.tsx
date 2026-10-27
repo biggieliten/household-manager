@@ -43,9 +43,7 @@ export default function Index() {
   const [showPausedInfo, setShowPausedInfo] = useState(false);
 
   return (
-    <View
-      // edges={["top"]}
-      style={[styles.container, { backgroundColor: colors.screen }]}>
+    <View style={[styles.container, { backgroundColor: colors.screen }]}>
       <ScreenHeader />
       {isPaused && (
         <Pressable
@@ -100,7 +98,9 @@ export default function Index() {
             styles.addButton,
             { backgroundColor: colors.primary },
           ])}>
-          <Text style={{ ...styles.addButtonText, color: colors.onPrimary }}>+</Text>
+          <Text style={{ ...styles.addButtonText, color: colors.onPrimary }}>
+            +
+          </Text>
         </Pressable>
       </Link>
       {showPausedInfo && (

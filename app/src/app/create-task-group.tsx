@@ -38,23 +38,24 @@ export default function CreateTaskGroup() {
 
   const [name, setName] = useState("");
   const [intervalDays, setIntervalDays] = useState("7");
-  const [startDate, setStartDate] = useState(
-    () => new Date().toISOString().slice(0, 10),
+  const [startDate, setStartDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
   );
   const [taskIds, setTaskIds] = useState<number[]>([]);
   const [memberIds, setMemberIds] = useState<number[]>([]);
   const [prefilledId, setPrefilledId] = useState<number | null>(null);
 
-  // Match the existing create-task form's prefill pattern.
   if (existing && tasks.data && prefilledId !== existing.id) {
     setPrefilledId(existing.id);
     setName(existing.name);
     setIntervalDays(String(existing.intervalDays));
     setStartDate(existing.startDate);
     setMemberIds(existing.memberIds);
-    setTaskIds(existing.taskIds.filter(
-      (taskId) => tasks.data.some((task) => task.id === taskId),
-    ));
+    setTaskIds(
+      existing.taskIds.filter((taskId) =>
+        tasks.data.some((task) => task.id === taskId),
+      ),
+    );
   }
 
   const saveMutation = useMutation({
@@ -182,16 +183,19 @@ export default function CreateTaskGroup() {
               disabled: saveMutation.isPending,
             }}
             disabled={saveMutation.isPending}
-            onPress={() => setMemberIds((previous) =>
-              selected
-                ? previous.filter((memberId) => memberId !== member.id)
-                : [...previous, member.id],
-            )}
+            onPress={() =>
+              setMemberIds((previous) =>
+                selected
+                  ? previous.filter((memberId) => memberId !== member.id)
+                  : [...previous, member.id],
+              )
+            }
             style={[styles.member, { backgroundColor: colors.surface }]}>
             <Text style={{ color: colors.text }}>{selected ? "☑" : "☐"}</Text>
             <Avatar avatar={member.avatar} />
             <Text style={{ color: colors.text }}>
-              {member.nickname}{member.isPaused ? " · Pausad" : ""}
+              {member.nickname}
+              {member.isPaused ? " · Pausad" : ""}
             </Text>
           </Pressable>
         );
@@ -218,15 +222,14 @@ export default function CreateTaskGroup() {
               disabled: saveMutation.isPending,
             }}
             disabled={saveMutation.isPending}
-            onPress={() => setTaskIds((previous) =>
-              selected
-                ? previous.filter((taskId) => taskId !== task.id)
-                : [...previous, task.id],
-            )}
-            style={[
-              styles.task,
-              { backgroundColor: colors.surface },
-            ]}>
+            onPress={() =>
+              setTaskIds((previous) =>
+                selected
+                  ? previous.filter((taskId) => taskId !== task.id)
+                  : [...previous, task.id],
+              )
+            }
+            style={[styles.task, { backgroundColor: colors.surface }]}>
             <Text style={{ color: colors.text }}>
               {selected ? "☑" : "☐"} {task.name}
             </Text>
@@ -240,13 +243,17 @@ export default function CreateTaskGroup() {
       )}
       {!validation.success && (
         <Text style={{ color: colors.textMuted }}>
-          Ange ett namn med minst två tecken, ett positivt heltal för intervallet,
-          ett giltigt startdatum och välj minst en syssla och en deltagare.
+          Ange ett namn med minst två tecken, ett positivt heltal för
+          intervallet, ett giltigt startdatum och välj minst en syssla och en
+          deltagare.
         </Text>
       )}
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ disabled: !canSave, busy: saveMutation.isPending }}
+        accessibilityState={{
+          disabled: !canSave,
+          busy: saveMutation.isPending,
+        }}
         disabled={!canSave}
         onPress={() => {
           if (validation.success) saveMutation.mutate(validation.data);

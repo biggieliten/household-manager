@@ -127,7 +127,6 @@ function CreateForm({ initialNickname }: HouseholdFormProps) {
     createMutation.mutate(input.data);
   };
 
-  // Refetch the list so the tabs show the new household, then open them
   const handleContinue = async () => {
     await queryClient.invalidateQueries({
       queryKey: householdsQueryOptions.queryKey,
@@ -438,7 +437,10 @@ function PrimaryButton({
       ) : (
         <>
           <Feather name={icon} size={20} color={colors.onPrimary} />
-          <Text style={{ ...styles.primaryButtonText, color: colors.onPrimary }}>{label}</Text>
+          <Text
+            style={{ ...styles.primaryButtonText, color: colors.onPrimary }}>
+            {label}
+          </Text>
         </>
       )}
     </Pressable>

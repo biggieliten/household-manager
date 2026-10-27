@@ -95,7 +95,7 @@ export default function TaskById() {
       setTimeout(() => router.back(), 100);
     },
     onError: (error) => {
-      console.error(error);
+      toast.error(error.message);
     },
   });
 
@@ -195,7 +195,7 @@ export default function TaskById() {
       ]);
     },
     onError: (error) => {
-      console.error(error);
+      toast.error(error.message);
     },
   });
 
@@ -214,10 +214,6 @@ export default function TaskById() {
         (other) => other.member.id === completion.member.id,
       ).length,
     }));
-
-  const count = task?.completedTasks.length ?? 0;
-
-  console.log({ count });
 
   const cardStyle = [styles.card, { backgroundColor: colors.card }];
 
@@ -412,7 +408,11 @@ export default function TaskById() {
             },
           ]}>
           <Feather name="pause-circle" size={20} color={colors.warningText} />
-          <Text style={[{ ...styles.doneButtonText, color: colors.onPrimary }, { color: colors.warningText }]}>
+          <Text
+            style={[
+              { ...styles.doneButtonText, color: colors.onPrimary },
+              { color: colors.warningText },
+            ]}>
             Du är pausad
           </Text>
         </Pressable>
@@ -435,8 +435,14 @@ export default function TaskById() {
           <Text style={{ ...styles.doneButtonText, color: colors.onPrimary }}>
             {completeTaskMutation.isPending ? "Sparar…" : "✓ Markera som klar"}
           </Text>
-          <View style={{ ...styles.doneBadge, backgroundColor: colors.badgeOverlay }}>
-            <Text style={{ ...styles.doneBadgeText, color: colors.onPrimary }}>+{task.difficultyLevel}p</Text>
+          <View
+            style={{
+              ...styles.doneBadge,
+              backgroundColor: colors.badgeOverlay,
+            }}>
+            <Text style={{ ...styles.doneBadgeText, color: colors.onPrimary }}>
+              +{task.difficultyLevel}p
+            </Text>
           </View>
         </Pressable>
       ) : null}
@@ -537,13 +543,13 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     marginTop: 4,
   },
-  doneButtonText: {  fontSize: 17, fontWeight: "600" },
+  doneButtonText: { fontSize: 17, fontWeight: "600" },
   doneBadge: {
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  doneBadgeText: {  fontSize: 13, fontWeight: "700" },
+  doneBadgeText: { fontSize: 13, fontWeight: "700" },
   sectionTitle: { fontSize: 18, fontWeight: "600" },
   iconRow: { flexDirection: "row", gap: 16 },
   tile: {
