@@ -89,7 +89,7 @@ export default function CreateTask() {
     setPrefilledId(taskById.id);
     setTask({
       name: taskById.name,
-      description: taskById.description,
+      description: taskById.description ?? "",
       frequency: taskById.frequency,
       difficultyLevel: taskById.difficultyLevel,
     });
@@ -360,9 +360,9 @@ export default function CreateTask() {
       </View>
 
       <View style={styles.section}>
-        <Text style={labelStyle}>Beskrivning</Text>
+        <Text style={labelStyle}>Beskrivning (valfri)</Text>
         <TextInput
-          value={task.description}
+          value={task.description ?? ""}
           onChangeText={(value) => update("description", value)}
           placeholder="Beskriv vad som ska göras eller speciella önskemål…"
           placeholderTextColor={colors.textMuted}

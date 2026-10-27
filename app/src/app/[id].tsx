@@ -365,16 +365,18 @@ export default function TaskById() {
           />
         )}
 
-        <View style={[styles.tile, { backgroundColor: accent.tile }]}>
-          <View style={styles.tileContent}>
-            <Text style={[styles.tileTitle, { color: colors.text }]}>
-              Beskrivning
-            </Text>
-            <Text style={[styles.tileBody, { color: colors.text }]}>
-              {task.description}
-            </Text>
+        {!!task.description?.trim() && (
+          <View style={[styles.tile, { backgroundColor: accent.tile }]}>
+            <View style={styles.tileContent}>
+              <Text style={[styles.tileTitle, { color: colors.text }]}>
+                Beskrivning
+              </Text>
+              <Text style={[styles.tileBody, { color: colors.text }]}>
+                {task.description}
+              </Text>
+            </View>
           </View>
-        </View>
+        )}
       </View>
 
       <View style={cardStyle}>
