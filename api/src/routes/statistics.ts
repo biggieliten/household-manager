@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { householdIdParamSchema } from "../../../shared/schemas/household-schema.ts";
 import { statisticsPeriodQuerySchema } from "../../../shared/schemas/statistics-schema.ts";
+import { mapDbError } from "../lib/db-errors.ts";
 import { activeRatio, normalizePoints } from "../lib/normalize-points.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
@@ -16,37 +17,36 @@ const app = new Hono().get(
     const { householdId } = c.req.valid("param");
     const { from, to } = c.req.valid("query");
 
-    const household = await db.household.findUnique({
-      where: { id: householdId },
-      include: {
-        members: {
-          orderBy: { id: "asc" },
-          include: {
-            // Pauses that overlap the period
-            pauses: {
-              where: {
-                deletedAt: null,
-                startDate: { lt: to },
-                OR: [{ endDate: null }, { endDate: { gt: from } }],
+    const household = await db.household
+      .findUniqueOrThrow({
+        where: { id: householdId },
+        include: {
+          members: {
+            orderBy: { id: "asc" },
+            include: {
+              // Pauses that overlap the period
+              pauses: {
+                where: {
+                  deletedAt: null,
+                  startDate: { lt: to },
+                  OR: [{ endDate: null }, { endDate: { gt: from } }],
+                },
+                select: { startDate: true, endDate: true },
               },
-              select: { startDate: true, endDate: true },
+            },
+          },
+          tasks: {
+            orderBy: { id: "asc" },
+            include: {
+              completedTasks: {
+                where: { completedAt: { gte: from, lt: to }, deletedAt: null },
+                select: { memberId: true },
+              },
             },
           },
         },
-        tasks: {
-          orderBy: { id: "asc" },
-          include: {
-            completedTasks: {
-              where: { completedAt: { gte: from, lt: to }, deletedAt: null },
-              select: { memberId: true },
-            },
-          },
-        },
-      },
-    });
-    if (!household) {
-      return c.json({ error: "Household not found" }, 404);
-    }
+      })
+      .catch(mapDbError({ P2025: "Household not found" }));
 
     const pointsPerMember = new Map<number, number>();
     const tasks = household.tasks

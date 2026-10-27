@@ -4,6 +4,7 @@ import type { ApplyGlobalResponse } from "hono/client";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { auth } from "./lib/auth.ts";
+import { toDbErrorResponse } from "./lib/db-errors.ts";
 import completions from "./routes/completions.ts";
 import households from "./routes/households.ts";
 import statistics from "./routes/statistics.ts";
@@ -27,10 +28,15 @@ app.on(["POST", "GET", "PUT", "DELETE"], "/api/auth/*", (c) =>
 );
 
 // Keeps the { error } shape for errors thrown outside route handlers,
-// e.g. malformed JSON bodies rejected by the validator
+// e.g. malformed JSON bodies rejected by the validator, and for
+// database errors a route didn't map itself
 app.onError((err, c) => {
   if (err instanceof HTTPException) {
     return c.json({ error: err.message }, err.status);
+  }
+  const dbError = toDbErrorResponse(err);
+  if (dbError) {
+    return c.json({ error: dbError.message }, dbError.status);
   }
   console.error(err);
   return c.json({ error: "Internal Server Error" }, 500);
@@ -52,7 +58,12 @@ type ErrorBody = { error: string };
 // Adds the responses produced by app.onError to every route's client types
 export type AppType = ApplyGlobalResponse<
   typeof routes,
-  { 400: { json: ErrorBody }; 500: { json: ErrorBody } }
+  {
+    400: { json: ErrorBody };
+    404: { json: ErrorBody };
+    409: { json: ErrorBody };
+    500: { json: ErrorBody };
+  }
 >;
 
 serve(

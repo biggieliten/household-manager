@@ -41,7 +41,7 @@ import {
 import { useTheme } from "@/theme";
 import type { TaskMediaKind } from "@shared/schemas/task-media-schema";
 import type { CreateTaskBody } from "@shared/schemas/task-schema";
-import { createTaskBodySchema } from "@shared/schemas/task-schema";
+import { createTaskSchema } from "@shared/schemas/task-schema";
 import { toast } from "sonner-native";
 
 const frequencyOptions = Array.from({ length: 31 }, (_, i) => i);
@@ -311,12 +311,12 @@ export default function CreateTask() {
 
   const canSave =
     !!householdId &&
-    createTaskBodySchema.safeParse(task).success &&
+    createTaskSchema.safeParse(task).success &&
     !saveTaskMutation.isPending &&
     !isRecording;
 
   const handleSave = () => {
-    const result = createTaskBodySchema.safeParse(task);
+    const result = createTaskSchema.safeParse(task);
     if (!result.success) {
       return;
     }

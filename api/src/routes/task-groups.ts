@@ -3,6 +3,7 @@ import z from "zod";
 import { householdIdParamSchema } from "../../../shared/schemas/household-schema.ts";
 import { taskGroupBodySchema } from "../../../shared/schemas/task-group-schema.ts";
 import type { Prisma } from "../generated/prisma/client.ts";
+import { mapDbError } from "../lib/db-errors.ts";
 import { db } from "../lib/prisma.ts";
 import { getRotationMemberId } from "../lib/task-rotation.ts";
 import { validate } from "../lib/validate.ts";
@@ -135,12 +136,6 @@ const app = new Hono()
     validate("json", taskGroupBodySchema),
     async (c) => {
       const { householdId, groupId } = c.req.valid("param");
-      const existing = await db.taskGroup.findFirst({
-        where: { id: groupId, householdId, deletedAt: null },
-        select: { id: true },
-      });
-      if (!existing) return c.json({ error: "Gruppen hittades inte." }, 404);
-
       const {
         taskIds: selectedIds,
         memberIds: selectedMemberIds,
@@ -173,22 +168,24 @@ const app = new Hono()
         return c.json({ error: "Välj medlemmar som är kvar i hushållet." }, 400);
       }
 
-      const group = await db.taskGroup.update({
-        where: { id: groupId, householdId, deletedAt: null },
-        data: {
-          ...body,
-          startDate: new Date(`${startDate}T00:00:00.000Z`),
-          taskToTaskGroups: {
-            deleteMany: {},
-            create: tasks.map((task) => ({ taskId: task.id })),
+      const group = await db.taskGroup
+        .update({
+          where: { id: groupId, householdId, deletedAt: null },
+          data: {
+            ...body,
+            startDate: new Date(`${startDate}T00:00:00.000Z`),
+            taskToTaskGroups: {
+              deleteMany: {},
+              create: tasks.map((task) => ({ taskId: task.id })),
+            },
+            memberToTaskGroups: {
+              deleteMany: {},
+              create: members.map((member) => ({ memberId: member.id })),
+            },
           },
-          memberToTaskGroups: {
-            deleteMany: {},
-            create: members.map((member) => ({ memberId: member.id })),
-          },
-        },
-        include: groupInclude,
-      });
+          include: groupInclude,
+        })
+        .catch(mapDbError({ P2025: "Gruppen hittades inte." }));
       return c.json(toResponse(group), 200);
     },
   )

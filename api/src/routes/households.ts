@@ -12,6 +12,7 @@ import {
   updateAvatarSchema,
   updateMyNicknameSchema,
 } from "../../../shared/schemas/member-schema.ts";
+import { mapDbError } from "../lib/db-errors.ts";
 import { db } from "../lib/prisma.ts";
 import { validate } from "../lib/validate.ts";
 import {
@@ -22,26 +23,30 @@ import { Prisma } from "../generated/prisma/client.ts";
 
 // A household by its code, with the members still in it
 function findHouseholdByCode(accessCode: string) {
-  return db.household.findFirst({
-    where: { accessCode, deletedAt: null },
-    select: {
-      id: true,
-      name: true,
-      accessCode: true,
-      members: {
-        where: { leftAt: null },
-        select: { userId: true, avatar: true },
+  return db.household
+    .findFirstOrThrow({
+      where: { accessCode, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        accessCode: true,
+        members: {
+          where: { leftAt: null },
+          select: { userId: true, avatar: true },
+        },
       },
-    },
-  });
+    })
+    .catch(mapDbError({ P2025: "Household not found" }));
 }
 
 // An active member of the household, with their ongoing pause if any
 function findActiveMember(householdId: number, memberId: number) {
-  return db.member.findFirst({
-    where: { id: memberId, householdId, leftAt: null },
-    include: { pauses: { where: { endDate: null, deletedAt: null } } },
-  });
+  return db.member
+    .findFirstOrThrow({
+      where: { id: memberId, householdId, leftAt: null },
+      include: { pauses: { where: { endDate: null, deletedAt: null } } },
+    })
+    .catch(mapDbError({ P2025: "Member not found" }));
 }
 
 const app = new Hono()
@@ -118,9 +123,6 @@ const app = new Hono()
       const { accessCode } = c.req.valid("param");
 
       const household = await findHouseholdByCode(accessCode);
-      if (!household) {
-        return c.json({ error: "Household not found" }, 404);
-      }
       if (household.members.some((member) => member.userId === user.id)) {
         return c.json({ error: "Already a member" }, 409);
       }
@@ -144,9 +146,6 @@ const app = new Hono()
       const { accessCode, nickname, avatar } = c.req.valid("json");
 
       const household = await findHouseholdByCode(accessCode);
-      if (!household) {
-        return c.json({ error: "Household not found" }, 404);
-      }
       if (household.members.some((member) => member.userId === user.id)) {
         return c.json({ error: "Already a member" }, 409);
       }
@@ -389,28 +388,27 @@ const app = new Hono()
       const { householdId } = c.req.valid("param");
       const { member: me } = c.var;
 
-      const household = await db.household.findUnique({
-        where: { id: householdId },
-        include: {
-          members: {
-            where: { leftAt: null },
-            orderBy: { id: "asc" },
-            select: {
-              id: true,
-              nickname: true,
-              avatar: true,
-              isAdmin: true,
-              pauses: {
-                where: { endDate: null, deletedAt: null },
-                select: { id: true },
+      const household = await db.household
+        .findUniqueOrThrow({
+          where: { id: householdId },
+          include: {
+            members: {
+              where: { leftAt: null },
+              orderBy: { id: "asc" },
+              select: {
+                id: true,
+                nickname: true,
+                avatar: true,
+                isAdmin: true,
+                pauses: {
+                  where: { endDate: null, deletedAt: null },
+                  select: { id: true },
+                },
               },
             },
           },
-        },
-      });
-      if (!household) {
-        return c.json({ error: "Household not found" }, 404);
-      }
+        })
+        .catch(mapDbError({ P2025: "Household not found" }));
 
       return c.json(
         {
@@ -482,22 +480,14 @@ const app = new Hono()
         return c.json({ error: "Avatar is taken" }, 409);
       }
 
-      try {
-        const member = await db.member.update({
+      const member = await db.member
+        .update({
           where: { id: me.id },
           data: { avatar },
           select: { id: true, nickname: true, avatar: true, isAdmin: true },
-        });
-        return c.json(member, 200);
-      } catch (error) {
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === "P2002"
-        ) {
-          return c.json({ error: "Avatar is taken" }, 409);
-        }
-        throw error;
-      }
+        })
+        .catch(mapDbError({ P2002: "Avatar is taken" }));
+      return c.json(member, 200);
     },
   )
 
@@ -510,9 +500,6 @@ const app = new Hono()
 
       const member = await findActiveMember(householdId, memberId);
 
-      if (!member) {
-        return c.json({ error: "Member not found" }, 404);
-      }
       if (member.isAdmin) {
         return c.json({ error: "Admins cannot be paused" }, 403);
       }
@@ -561,9 +548,6 @@ const app = new Hono()
 
       const member = await findActiveMember(householdId, memberId);
 
-      if (!member) {
-        return c.json({ error: "Member not found" }, 404);
-      }
       if (member.isAdmin) {
         return c.json({ error: "Member is already an admin" }, 409);
       }

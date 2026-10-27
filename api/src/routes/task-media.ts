@@ -5,16 +5,19 @@ import {
   taskMediaParamSchema,
   uploadTaskMediaFormSchema,
 } from "../../../shared/schemas/task-media-schema.ts";
+import { mapDbError } from "../lib/db-errors.ts";
 import { db } from "../lib/prisma.ts";
 import { toMediaKind } from "../lib/task-media.ts";
 import { validate } from "../lib/validate.ts";
 import { sessionControl } from "../middleware/sessioncontrol.ts";
 
 const findTask = (householdId: number, taskId: number) =>
-  db.task.findFirst({
-    where: { id: taskId, householdId, deletedAt: null },
-    select: { id: true },
-  });
+  db.task
+    .findFirstOrThrow({
+      where: { id: taskId, householdId, deletedAt: null },
+      select: { id: true },
+    })
+    .catch(mapDbError({ P2025: "Task not found" }));
 
 // Reject oversized uploads before the body is read into memory.
 // The extra 64 KB leaves room for the multipart boundaries and headers.
@@ -30,18 +33,14 @@ const app = new Hono()
     async (c) => {
       const { householdId, taskId, kind } = c.req.valid("param");
 
-      const task = await findTask(householdId, taskId);
-      if (!task) {
-        return c.json({ error: "Task not found" }, 404);
-      }
+      await findTask(householdId, taskId);
 
-      const media = await db.taskMedia.findUnique({
-        where: { taskId_kind: { taskId, kind: toMediaKind(kind) } },
-        select: { data: true, mimeType: true },
-      });
-      if (!media) {
-        return c.json({ error: "Media not found" }, 404);
-      }
+      const media = await db.taskMedia
+        .findUniqueOrThrow({
+          where: { taskId_kind: { taskId, kind: toMediaKind(kind) } },
+          select: { data: true, mimeType: true },
+        })
+        .catch(mapDbError({ P2025: "Media not found" }));
 
       return c.body(media.data, 200, {
         "Content-Type": media.mimeType,
@@ -76,10 +75,7 @@ const app = new Hono()
         return c.json({ error: "File is empty or too large" }, 413);
       }
 
-      const task = await findTask(householdId, taskId);
-      if (!task) {
-        return c.json({ error: "Task not found" }, 404);
-      }
+      await findTask(householdId, taskId);
 
       const fields = {
         mimeType: file.type,
@@ -105,10 +101,7 @@ const app = new Hono()
     async (c) => {
       const { householdId, taskId, kind } = c.req.valid("param");
 
-      const task = await findTask(householdId, taskId);
-      if (!task) {
-        return c.json({ error: "Task not found" }, 404);
-      }
+      await findTask(householdId, taskId);
 
       const { count } = await db.taskMedia.deleteMany({
         where: { taskId, kind: toMediaKind(kind) },

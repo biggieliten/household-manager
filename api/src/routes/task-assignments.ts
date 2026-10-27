@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import z from "zod";
 import { householdIdParamSchema } from "../../../shared/schemas/household-schema.ts";
 import { memberToTaskSchema } from "../../../shared/schemas/member-to-task-schema.ts";
-import { Prisma } from "../generated/prisma/client.ts";
+import { mapDbError } from "../lib/db-errors.ts";
 import { db } from "../lib/prisma.ts";
 import { combineTaskAssignments } from "../lib/task-rotation.ts";
 import { validate } from "../lib/validate.ts";
@@ -76,38 +76,34 @@ const app = new Hono()
       const { householdId } = c.req.valid("param");
       const { memberId, taskId } = c.req.valid("json");
 
-      const task = await db.task.findFirst({
-        where: { id: taskId, householdId, deletedAt: null, isArchived: false },
-        select: { id: true },
-      });
-      if (!task) {
-        return c.json({ error: "Task not found" }, 404);
-      }
+      await db.task
+        .findFirstOrThrow({
+          where: {
+            id: taskId,
+            householdId,
+            deletedAt: null,
+            isArchived: false,
+          },
+          select: { id: true },
+        })
+        .catch(mapDbError({ P2025: "Task not found" }));
 
-      const member = await db.member.findFirst({
-        where: { id: memberId, householdId, leftAt: null },
-        select: { id: true },
-      });
-      if (!member) {
-        return c.json({ error: "Member not found" }, 404);
-      }
+      await db.member
+        .findFirstOrThrow({
+          where: { id: memberId, householdId, leftAt: null },
+          select: { id: true },
+        })
+        .catch(mapDbError({ P2025: "Member not found" }));
 
-      try {
-        const assignment = await db.memberToTask.create({
-          data: { memberId, taskId },
-        });
-        return c.json(assignment, 201);
-      } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-          if (error.code === "P2002") {
-            return c.json({ error: "Assignment already exists" }, 409);
-          }
-          if (error.code === "P2003") {
-            return c.json({ error: "Task or member not found" }, 404);
-          }
-        }
-        throw error;
-      }
+      const assignment = await db.memberToTask
+        .create({ data: { memberId, taskId } })
+        .catch(
+          mapDbError({
+            P2002: "Assignment already exists",
+            P2003: "Task or member not found",
+          }),
+        );
+      return c.json(assignment, 201);
     },
   )
   .delete(

@@ -176,6 +176,7 @@ household-manager/
 │       │   └── seed.ts
 │       ├── lib/
 │       │   ├── auth.ts
+│       │   ├── db-errors.ts
 │       │   ├── normalize-points.ts
 │       │   ├── prisma.ts
 │       │   ├── task-media.ts
