@@ -1,17 +1,18 @@
+import PausedInfoModal from "@/components/PausedInfoModal";
+import Feather from "@expo/vector-icons/Feather";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import Feather from "@expo/vector-icons/Feather";
-import PausedInfoModal from "@/components/PausedInfoModal";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import DateCarousel from "@/components/DateCarousel";
 import ErrorView from "@/components/ErrorView";
 import LoadingView from "@/components/LoadingView";
 import ScreenHeader from "@/components/ScreenHeader";
 import TaskList from "@/components/TaskList";
-import usePullToRefresh from "@/hooks/use-pull-to-refresh";
 import useActiveHouseholdId from "@/hooks/use-active-household-id";
+import usePullToRefresh from "@/hooks/use-pull-to-refresh";
 import { householdsQueryOptions } from "@/options/households";
 import {
   taskAssignmentsQueryOptions,
@@ -26,6 +27,8 @@ function startOfToday(): Date {
 
 export default function Index() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const addButtonBottom = (Platform.OS === "ios" ? insets.bottom : 0) + 16;
   const [selectedDate, setSelectedDate] = useState(startOfToday);
   const householdId = useActiveHouseholdId();
   const {
@@ -104,7 +107,7 @@ export default function Index() {
             accessibilityLabel="Skapa syssla"
             style={StyleSheet.flatten([
               styles.addButton,
-              { backgroundColor: colors.primary },
+              { backgroundColor: colors.primary, bottom: addButtonBottom },
             ])}>
             <Text style={{ ...styles.addButtonText, color: colors.onPrimary }}>
               +
@@ -124,7 +127,6 @@ const styles = StyleSheet.create({
   addButton: {
     position: "absolute",
     right: 16,
-    bottom: 80,
     width: 56,
     height: 56,
     borderRadius: 28,
