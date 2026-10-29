@@ -33,6 +33,18 @@ Följande avvikelser från de ursprungliga skisserna har gjorts.
 
 - Inloggning, hushåll, profil, sysslegrupper och detaljvy för en syssla har designats av gruppen.
 
+### Färger
+
+- Appens accentfärg är mörkröd (#A3393A, ljust tema).
+- En försenad syssla har en ljusröd bakgrund och en röd dagsetikett.
+- Små etiketter och avatarcirklar har en ljuslila bakgrund.
+- Appen har både ljust och mörkt tema med egna färger.
+
+### Sidhuvud
+
+- Rubriken "Sysslor" har ersatts av ett sidhuvud med logga, hushållets namn och en profilknapp.
+- Genom att trycka på hushållets namn öppnas en meny där man kan byta mellan sina hushåll.
+
 ### Godkännande
 
 - Godkänt av produktägaren: 2026-10-28
