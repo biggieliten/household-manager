@@ -67,6 +67,12 @@ export default function DateCarousel({
     { length: PAST_DAYS + 1 + SIDE_DAYS * 2 },
     (_, index) => addDays(today, index - SIDE_DAYS - PAST_DAYS),
   );
+  // One offset per scroll position; Android rounds each to whole pixels, while
+  // snapToInterval would round the width once and drift further back in time
+  const snapOffsets = Array.from(
+    { length: days.length - VISIBLE_DAYS + 1 },
+    (_, index) => index * dayWidth,
+  );
   const firstDay = days[SIDE_DAYS];
   const isToday = isSameDay(selectedDate, today);
   const isFirstDay = isSameDay(selectedDate, firstDay);
@@ -137,7 +143,7 @@ export default function DateCarousel({
           ref={listRef}
           data={days}
           horizontal
-          snapToInterval={dayWidth}
+          snapToOffsets={snapOffsets}
           decelerationRate="fast"
           showsHorizontalScrollIndicator={false}
           keyExtractor={(day) => day.toDateString()}
