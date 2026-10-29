@@ -1,13 +1,15 @@
 import Feather from "@expo/vector-icons/Feather";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { DonutChart } from "expo-skia-charts";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
+  FlatList,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -55,12 +57,14 @@ const periodOptions = [
 export default function Statistics() {
   const { colors } = useTheme();
   const householdId = useActiveHouseholdId();
+  const { width } = useWindowDimensions();
   // null = the newest period with data
   const [selectedTitle, setSelectedTitle] = useState<string | null>(null);
   const options = periodOptions.map((option) => ({
     ...option,
     period: option.getPeriod(),
   }));
+  const listRef = useRef<FlatList<(typeof options)[number]>>(null);
   const results = useQueries({
     queries: options.map(({ period }) =>
       statisticsQueryOptions(householdId, period),
@@ -116,6 +120,11 @@ export default function Statistics() {
   const hasPrevious = periodIndex > 0;
   const hasNext = periodIndex < visibleOptions.length - 1;
 
+  const goToPeriod = (index: number) => {
+    setSelectedTitle(visibleOptions[index].title);
+    listRef.current?.scrollToIndex({ index, animated: true });
+  };
+
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScreenHeader />
@@ -129,9 +138,7 @@ export default function Statistics() {
           accessibilityRole="button"
           accessibilityLabel="Föregående period"
           disabled={!hasPrevious}
-          onPress={() =>
-            setSelectedTitle(visibleOptions[periodIndex - 1].title)
-          }
+          onPress={() => goToPeriod(periodIndex - 1)}
           style={[styles.arrowButton, !hasPrevious && styles.hidden]}>
           <Feather name="chevron-left" size={28} color={colors.text} />
         </Pressable>
@@ -147,14 +154,37 @@ export default function Statistics() {
           accessibilityRole="button"
           accessibilityLabel="Nästa period"
           disabled={!hasNext}
-          onPress={() =>
-            setSelectedTitle(visibleOptions[periodIndex + 1].title)
-          }
+          onPress={() => goToPeriod(periodIndex + 1)}
           style={[styles.arrowButton, !hasNext && styles.hidden]}>
           <Feather name="chevron-right" size={28} color={colors.text} />
         </Pressable>
       </View>
-      <StatisticsContent period={period} />
+      <FlatList
+        ref={listRef}
+        // Remount on the selected page when a refresh changes which periods have data
+        key={visibleOptions.map((option) => option.title).join()}
+        data={visibleOptions}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(option) => option.title}
+        initialScrollIndex={periodIndex}
+        getItemLayout={(_, index) => ({
+          length: width,
+          offset: width * index,
+          index,
+        })}
+        onMomentumScrollEnd={(event) => {
+          const index = Math.round(event.nativeEvent.contentOffset.x / width);
+          setSelectedTitle(visibleOptions[index].title);
+        }}
+        style={styles.pager}
+        renderItem={({ item }) => (
+          <View style={{ width }}>
+            <StatisticsContent period={item.period} />
+          </View>
+        )}
+      />
     </View>
   );
 }
@@ -304,6 +334,9 @@ const styles = StyleSheet.create({
   },
   hidden: {
     opacity: 0,
+  },
+  pager: {
+    flex: 1,
   },
   periodTitle: {
     fontSize: 28,
