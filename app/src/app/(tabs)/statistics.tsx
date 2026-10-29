@@ -139,7 +139,7 @@ export default function Statistics() {
           accessibilityLabel="Föregående period"
           disabled={!hasPrevious}
           onPress={() => goToPeriod(periodIndex - 1)}
-          style={[styles.arrowButton, !hasPrevious && styles.hidden]}>
+          style={[styles.arrowButton, !hasPrevious && styles.disabled]}>
           <Feather name="chevron-left" size={28} color={colors.text} />
         </Pressable>
         <View style={styles.periodText}>
@@ -155,7 +155,7 @@ export default function Statistics() {
           accessibilityLabel="Nästa period"
           disabled={!hasNext}
           onPress={() => goToPeriod(periodIndex + 1)}
-          style={[styles.arrowButton, !hasNext && styles.hidden]}>
+          style={[styles.arrowButton, !hasNext && styles.disabled]}>
           <Feather name="chevron-right" size={28} color={colors.text} />
         </Pressable>
       </View>
@@ -332,8 +332,8 @@ const styles = StyleSheet.create({
   arrowButton: {
     padding: 4,
   },
-  hidden: {
-    opacity: 0,
+  disabled: {
+    opacity: 0.4,
   },
   pager: {
     flex: 1,
