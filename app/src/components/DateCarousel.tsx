@@ -1,5 +1,5 @@
 import Feather from "@expo/vector-icons/Feather";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -9,11 +9,13 @@ import {
   View,
 } from "react-native";
 
-import { currentWeek } from "@/lib/statistics-period";
 import { useTheme } from "@/theme";
 
-// How many weeks back the strip can be swiped, including the current one
-const WEEKS = 52;
+// How many days back the strip can be swiped
+const PAST_DAYS = 364;
+// Days on each side of the centered day
+const SIDE_DAYS = 3;
+const VISIBLE_DAYS = SIDE_DAYS * 2 + 1;
 const WEEKDAY_LETTERS = ["M", "T", "O", "T", "F", "L", "S"];
 
 const weekdayFormat = new Intl.DateTimeFormat("sv-SE", { weekday: "long" });
@@ -55,29 +57,34 @@ export default function DateCarousel({
 }: Props): React.JSX.Element {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const pageWidth = width - 32;
+  const dayWidth = (width - 32) / VISIBLE_DAYS;
   const listRef = useRef<FlatList<Date>>(null);
-  const visibleWeek = useRef(WEEKS - 1);
 
   // Local midnight
   const today = addDays(new Date(), 0);
-  const thisMonday = currentWeek(today).from;
-  const weeks = Array.from({ length: WEEKS }, (_, index) =>
-    addDays(thisMonday, (index - (WEEKS - 1)) * 7),
+  // Dimmed days pad both ends so the oldest and newest selectable days can be centered
+  const days = Array.from(
+    { length: PAST_DAYS + 1 + SIDE_DAYS * 2 },
+    (_, index) => addDays(today, index - SIDE_DAYS - PAST_DAYS),
   );
-  const firstDay = weeks[0];
+  const firstDay = days[SIDE_DAYS];
   const isToday = isSameDay(selectedDate, today);
   const isFirstDay = isSameDay(selectedDate, firstDay);
+  const selectedIndex = days.findIndex((day) => isSameDay(day, selectedDate));
+  const centeredIndex = useRef(selectedIndex);
+  // The day under the fixed square; follows the scroll, while selection waits for the strip to stop
+  const [highlightIndex, setHighlightIndex] = useState(selectedIndex);
 
-  // Keep the strip on the selected week when the arrows cross a week boundary
+  // Slide the strip when a tap or the arrows change the selected day
   useEffect(() => {
-    const selectedMonday = currentWeek(selectedDate).from;
-    const index = weeks.findIndex((monday) => isSameDay(monday, selectedMonday));
-    if (index !== -1 && index !== visibleWeek.current) {
-      visibleWeek.current = index;
-      listRef.current?.scrollToIndex({ index, animated: true });
+    if (selectedIndex !== -1 && selectedIndex !== centeredIndex.current) {
+      centeredIndex.current = selectedIndex;
+      listRef.current?.scrollToOffset({
+        offset: (selectedIndex - SIDE_DAYS) * dayWidth,
+        animated: true,
+      });
     }
-  }, [selectedDate, weeks]);
+  }, [selectedIndex, dayWidth]);
 
   return (
     <View style={styles.container}>
@@ -116,59 +123,89 @@ export default function DateCarousel({
       </View>
 
       <View style={[styles.strip, { backgroundColor: colors.card }]}>
+        <View
+          style={[
+            styles.centerSquare,
+            {
+              left: SIDE_DAYS * dayWidth + 2,
+              width: dayWidth - 4,
+              backgroundColor: colors.primary,
+            },
+          ]}
+        />
         <FlatList
           ref={listRef}
-          data={weeks}
+          data={days}
           horizontal
-          pagingEnabled
+          snapToInterval={dayWidth}
+          decelerationRate="fast"
           showsHorizontalScrollIndicator={false}
-          keyExtractor={(monday) => monday.toDateString()}
-          initialScrollIndex={WEEKS - 1}
+          keyExtractor={(day) => day.toDateString()}
+          initialScrollIndex={Math.max(selectedIndex - SIDE_DAYS, 0)}
           getItemLayout={(_, index) => ({
-            length: pageWidth,
-            offset: pageWidth * index,
+            length: dayWidth,
+            offset: dayWidth * index,
             index,
           })}
+          scrollEventThrottle={16}
+          onScroll={(event) =>
+            setHighlightIndex(
+              Math.round(event.nativeEvent.contentOffset.x / dayWidth) +
+                SIDE_DAYS,
+            )
+          }
           onMomentumScrollEnd={(event) => {
-            visibleWeek.current = Math.round(
-              event.nativeEvent.contentOffset.x / pageWidth,
+            const index =
+              Math.round(event.nativeEvent.contentOffset.x / dayWidth) +
+              SIDE_DAYS;
+            // Snap back from the dimmed days past either end
+            const clamped = Math.min(
+              Math.max(index, SIDE_DAYS),
+              SIDE_DAYS + PAST_DAYS,
+            );
+            centeredIndex.current = clamped;
+            if (clamped !== index) {
+              listRef.current?.scrollToOffset({
+                offset: (clamped - SIDE_DAYS) * dayWidth,
+                animated: true,
+              });
+            }
+            if (!isSameDay(days[clamped], selectedDate)) {
+              onSelectDate(days[clamped]);
+            }
+          }}
+          renderItem={({ item: day, index }) => {
+            const selected = isSameDay(day, selectedDate);
+            const highlighted = index === highlightIndex;
+            const outOfRange = day > today || day < firstDay;
+            const textColor = highlighted ? colors.onPrimary : colors.text;
+            return (
+              <View style={[styles.day, { width: dayWidth }]}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={daySubtitle(day)}
+                  accessibilityState={{ selected, disabled: outOfRange }}
+                  disabled={outOfRange}
+                  onPress={() => onSelectDate(day)}
+                  style={[
+                    styles.pill,
+                    outOfRange && styles.disabled,
+                  ]}>
+                  <Text
+                    style={[
+                      styles.pillLetter,
+                      { color: highlighted ? textColor : colors.textMuted },
+                    ]}>
+                    {/* getDay() starts on Sunday; the letters start on Monday */}
+                    {WEEKDAY_LETTERS[(day.getDay() + 6) % 7]}
+                  </Text>
+                  <Text style={[styles.pillDate, { color: textColor }]}>
+                    {day.getDate()}
+                  </Text>
+                </Pressable>
+              </View>
             );
           }}
-          renderItem={({ item: monday }) => (
-            <View style={[styles.week, { width: pageWidth }]}>
-              {WEEKDAY_LETTERS.map((letter, offset) => {
-                const day = addDays(monday, offset);
-                const selected = isSameDay(day, selectedDate);
-                const future = day > today;
-                const textColor = selected ? colors.onPrimary : colors.text;
-                return (
-                  <Pressable
-                    key={offset}
-                    accessibilityRole="button"
-                    accessibilityLabel={daySubtitle(day)}
-                    accessibilityState={{ selected, disabled: future }}
-                    disabled={future}
-                    onPress={() => onSelectDate(day)}
-                    style={[
-                      styles.pill,
-                      selected && { backgroundColor: colors.primary },
-                      future && styles.disabled,
-                    ]}>
-                    <Text
-                      style={[
-                        styles.pillLetter,
-                        { color: selected ? textColor : colors.textMuted },
-                      ]}>
-                      {letter}
-                    </Text>
-                    <Text style={[styles.pillDate, { color: textColor }]}>
-                      {day.getDate()}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
         />
       </View>
     </View>
@@ -191,7 +228,9 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4 },
   subtitle: { fontSize: 13, fontWeight: "600" },
   strip: { borderRadius: 20, paddingVertical: 8, overflow: "hidden" },
-  week: { flexDirection: "row", paddingHorizontal: 8 },
+  // Matches the pill: the strip's vertical padding, the pill margins and corners
+  centerSquare: { position: "absolute", top: 8, bottom: 8, borderRadius: 12 },
+  day: { flexDirection: "row" },
   pill: {
     flex: 1,
     alignItems: "center",
