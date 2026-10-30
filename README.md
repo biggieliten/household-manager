@@ -59,7 +59,7 @@ Välj adress efter hur appen körs:
 
 - **Samma dator/iOS-simulator:** använd `localhost`.
 - **Fysisk telefon över lokalt nätverk:** använd datorns lokala IP-adress.
-- **Androids standardemulator:** använd `10.0.2.2`.
+- **Androids standardemulator:** använd `10.0.2.2`. Om du vill använda `localhost` kom ihåg att använda `adb reverse` kommandot.
 - **Android via USB/ADB:** se instruktionerna i appens exempelfil.
 
 Hemligheter ska endast finnas i API:ts miljöfil; `EXPO_PUBLIC_`-värden är offentliga. Starta om API:t respektive Expo och ladda om appen efter ändringar i miljöfilerna.
