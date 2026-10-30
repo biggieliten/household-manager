@@ -49,6 +49,13 @@ Kopiera [`api/.env.example`](api/.env.example) till `api/.env` och fyll i:
 
 GitHub-uppgifterna behövs för GitHub-inloggning. OAuth-appens callback ska vara API-basadressen följd av `/api/auth/callback/github`.
 
+##### Skapa en GitHub OAuth-app (om du vill använda GitHub som login)
+
+1. Öppna GitHub → **Settings → Developer settings → OAuth Apps → New OAuth App**.
+2. Ange **Application name**, exempelvis `Hushållet`, och **Homepage URL**, exempelvis projektets GitHub-adress.
+3. Ange **Authorization callback URL** till API:ts basadress följd av `/api/auth/callback/github`, exempelvis `http://localhost:3000/api/auth/callback/github`. På en fysisk telefon behöver adressen vara nåbar från telefonen.
+4. Klicka på **Register application** och sedan **Generate a new client secret**. Kopiera **Client ID** och hemligheten till `GITHUB_CLIENT_ID` respektive `GITHUB_CLIENT_SECRET` i `api/.env`. Hemligheten ska aldrig checkas in.
+
 #### App – `app/.env`
 
 Kopiera [`app/.env.example`](app/.env.example) till `app/.env` och ange:
